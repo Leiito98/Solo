@@ -1,0 +1,622 @@
+'use client'
+
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import Link from 'next/link'
+import { Zap, ArrowRight, ArrowLeft, Check, Sparkles, Globe, Mail, Lock, Building, MapPin, Phone } from 'lucide-react'
+
+const VERTICALES = [
+  { value: 'barberia', label: '💈 Barbería' },
+  { value: 'belleza', label: '💅 Belleza (Lashes, Uñas)' },
+  { value: 'nutricion', label: '🥗 Nutrición' },
+  { value: 'psicologia', label: '🧠 Psicología' },
+  { value: 'fitness', label: '💪 Fitness' },
+  { value: 'spa', label: '💆 Spa & Masajes' },
+  { value: 'otros', label: '🔧 Otros' },
+]
+
+function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+}
+
+type SlugStatus = 'idle' | 'checking' | 'available' | 'taken' | 'error'
+
+function normalizeEmail(v: string) {
+  return v.trim().toLowerCase()
+}
+
+function isRateLimitError(msg: string) {
+  const m = msg.toLowerCase()
+  return (
+    m.includes('rate limit') ||
+    m.includes('too many requests') ||
+    m.includes('over_email_send_rate_limit') ||
+    m.includes('email rate limit')
+  )
+}
+
+export default function RegisterPage() {
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+
+  const [step, setStep] = useState(1) // 1: cuenta, 2: negocio
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const inFlight = useRef(false)
+
+  // Step 1: Cuenta
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  // Step 2: Negocio
+  const [nombreNegocio, setNombreNegocio] = useState('')
+  const [slug, setSlug] = useState('')
+  const [vertical, setVertical] = useState<string>('')
+  const [direccion, setDireccion] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [emailNegocio, setEmailNegocio] = useState('')
+
+  const [slugStatus, setSlugStatus] = useState<SlugStatus>('idle')
+
+  useEffect(() => {
+    if (step !== 2) return
+
+    const s = slugify(slug || '')
+    if (!s) {
+      setSlugStatus('idle')
+      return
+    }
+
+    if (s.length < 3) {
+      setSlugStatus('taken')
+      return
+    }
+
+    setSlugStatus('checking')
+
+    const controller = new AbortController()
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/slug/check?slug=${encodeURIComponent(s)}`, {
+          signal: controller.signal,
+        })
+        const json = await res.json()
+        setSlugStatus(json?.available ? 'available' : 'taken')
+      } catch {
+        if (!controller.signal.aborted) setSlugStatus('error')
+      }
+    }, 450)
+
+    return () => {
+      controller.abort()
+      clearTimeout(t)
+    }
+  }, [slug, step])
+
+  async function handleCreateAccount(e: React.FormEvent) {
+    e.preventDefault()
+    if (inFlight.current) return
+    inFlight.current = true
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const cleanEmail = normalizeEmail(email)
+
+      const { data, error: signUpErr } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+      })
+
+      if (signUpErr) {
+        if (isRateLimitError(signUpErr.message)) {
+          setError('Límite de emails alcanzado. Esperá un momento y probá de nuevo.')
+        } else {
+          setError(signUpErr.message)
+        }
+        return
+      }
+
+      if (!data.session) {
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        })
+
+        if (signInErr) {
+          setError(signInErr.message)
+          return
+        }
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session?.user) {
+        setError('No pude iniciar sesión. Probá de nuevo.')
+        return
+      }
+
+      setStep(2)
+    } finally {
+      setLoading(false)
+      inFlight.current = false
+    }
+  }
+
+  async function handleCreateNegocio(e: React.FormEvent) {
+    e.preventDefault()
+    if (inFlight.current) return
+    inFlight.current = true
+
+    setLoading(true)
+    setError('')
+
+    try {
+      if (slugStatus === 'checking') {
+        setError('Verificando slug...')
+        return
+      }
+      if (slugStatus === 'taken') {
+        setError('Ese slug ya está en uso.')
+        return
+      }
+      if (slugStatus === 'error') {
+        setError('No pude verificar el slug.')
+        return
+      }
+
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession()
+      let userId = sessionData.session?.user?.id || null
+
+      if (sessionErr || !userId) {
+        const { data: userData, error: userErr } = await supabase.auth.getUser()
+        userId = userData.user?.id || null
+        if (userErr || !userId) {
+          setError('No hay sesión activa.')
+          return
+        }
+      }
+
+      const finalSlug = slugify(slug || nombreNegocio)
+      if (!finalSlug) {
+        setError('El slug no puede estar vacío.')
+        return
+      }
+
+      const { error: insertErr } = await supabase.from('negocios').insert({
+        owner_id: userId,
+        nombre: nombreNegocio,
+        slug: finalSlug,
+        vertical,
+        direccion: direccion || null,
+        telefono: telefono || null,
+        email: emailNegocio || null,
+      })
+
+      if (insertErr) {
+        const msg = String(insertErr.message || '')
+        const code = String((insertErr as any).code || '')
+        if (msg.toLowerCase().includes('duplicate') || code === '23505') {
+          setError('Ese slug ya está en uso.')
+        } else {
+          setError(msg || 'Error al crear el negocio.')
+        }
+        return
+      }
+
+      router.push('/dashboard')
+      router.refresh()
+    } finally {
+      setLoading(false)
+      inFlight.current = false
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex relative overflow-hidden">
+      {/* Left side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10 bg-white">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <Zap className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-3xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Solo
+            </span>
+          </Link>
+
+          {/* Progress indicator */}
+          <div className="flex items-center gap-3">
+            <div className={`flex items-center gap-2 ${step === 1 ? 'text-blue-600' : 'text-green-600'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 1 ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                {step === 1 ? '1' : <Check className="w-5 h-5" />}
+              </div>
+              <span className="text-sm font-semibold hidden sm:inline">Tu cuenta</span>
+            </div>
+            <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div className={`h-full bg-blue-600 transition-all duration-500 ${step === 2 ? 'w-full' : 'w-0'}`} />
+            </div>
+            <div className={`flex items-center gap-2 ${step === 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 2 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                2
+              </div>
+              <span className="text-sm font-semibold hidden sm:inline">Tu negocio</span>
+            </div>
+          </div>
+
+          {/* Header */}
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black text-gray-900">
+              {step === 1 ? '¡Empecemos!' : 'Configura tu negocio'}
+            </h1>
+            <p className="text-lg text-gray-600">
+              {step === 1 
+                ? 'Crea tu cuenta y empieza gratis por 14 días' 
+                : 'Solo te tomará 1 minuto más'}
+            </p>
+          </div>
+
+          {/* Forms */}
+          {step === 1 ? (
+            <form onSubmit={handleCreateAccount} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="tu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-gray-500" />
+                    Contraseña
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Mínimo 6 caracteres"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
+                  />
+                  <p className="text-xs text-gray-500">Usa al menos 6 caracteres</p>
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                </div>
+              )}
+
+              <Button 
+                type="submit" 
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all hover:scale-[1.02] group"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creando cuenta...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Continuar
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                )}
+              </Button>
+
+              <p className="text-xs text-gray-500 text-center">
+                Al continuar, aceptás nuestros <a href="#" className="text-blue-600 hover:underline">Términos</a> y <a href="#" className="text-blue-600 hover:underline">Privacidad</a>
+              </p>
+            </form>
+          ) : (
+            <form onSubmit={handleCreateNegocio} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="vertical" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-gray-500" />
+                    Tipo de negocio
+                  </Label>
+                  <Select value={vertical} onValueChange={setVertical} required>
+                    <SelectTrigger className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600">
+                      <SelectValue placeholder="Selecciona tu rubro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VERTICALES.map((v) => (
+                        <SelectItem key={v.value} value={v.value} className="text-lg py-3">
+                          {v.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="nombre" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Building className="w-4 h-4 text-gray-500" />
+                    Nombre de tu negocio
+                  </Label>
+                  <Input
+                    id="nombre"
+                    placeholder="Ej: Barbería El Clásico"
+                    value={nombreNegocio}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      setNombreNegocio(v)
+                      setSlug(slugify(v))
+                    }}
+                    required
+                    className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="slug" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-gray-500" />
+                    Tu página web
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="slug"
+                      value={slug}
+                      onChange={(e) => setSlug(slugify(e.target.value))}
+                      placeholder="mi-negocio"
+                      required
+                      className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
+                    />
+                    <span className="text-sm text-gray-500 whitespace-nowrap font-medium">.getsolo.site</span>
+                  </div>
+
+                  {slug && (
+                    <div className="flex items-center gap-2 mt-2">
+                      {slugStatus === 'checking' && (
+                        <p className="text-sm text-gray-500 flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+                          Verificando...
+                        </p>
+                      )}
+                      {slugStatus === 'available' && (
+                        <p className="text-sm text-green-600 font-semibold flex items-center gap-2">
+                          <Check className="w-4 h-4" />
+                          ¡Disponible!
+                        </p>
+                      )}
+                      {slugStatus === 'taken' && (
+                        <p className="text-sm text-red-600 font-semibold">❌ Ese slug ya está en uso</p>
+                      )}
+                      {slugStatus === 'error' && (
+                        <p className="text-sm text-red-600 font-semibold">⚠️ Error al verificar</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-gray-500">
+                    Tu página será: <span className="font-semibold text-blue-600">{(slug || 'tu-negocio')}.getsolo.site</span>
+                  </p>
+                </div>
+
+                {/* Optional fields */}
+                <details className="group">
+                  <summary className="cursor-pointer text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors list-none flex items-center gap-2">
+                    <span>+ Información opcional</span>
+                    <span className="text-xs text-gray-500">(lo podés completar después)</span>
+                  </summary>
+                  
+                  <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
+                    <div className="space-y-2">
+                      <Label htmlFor="direccion" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-gray-500" />
+                        Dirección
+                      </Label>
+                      <Input
+                        id="direccion"
+                        placeholder="Av. Siempre Viva 123"
+                        value={direccion}
+                        onChange={(e) => setDireccion(e.target.value)}
+                        className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="telefono" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-500" />
+                        Teléfono
+                      </Label>
+                      <Input
+                        id="telefono"
+                        placeholder="+54 11 1234-5678"
+                        value={telefono}
+                        onChange={(e) => setTelefono(e.target.value)}
+                        className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="emailNegocio" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                        Email del negocio
+                      </Label>
+                      <Input
+                        id="emailNegocio"
+                        type="email"
+                        placeholder="contacto@negocio.com"
+                        value={emailNegocio}
+                        onChange={(e) => setEmailNegocio(e.target.value)}
+                        className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              {error && (
+                <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  variant="outline"
+                  className="h-14 text-lg font-bold border-2 border-gray-300 hover:border-gray-400 flex-1"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Volver
+                </Button>
+                
+                <Button 
+                  type="submit" 
+                  className="h-14 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all hover:scale-[1.02] group flex-[2]"
+                  disabled={loading || slugStatus === 'taken' || slugStatus === 'checking' || slugStatus === 'error'}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Creando...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Crear mi Negocio
+                      <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Footer */}
+          {step === 1 && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t-2 border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-gray-500 font-medium">
+                    ¿Ya tienes cuenta?
+                  </span>
+                </div>
+              </div>
+
+              <Button 
+                asChild 
+                variant="outline" 
+                className="w-full h-12 text-base font-semibold border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 transition-all"
+              >
+                <Link href="/login">
+                  Iniciar Sesión
+                </Link>
+              </Button>
+            </>
+          )}
+
+          <div className="text-center">
+            <Link 
+              href="/" 
+              className="text-sm text-gray-500 hover:text-blue-600 transition-colors font-medium"
+            >
+              ← Volver al inicio
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Right side - Visual */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
+        
+        <div className="relative z-10 flex flex-col items-center justify-center p-12 text-white">
+          <div className="max-w-lg space-y-8">
+            <div className="space-y-4">
+              <Sparkles className="w-16 h-16 text-yellow-300" />
+              <h2 className="text-5xl font-black leading-tight">
+                Todo listo en 5 minutos
+              </h2>
+              <p className="text-xl text-blue-100">
+                Configurá tu negocio y empezá a recibir reservas online hoy mismo.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="w-8 h-8 bg-green-400 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-lg">14 días gratis</p>
+                  <p className="text-blue-100">Sin tarjeta de crédito. Cancelá cuando quieras.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="w-8 h-8 bg-green-400 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-lg">Todo incluido</p>
+                  <p className="text-blue-100">Agenda, pagos, finanzas y más en un solo lugar.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="w-8 h-8 bg-green-400 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-lg">Soporte en español</p>
+                  <p className="text-blue-100">Equipo local listo para ayudarte por WhatsApp.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-8 border-t border-white/20">
+              <div className="flex gap-1 mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 fill-yellow-400" viewBox="0 0 20 20">
+                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-blue-100 text-sm">
+                "En 10 minutos ya estaba recibiendo reservas. Increíble."
+              </p>
+              <p className="text-white font-bold mt-2">— María G., Estudio de Uñas</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute w-64 h-64 bg-blue-400/20 rounded-full blur-[100px] top-10 right-10 animate-pulse"></div>
+        <div className="absolute w-96 h-96 bg-purple-400/20 rounded-full blur-[100px] bottom-10 left-10 animate-pulse" style={{animationDelay: '1s'}}></div>
+      </div>
+    </div>
+  )
+}

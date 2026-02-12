@@ -1,61 +1,64 @@
-// src/app/negocio/[slug]/page.tsx
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server"
+import { LandingNavbar } from "@/components/landing/navbar"
+import { Hero } from "@/components/landing/hero"
+import { ServiciosSection } from "@/components/landing/servicios"
+import { ProfesionalesSection } from "@/components/landing/profesionales"
+import { CTASection } from "@/components/landing/cta-section"
+import { Footer } from "@/components/landing/footer"
 
 type PageProps = {
-  params: Promise<{ slug: string }>;
-};
+  params: Promise<{ slug: string }>
+}
 
 export default async function NegocioPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug } = await params
+  const supabase = await createClient()
 
-  const supabase = await createClient();
-
+  // Fetch negocio
   const { data: negocio, error: nErr } = await supabase
     .from("negocios")
-    .select(
-      "id,nombre,slug,vertical,logo_url,color_primario,color_secundario,direccion,telefono,email"
-    )
+    .select("*")
     .eq("slug", slug)
-    .single();
+    .single()
 
   if (nErr || !negocio) {
-    return <div className="p-10">Negocio no encontrado</div>;
-  }
-
-  const { data: servicios, error: sErr } = await supabase
-    .from("servicios")
-    .select("id,nombre,descripcion,duracion_min,precio")
-    .eq("negocio_id", negocio.id)
-    .order("nombre");
-
-  if (sErr) {
     return (
-      <main className="p-10">
-        <h1 className="text-3xl font-bold">{negocio.nombre}</h1>
-        <p className="mt-4">Error cargando servicios.</p>
-      </main>
-    );
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold text-gray-900">404</h1>
+          <p className="text-gray-600">Negocio no encontrado</p>
+        </div>
+      </div>
+    )
   }
+
+  // Fetch servicios
+  const { data: servicios } = await supabase
+    .from("servicios")
+    .select("id, nombre, descripcion, duracion_min, precio")
+    .eq("negocio_id", negocio.id)
+    .order("nombre")
+
+  // Fetch profesionales activos
+  const { data: profesionales } = await supabase
+    .from("profesionales")
+    .select("id, nombre, especialidad, foto_url, bio")
+    .eq("negocio_id", negocio.id)
+    .eq("activo", true)
+    .order("nombre")
 
   return (
-    <main className="p-10">
-      <h1 className="text-3xl font-bold">{negocio.nombre}</h1>
-      <p className="mt-2 text-muted-foreground">Vertical: {negocio.vertical}</p>
-
-      <h2 className="mt-8 text-xl font-semibold">Servicios</h2>
-      <div className="mt-3 space-y-3">
-        {(servicios ?? []).map((s) => (
-          <div key={s.id} className="rounded-xl border p-4">
-            <div className="font-medium">{s.nombre}</div>
-            {s.descripcion && (
-              <div className="text-sm text-muted-foreground">{s.descripcion}</div>
-            )}
-            <div className="text-sm mt-2">
-              {s.duracion_min} min · ${Number(s.precio).toFixed(2)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </main>
-  );
+    <div className="min-h-screen">
+      <LandingNavbar negocio={negocio} />
+      <Hero negocio={negocio} />
+      {servicios && servicios.length > 0 && (
+        <ServiciosSection servicios={servicios} negocioSlug={negocio.slug} />
+      )}
+      {profesionales && profesionales.length > 0 && (
+        <ProfesionalesSection profesionales={profesionales} />
+      )}
+      <CTASection negocioSlug={negocio.slug} />
+      <Footer negocio={negocio} />
+    </div>
+  )
 }

@@ -1,0 +1,57 @@
+/* Estilos personalizados para react-big-calendar */
+.rbc-calendar {
+    font-family: inherit;
+  }
+  
+  .rbc-header {
+    padding: 10px 0;
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  
+  .rbc-time-slot {
+    min-height: 40px;
+  }
+  
+  .rbc-event {
+    padding: 2px 5px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .rbc-event:hover {
+    opacity: 0.8;
+  }
+  
+  .rbc-today {
+    background-color: #eff6ff;
+  }
+  
+  .rbc-toolbar {
+    margin-bottom: 15px;
+  }
+  
+  .rbc-toolbar button {
+    padding: 5px 15px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .rbc-toolbar button:hover {
+    background: #f3f4f6;
+  }
+  
+  .rbc-toolbar button.rbc-active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+  
+  .rbc-current-time-indicator {
+    background-color: #ef4444;
+    height: 2px;
+  }
