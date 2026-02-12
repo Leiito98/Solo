@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -9,11 +9,16 @@ function safeNumber(x: any) {
   return Number.isFinite(v) ? v : 0;
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+// ✅ Next 16: params viene tipado como Promise
+type Ctx = { params: Promise<{ id: string }> };
+
+export async function PATCH(req: NextRequest, { params }: Ctx) {
   const supabase = await createClient();
   const admin = createAdminClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: negocio } = await supabase
@@ -22,19 +27,27 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     .eq("owner_id", user.id)
     .single();
 
-  if (!negocio) return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
+  if (!negocio)
+    return NextResponse.json({ error: "Negocio no encontrado" }, { status: 404 });
 
-  const id = String(params?.id || "").trim();
+  // ✅ Next 16: hay que await params
+  const { id: rawId } = await params;
+  const id = String(rawId || "").trim();
   if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
 
   const body = await req.json().catch(() => ({}));
 
   const patch: any = {};
   if (body?.nombre != null) patch.nombre = String(body.nombre || "").trim();
-  if (body?.categoria != null) patch.categoria = String(body.categoria || "otros").trim();
-  if (body?.monto_mensual != null) patch.monto_mensual = safeNumber(body.monto_mensual);
+  if (body?.categoria != null)
+    patch.categoria = String(body.categoria || "otros").trim();
+  if (body?.monto_mensual != null)
+    patch.monto_mensual = safeNumber(body.monto_mensual);
   if (body?.dia_vencimiento != null)
-    patch.dia_vencimiento = Math.max(1, Math.min(31, Math.floor(safeNumber(body.dia_vencimiento))));
+    patch.dia_vencimiento = Math.max(
+      1,
+      Math.min(31, Math.floor(safeNumber(body.dia_vencimiento)))
+    );
 
   if (body?.activo != null) patch.activo = Boolean(body.activo);
 
