@@ -32,6 +32,15 @@ function ars(n: number) {
   return `$${Math.round(n).toLocaleString('es-AR')}`
 }
 
+function firstNameFromMeta(user: any) {
+  const first = String(user?.user_metadata?.first_name || '').trim()
+  if (first) return first
+
+  const full = String(user?.user_metadata?.full_name || '').trim().replace(/\s+/g, ' ')
+  if (!full) return ''
+  return full.split(' ')[0] || ''
+}
+
 export default async function DashboardHome() {
   const supabase = await createClient()
   const {
@@ -42,16 +51,21 @@ export default async function DashboardHome() {
 
   const { data: negocio } = await supabase
     .from('negocios')
-    .select('id, nombre')
+    .select('id, nombre, nombrecliente')
     .eq('owner_id', user.id)
     .single()
 
   if (!negocio) redirect('/onboarding')
 
+  const firstName =
+  (negocio.nombrecliente || '').trim().replace(/\s+/g, ' ').split(' ')[0] || ''
+
   const hoyAR = toZonedTime(new Date(), TZ)
   const hoyStr = format(hoyAR, 'yyyy-MM-dd')
   const inicioMesStr = format(startOfMonth(hoyAR), 'yyyy-MM-dd')
   const finMesStr = format(endOfMonth(hoyAR), 'yyyy-MM-dd')
+
+  const tituloHeader = firstName ? `¡Hola ${firstName}! 👋` : `¡Hola! 👋`
 
   // ==================== CAJA DE HOY ====================
   const { data: turnosHoyCompletos } = await supabase
@@ -75,9 +89,7 @@ export default async function DashboardHome() {
     turnosHoyCompletos?.filter((t: any) => t.estado === 'completado').length || 0
 
   const turnosPendientesHoy =
-    turnosHoyCompletos?.filter(
-      (t: any) => t.estado === 'pendiente' || t.estado === 'confirmado'
-    ).length || 0
+    turnosHoyCompletos?.filter((t: any) => t.estado === 'pendiente' || t.estado === 'confirmado').length || 0
 
   const turnosTotalesHoy = turnosHoyCompletos?.length || 0
 
@@ -110,9 +122,8 @@ export default async function DashboardHome() {
 
   // ==================== PRÓXIMO TURNO + ATRASADOS ====================
   const ahoraAR = toZonedTime(new Date(), TZ)
-  const horaActualStr = format(ahoraAR, 'HH:mm:ss') // tu DB está HH:mm:ss, dejamos igual
+  const horaActualStr = format(ahoraAR, 'HH:mm:ss')
 
-  // Próximo turno FUTURO (si existe)
   const { data: proximoTurno } = await supabase
     .from('turnos')
     .select(
@@ -134,7 +145,6 @@ export default async function DashboardHome() {
     .limit(1)
     .maybeSingle()
 
-  // Contador de turnos ATRASADOS (pendiente/confirmado pero antes de ahora)
   const { count: atrasadosCount } = await supabase
     .from('turnos')
     .select('id', { count: 'exact', head: true })
@@ -157,9 +167,7 @@ export default async function DashboardHome() {
         return `En ${horas}h ${mins}m`
       })()
     : null
-  
-    
-    
+
   // ==================== INGRESOS DIARIOS (ÚLTIMOS 7 DÍAS) ====================
   const ingresosDiarios = await Promise.all(
     Array.from({ length: 7 }).map(async (_, i) => {
@@ -213,9 +221,7 @@ export default async function DashboardHome() {
   const mapProf = new Map<string, { id: string; nombre: string; turnos: number; total: number }>()
 
   for (const t of turnosMesDetalle || []) {
-    const prof = Array.isArray((t as any).profesionales)
-      ? (t as any).profesionales[0]
-      : (t as any).profesionales
+    const prof = Array.isArray((t as any).profesionales) ? (t as any).profesionales[0] : (t as any).profesionales
     if (!prof?.id) continue
 
     const pagoMonto = Number((t as any).pago_monto) || 0
@@ -240,8 +246,9 @@ export default async function DashboardHome() {
 
   // ==================== PRÓXIMOS TURNOS DE HOY ====================
   const { data: turnosActivosHoy } = await supabase
-  .from('turnos')
-  .select(`
+    .from('turnos')
+    .select(
+      `
     id,
     fecha,
     hora_inicio,
@@ -250,25 +257,23 @@ export default async function DashboardHome() {
     servicios(nombre),
     profesionales(nombre),
     clientes(nombre, telefono)
-  `)
-  .eq('negocio_id', negocio.id)
-  .eq('fecha', hoyStr)
-  .in('estado', ['pendiente', 'confirmado'])
-  .order('hora_inicio', { ascending: true })
+  `
+    )
+    .eq('negocio_id', negocio.id)
+    .eq('fecha', hoyStr)
+    .in('estado', ['pendiente', 'confirmado'])
+    .order('hora_inicio', { ascending: true })
 
-const normalizados = (turnosActivosHoy || []).map((t: any) => ({
-  ...t,
-  servicios: Array.isArray(t.servicios) ? t.servicios[0] : t.servicios,
-  profesionales: Array.isArray(t.profesionales) ? t.profesionales[0] : t.profesionales,
-  clientes: Array.isArray(t.clientes) ? t.clientes[0] : t.clientes,
-}))
+  const normalizados = (turnosActivosHoy || []).map((t: any) => ({
+    ...t,
+    servicios: Array.isArray(t.servicios) ? t.servicios[0] : t.servicios,
+    profesionales: Array.isArray(t.profesionales) ? t.profesionales[0] : t.profesionales,
+    clientes: Array.isArray(t.clientes) ? t.clientes[0] : t.clientes,
+  }))
 
-// ⚠️ horaActualStr ya la tenés calculada arriba (HH:mm:ss)
-const atrasados = normalizados.filter((t: any) => String(t.hora_inicio) < horaActualStr)
-const proximos = normalizados.filter((t: any) => String(t.hora_inicio) >= horaActualStr)
-
-// ✅ Primero atrasados, después próximos. Cupo 5.
-const turnosAdaptados = [...atrasados, ...proximos].slice(0, 5)
+  const atrasados = normalizados.filter((t: any) => String(t.hora_inicio) < horaActualStr)
+  const proximos = normalizados.filter((t: any) => String(t.hora_inicio) >= horaActualStr)
+  const turnosAdaptados = [...atrasados, ...proximos].slice(0, 5)
 
   // ==================== ALERTAS / ACCIONES PENDIENTES ====================
   const { data: comisionesPendientes } = await supabase
@@ -288,17 +293,11 @@ const turnosAdaptados = [...atrasados, ...proximos].slice(0, 5)
     .eq('negocio_id', negocio.id)
     .eq('estado', 'pendiente')
 
-  const totalGastosPendientes = (gastosPendientes || []).reduce(
-    (sum, g: any) => sum + (Number(g.monto) || 0),
-    0
-  )
+  const totalGastosPendientes = (gastosPendientes || []).reduce((sum, g: any) => sum + (Number(g.monto) || 0), 0)
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={`¡Hola! 👋`}
-        description={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })}
-      />
+      <PageHeader title={tituloHeader} description={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })} />
 
       <div className="flex justify-end">
         <RefreshButton />
@@ -398,18 +397,12 @@ const turnosAdaptados = [...atrasados, ...proximos].slice(0, 5)
                   <p className="text-2xl font-bold text-blue-600">
                     {String((proximoTurno as any).hora_inicio).slice(0, 5)}
                   </p>
-                  <p className="text-xs text-gray-500">
-                    hasta {String((proximoTurno as any).hora_fin).slice(0, 5)}
-                  </p>
+                  <p className="text-xs text-gray-500">hasta {String((proximoTurno as any).hora_fin).slice(0, 5)}</p>
                 </div>
                 <div className="h-16 w-px bg-blue-200" />
                 <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-lg">
-                    {(proximoTurno as any).clientes?.nombre || 'Cliente'}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {(proximoTurno as any).servicios?.nombre || 'Servicio'}
-                  </p>
+                  <p className="font-bold text-gray-900 text-lg">{(proximoTurno as any).clientes?.nombre || 'Cliente'}</p>
+                  <p className="text-sm text-gray-600">{(proximoTurno as any).servicios?.nombre || 'Servicio'}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     con {(proximoTurno as any).profesionales?.nombre || 'Profesional'}
                   </p>
@@ -423,12 +416,8 @@ const turnosAdaptados = [...atrasados, ...proximos].slice(0, 5)
               {(atrasadosCount ?? 0) > 0 ? (
                 <>
                   <XCircle className="w-12 h-12 mx-auto text-red-500 mb-3" />
-                  <p className="font-semibold text-gray-700 mb-1">
-                    Tenés {(atrasadosCount ?? 0)} turnos atrasados
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Hay turnos pendientes/confirmados antes de la hora actual.
-                  </p>
+                  <p className="font-semibold text-gray-700 mb-1">Tenés {(atrasadosCount ?? 0)} turnos atrasados</p>
+                  <p className="text-sm text-gray-500">Hay turnos pendientes/confirmados antes de la hora actual.</p>
                 </>
               ) : (
                 <>
@@ -475,10 +464,7 @@ const turnosAdaptados = [...atrasados, ...proximos].slice(0, 5)
       {/* Ingresos Diarios + Próximos Turnos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <IngresosDiariosConGrafico ingresosDiarios={ingresosDiarios} />
-        <ProximosTurnosHoy
-          tituloFecha={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })}
-          turnos={turnosAdaptados}
-        />
+        <ProximosTurnosHoy tituloFecha={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })} turnos={turnosAdaptados} />
       </div>
 
       {/* Top Profesionales del Mes */}
@@ -501,10 +487,7 @@ const turnosAdaptados = [...atrasados, ...proximos].slice(0, 5)
                 const iconos = ['🥇', '🥈', '🥉']
 
                 return (
-                  <div
-                    key={p.id}
-                    className={`p-4 rounded-lg border-2 bg-gradient-to-br ${colores[idx]}`}
-                  >
+                  <div key={p.id} className={`p-4 rounded-lg border-2 bg-gradient-to-br ${colores[idx]}`}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-2xl">{iconos[idx]}</span>
                       <Badge variant="secondary" className="text-xs">
