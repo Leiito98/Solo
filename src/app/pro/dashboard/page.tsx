@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -31,10 +32,12 @@ function ars(n: number) {
 
 export default async function ProDashboardHome() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Traer el profesional logueado (RLS no bloquea esto porque policy self)
+  // Profesional logueado (policy self)
   const { data: profesional } = await supabase
     .from('profesionales')
     .select('id, nombre, negocio_id, comision_pct')
@@ -52,8 +55,6 @@ export default async function ProDashboardHome() {
   const tituloHeader = firstName ? `¡Hola ${firstName}! 👋` : `¡Hola! 👋`
 
   // ==================== CAJA DE HOY (MIS GANANCIAS) ====================
-  // En profesional NO mostramos "caja del negocio", mostramos "mi comisión del día"
-  // Usamos comisiones generadas hoy (si tu sistema las genera al completar/pagar)
   const { data: comisionesHoy } = await supabase
     .from('comisiones')
     .select('monto_comision, estado, fecha_generada')
@@ -65,21 +66,27 @@ export default async function ProDashboardHome() {
     0
   )
 
-  const comisionesPendientesHoy = (comisionesHoy || []).filter((c: any) => c.estado === 'pendiente').length
-  const comisionesPagadasHoy = (comisionesHoy || []).filter((c: any) => c.estado === 'pagada').length
+  const comisionesPendientesHoy =
+    (comisionesHoy || []).filter((c: any) => c.estado === 'pendiente').length
+  const comisionesPagadasHoy =
+    (comisionesHoy || []).filter((c: any) => c.estado === 'pagada').length
 
   // ==================== TURNOS HOY (solo los míos) ====================
-  // RLS ya filtra por profesional_id = mío
   const { data: turnosHoy } = await supabase
     .from('turnos')
-    .select('id, fecha, hora_inicio, hora_fin, estado, pago_estado, pago_monto, servicios(nombre, precio), clientes(nombre, telefono)')
+    .select(
+      'id, fecha, hora_inicio, hora_fin, estado, pago_estado, pago_monto, servicios(nombre, precio), clientes(nombre, telefono)'
+    )
     .eq('fecha', hoyStr)
     .order('hora_inicio', { ascending: true })
 
   const turnosTotalesHoy = turnosHoy?.length || 0
-  const turnosCompletadosHoy = turnosHoy?.filter((t: any) => t.estado === 'completado').length || 0
+  const turnosCompletadosHoy =
+    turnosHoy?.filter((t: any) => t.estado === 'completado').length || 0
   const turnosPendientesHoy =
-    turnosHoy?.filter((t: any) => t.estado === 'pendiente' || t.estado === 'confirmado').length || 0
+    turnosHoy?.filter(
+      (t: any) => t.estado === 'pendiente' || t.estado === 'confirmado'
+    ).length || 0
 
   // ==================== MIS GANANCIAS DEL MES ====================
   const { data: comisionesMes } = await supabase
@@ -97,11 +104,48 @@ export default async function ProDashboardHome() {
     .filter((c: any) => c.estado === 'pendiente')
     .reduce((sum: number, c: any) => sum + (Number(c.monto_comision) || 0), 0)
 
+  // ==================== RANKING DEL MES (SEGURO: SERVICE ROLE) ====================
+  const admin = createAdminClient()
+
+  const { data: comisionesNegocioMes, error: rankErr } = await admin
+    .from('comisiones')
+    .select('profesional_id, monto_comision')
+    .eq('negocio_id', profesional.negocio_id)
+    .gte('fecha_generada', `${inicioMesStr}T00:00:00`)
+    .lte('fecha_generada', `${finMesStr}T23:59:59`)
+
+  if (rankErr) {
+    // No rompemos el dashboard
+    console.error('RANKING_ERR', rankErr)
+  }
+
+  const totalsByProf = new Map<string, number>()
+  for (const c of comisionesNegocioMes || []) {
+    const pid = String((c as any).profesional_id || '')
+    if (!pid) continue
+    totalsByProf.set(
+      pid,
+      (totalsByProf.get(pid) || 0) + (Number((c as any).monto_comision) || 0)
+    )
+  }
+
+  const sorted = Array.from(totalsByProf.entries()).sort((a, b) => b[1] - a[1])
+  const totalProfesionalesRank = Math.max(sorted.length, 1)
+  const myIndex = sorted.findIndex(([pid]) => pid === profesional.id)
+  const miPuesto = myIndex >= 0 ? myIndex + 1 : totalProfesionalesRank
+  const miTotalRank = myIndex >= 0 ? sorted[myIndex][1] : 0
+
+  const getRankLabel = (pos: number) => {
+    if (pos === 1) return '🥇 #1'
+    if (pos === 2) return '🥈 #2'
+    if (pos === 3) return '🥉 #3'
+    return `#${pos}`
+  }
+
   // ==================== PRÓXIMO TURNO + ATRASADOS ====================
   const ahoraAR = toZonedTime(new Date(), TZ)
   const horaActualStr = format(ahoraAR, 'HH:mm:ss')
 
-  // normalizar relaciones (por si vienen como array)
   const norm = (x: any) => (Array.isArray(x) ? x[0] : x)
 
   const normalizados = (turnosHoy || []).map((t: any) => ({
@@ -110,8 +154,16 @@ export default async function ProDashboardHome() {
     clientes: norm(t.clientes),
   }))
 
-  const atrasados = normalizados.filter((t: any) => String(t.hora_inicio) < horaActualStr && (t.estado === 'pendiente' || t.estado === 'confirmado'))
-  const proximos = normalizados.filter((t: any) => String(t.hora_inicio) >= horaActualStr && (t.estado === 'pendiente' || t.estado === 'confirmado'))
+  const atrasados = normalizados.filter(
+    (t: any) =>
+      String(t.hora_inicio) < horaActualStr &&
+      (t.estado === 'pendiente' || t.estado === 'confirmado')
+  )
+  const proximos = normalizados.filter(
+    (t: any) =>
+      String(t.hora_inicio) >= horaActualStr &&
+      (t.estado === 'pendiente' || t.estado === 'confirmado')
+  )
 
   const proximoTurno = proximos.length > 0 ? proximos[0] : null
   const atrasadosCount = atrasados.length
@@ -121,7 +173,9 @@ export default async function ProDashboardHome() {
         const [h, m] = String(proximoTurno.hora_inicio).split(':').map(Number)
         const turnoFecha = new Date(hoyAR)
         turnoFecha.setHours(h, m, 0, 0)
-        const diffMinutos = Math.floor((turnoFecha.getTime() - ahoraAR.getTime()) / 60000)
+        const diffMinutos = Math.floor(
+          (turnoFecha.getTime() - ahoraAR.getTime()) / 60000
+        )
 
         if (diffMinutos < 0) return 'Ahora'
         if (diffMinutos < 60) return `En ${diffMinutos} min`
@@ -153,7 +207,6 @@ export default async function ProDashboardHome() {
       return {
         fecha: fechaStr,
         monto,
-        // "turnos" acá lo uso como cantidad de comisiones generadas (aprox a turnos pagados/completados)
         turnos: (comisionesDia || []).length,
       }
     })
@@ -161,13 +214,16 @@ export default async function ProDashboardHome() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={tituloHeader} description={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })} />
+      <PageHeader
+        title={tituloHeader}
+        description={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })}
+      />
 
       <div className="flex justify-end">
         <RefreshButton />
       </div>
 
-      {/* KPIs - enfoque en el profesional */}
+      {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* GANANCIAS DE HOY */}
         <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white shadow-lg">
@@ -178,10 +234,15 @@ export default async function ProDashboardHome() {
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Mis Ganancias Hoy</p>
-              <p className="text-3xl font-bold text-green-600 mb-1">{ars(gananciasHoy)}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Mis Ganancias Hoy
+              </p>
+              <p className="text-3xl font-bold text-green-600 mb-1">
+                {ars(gananciasHoy)}
+              </p>
               <p className="text-xs text-gray-500">
-                {comisionesPagadasHoy} pagadas · {comisionesPendientesHoy} pendientes
+                {comisionesPagadasHoy} pagadas · {comisionesPendientesHoy}{' '}
+                pendientes
               </p>
             </div>
           </CardContent>
@@ -196,11 +257,19 @@ export default async function ProDashboardHome() {
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Mis Turnos Hoy</p>
-              <p className="text-2xl font-bold text-gray-900 mb-1">{turnosTotalesHoy}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Mis Turnos Hoy
+              </p>
+              <p className="text-2xl font-bold text-gray-900 mb-1">
+                {turnosTotalesHoy}
+              </p>
               <div className="flex gap-2 text-xs">
-                <span className="text-green-600 font-medium">✓ {turnosCompletadosHoy}</span>
-                <span className="text-blue-600 font-medium">⏱ {turnosPendientesHoy}</span>
+                <span className="text-green-600 font-medium">
+                  ✓ {turnosCompletadosHoy}
+                </span>
+                <span className="text-blue-600 font-medium">
+                  ⏱ {turnosPendientesHoy}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -215,25 +284,48 @@ export default async function ProDashboardHome() {
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Mis Ganancias del Mes</p>
-              <p className="text-2xl font-bold text-gray-900 mb-1">{ars(gananciasMes)}</p>
-              <p className="text-xs text-gray-500">{format(hoyAR, 'MMMM yyyy', { locale: es })}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Mis Ganancias del Mes
+              </p>
+              <p className="text-2xl font-bold text-gray-900 mb-1">
+                {ars(gananciasMes)}
+              </p>
+              <p className="text-xs text-gray-500">
+                {format(hoyAR, 'MMMM yyyy', { locale: es })}
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* % Comisión */}
+        {/* Mi Puesto */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
               <div className="p-2 rounded-lg bg-orange-100">
                 <DollarSign className="w-5 h-5 text-orange-600" />
               </div>
+              <Badge variant="secondary" className="text-xs">
+                {format(hoyAR, 'MMMM yyyy', { locale: es })}
+              </Badge>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Mi Comisión</p>
-              <p className="text-2xl font-bold text-gray-900 mb-1">{Number(profesional.comision_pct || 0)}%</p>
-              <p className="text-xs text-gray-500">por turno atendido</p>
+              <p className="text-sm font-medium text-gray-600 mb-1">
+                Mi Puesto (Mes)
+              </p>
+
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-gray-900">
+                  {getRankLabel(miPuesto)}
+                </p>
+                <p className="text-sm text-gray-500">de {totalProfesionalesRank}</p>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-1">
+                Mis comisiones este mes:{' '}
+                <span className="font-semibold text-gray-700">
+                  {ars(miTotalRank)}
+                </span>
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -250,7 +342,10 @@ export default async function ProDashboardHome() {
                   <Clock className="w-5 h-5 text-blue-600" />
                   Próximo Turno
                 </CardTitle>
-                <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                <Badge
+                  variant="outline"
+                  className="bg-blue-100 text-blue-700 border-blue-300"
+                >
                   {tiempoParaProximo}
                 </Badge>
               </div>
@@ -261,12 +356,18 @@ export default async function ProDashboardHome() {
                   <p className="text-2xl font-bold text-blue-600">
                     {String(proximoTurno.hora_inicio).slice(0, 5)}
                   </p>
-                  <p className="text-xs text-gray-500">hasta {String(proximoTurno.hora_fin).slice(0, 5)}</p>
+                  <p className="text-xs text-gray-500">
+                    hasta {String(proximoTurno.hora_fin).slice(0, 5)}
+                  </p>
                 </div>
                 <div className="h-16 w-px bg-blue-200" />
                 <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-lg">{proximoTurno.clientes?.nombre || 'Cliente'}</p>
-                  <p className="text-sm text-gray-600">{proximoTurno.servicios?.nombre || 'Servicio'}</p>
+                  <p className="font-bold text-gray-900 text-lg">
+                    {proximoTurno.clientes?.nombre || 'Cliente'}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {proximoTurno.servicios?.nombre || 'Servicio'}
+                  </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Estado: {proximoTurno.estado} · Pago: {proximoTurno.pago_estado}
                   </p>
@@ -280,14 +381,22 @@ export default async function ProDashboardHome() {
               {atrasadosCount > 0 ? (
                 <>
                   <XCircle className="w-12 h-12 mx-auto text-red-500 mb-3" />
-                  <p className="font-semibold text-gray-700 mb-1">Tenés {atrasadosCount} turnos atrasados</p>
-                  <p className="text-sm text-gray-500">Hay turnos pendientes/confirmados antes de la hora actual.</p>
+                  <p className="font-semibold text-gray-700 mb-1">
+                    Tenés {atrasadosCount} turnos atrasados
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Hay turnos pendientes/confirmados antes de la hora actual.
+                  </p>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-12 h-12 mx-auto text-green-500 mb-3" />
-                  <p className="font-semibold text-gray-700 mb-1">¡Todo listo por hoy!</p>
-                  <p className="text-sm text-gray-500">No hay más turnos pendientes</p>
+                  <p className="font-semibold text-gray-700 mb-1">
+                    ¡Todo listo por hoy!
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    No hay más turnos pendientes
+                  </p>
                 </>
               )}
             </CardContent>
@@ -306,8 +415,12 @@ export default async function ProDashboardHome() {
             <CardContent className="p-4 space-y-3">
               <Link href="/pro/ganancias">
                 <div className="p-3 rounded-lg bg-white border border-amber-200 hover:border-amber-300 transition-colors cursor-pointer">
-                  <p className="text-xs text-gray-600 mb-1">Comisiones pendientes</p>
-                  <p className="text-lg font-bold text-amber-700">{ars(gananciasPendientesMes)}</p>
+                  <p className="text-xs text-gray-600 mb-1">
+                    Comisiones pendientes
+                  </p>
+                  <p className="text-lg font-bold text-amber-700">
+                    {ars(gananciasPendientesMes)}
+                  </p>
                 </div>
               </Link>
               <p className="text-xs text-gray-500">
@@ -321,10 +434,12 @@ export default async function ProDashboardHome() {
       {/* Gráfico + Próximos turnos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <IngresosDiariosConGrafico ingresosDiarios={ingresosDiarios} />
-        <ProximosTurnosHoy
-          tituloFecha={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })}
-          turnos={turnosAdaptados}
-        />
+        <div className="pointer-events-none">
+            <ProximosTurnosHoy
+            tituloFecha={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })}
+            turnos={turnosAdaptados}
+            />
+        </div>
       </div>
     </div>
   )

@@ -173,14 +173,9 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-white/50 uppercase tracking-widest">
-                    Contraseña
-                  </Label>
-                  <a href="#" className="text-xs text-white/30 hover:text-white/60 transition-colors">
-                    ¿Olvidaste tu contraseña?
-                  </a>
-                </div>
+                <Label className="text-xs font-semibold text-white/50 uppercase tracking-widest">
+                  Contraseña
+                </Label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 pointer-events-none" />
                   <Input
@@ -217,6 +212,16 @@ export default function LoginPage() {
                   </>
                 )}
               </button>
+
+              {/* Link de recuperación debajo del botón */}
+              <div className="text-center pt-1">
+                <Link 
+                  href="/reset-password" 
+                  className="text-xs text-white/30 hover:text-white/60 transition-colors inline-block"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
             </form>
 
             {/* Divider */}
