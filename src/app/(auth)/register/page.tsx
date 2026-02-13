@@ -1,14 +1,26 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Link from 'next/link'
-import { Zap, ArrowRight, ArrowLeft, Check, Sparkles, Globe, Mail, Lock, Building, MapPin, Phone } from 'lucide-react'
+import {
+  Zap,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Sparkles,
+  Globe,
+  Mail,
+  Lock,
+  Building,
+  MapPin,
+  Phone,
+} from 'lucide-react'
 
 const VERTICALES = [
   { value: 'barberia', label: '💈 Barbería' },
@@ -36,29 +48,34 @@ function normalizeEmail(v: string) {
 }
 
 function isRateLimitError(msg: string) {
-  const m = msg.toLowerCase()
+  const m = (msg || '').toLowerCase()
   return (
     m.includes('rate limit') ||
     m.includes('too many requests') ||
     m.includes('over_email_send_rate_limit') ||
-    m.includes('email rate limit')
+    m.includes('email rate limit') ||
+    m.includes('you have sent too many emails') ||
+    m.includes('error sending confirmation email') ||
+    m.includes('error sending invite email')
   )
 }
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = useMemo(() => createClient(), [])
 
-  const [step, setStep] = useState(1) // 1: cuenta, 2: negocio
+  const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const inFlight = useRef(false)
 
-  // Step 1: Cuenta
+  const [emailSent, setEmailSent] = useState(false)
+  const [sentTo, setSentTo] = useState('')
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  // Step 2: Negocio
   const [nombreNegocio, setNombreNegocio] = useState('')
   const [slug, setSlug] = useState('')
   const [vertical, setVertical] = useState<string>('')
@@ -68,6 +85,41 @@ export default function RegisterPage() {
 
   const [slugStatus, setSlugStatus] = useState<SlugStatus>('idle')
 
+  // ✅ FIX: tu callback real es /callback (no /auth/callback)
+  const getEmailRedirectTo = () => {
+    const base =
+      (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '') ||
+      (typeof window !== 'undefined' ? window.location.origin : '')
+
+    return `${base}/callback?next=${encodeURIComponent('/register?step=2')}`
+  }
+
+  useEffect(() => {
+    const wantedStep = searchParams?.get('step')
+    if (wantedStep !== '2') return
+
+    ;(async () => {
+      const { data } = await supabase.auth.getSession()
+      if (data.session?.user) {
+        setStep(2)
+        setEmailSent(false)
+        setError('')
+      }
+    })()
+  }, [searchParams, supabase])
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const wantedStep = searchParams?.get('step')
+      if (wantedStep === '2' && session?.user) {
+        setStep(2)
+        setEmailSent(false)
+        setError('')
+      }
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [supabase, searchParams])
+
   useEffect(() => {
     if (step !== 2) return
 
@@ -76,7 +128,6 @@ export default function RegisterPage() {
       setSlugStatus('idle')
       return
     }
-
     if (s.length < 3) {
       setSlugStatus('taken')
       return
@@ -117,39 +168,54 @@ export default function RegisterPage() {
       const { data, error: signUpErr } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
+        options: {
+          emailRedirectTo: getEmailRedirectTo(),
+        },
       })
 
       if (signUpErr) {
         if (isRateLimitError(signUpErr.message)) {
-          setError('Límite de emails alcanzado. Esperá un momento y probá de nuevo.')
+          setError('No se pudo enviar el email (o llegaste al límite). Probá de nuevo en unos minutos.')
         } else {
           setError(signUpErr.message)
         }
         return
       }
 
-      if (!data.session) {
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password,
-        })
-
-        if (signInErr) {
-          setError(signInErr.message)
-          return
-        }
-      }
-
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session?.user) {
-        setError('No pude iniciar sesión. Probá de nuevo.')
+      if (data.session) {
+        setStep(2)
         return
       }
 
-      setStep(2)
+      setSentTo(cleanEmail)
+      setEmailSent(true)
     } finally {
       setLoading(false)
       inFlight.current = false
+    }
+  }
+
+  async function handleResendEmail() {
+    if (!sentTo) return
+    setLoading(true)
+    setError('')
+    try {
+      const { error: resendErr } = await supabase.auth.resend({
+        type: 'signup',
+        email: sentTo,
+        options: { emailRedirectTo: getEmailRedirectTo() },
+      } as any)
+
+      if (resendErr) {
+        if (isRateLimitError(resendErr.message)) {
+          setError('No se pudo reenviar el email. Esperá unos minutos y probá de nuevo.')
+        } else {
+          setError(resendErr.message)
+        }
+        return
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -162,18 +228,9 @@ export default function RegisterPage() {
     setError('')
 
     try {
-      if (slugStatus === 'checking') {
-        setError('Verificando slug...')
-        return
-      }
-      if (slugStatus === 'taken') {
-        setError('Ese slug ya está en uso.')
-        return
-      }
-      if (slugStatus === 'error') {
-        setError('No pude verificar el slug.')
-        return
-      }
+      if (slugStatus === 'checking') return setError('Verificando slug...')
+      if (slugStatus === 'taken') return setError('Ese slug ya está en uso.')
+      if (slugStatus === 'error') return setError('No pude verificar el slug.')
 
       const { data: sessionData, error: sessionErr } = await supabase.auth.getSession()
       let userId = sessionData.session?.user?.id || null
@@ -181,17 +238,11 @@ export default function RegisterPage() {
       if (sessionErr || !userId) {
         const { data: userData, error: userErr } = await supabase.auth.getUser()
         userId = userData.user?.id || null
-        if (userErr || !userId) {
-          setError('No hay sesión activa.')
-          return
-        }
+        if (userErr || !userId) return setError('No hay sesión activa.')
       }
 
       const finalSlug = slugify(slug || nombreNegocio)
-      if (!finalSlug) {
-        setError('El slug no puede estar vacío.')
-        return
-      }
+      if (!finalSlug) return setError('El slug no puede estar vacío.')
 
       const { error: insertErr } = await supabase.from('negocios').insert({
         owner_id: userId,
@@ -223,8 +274,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
-      {/* Left side - Form */}
+    // ✅ Layout invertido: en lg el form queda a la derecha (row-reverse)
+    <div className="min-h-screen flex flex-col lg:flex-row-reverse relative overflow-hidden">
+      {/* Form side */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10 bg-white">
         <div className="w-full max-w-md space-y-8">
           {/* Logo */}
@@ -240,7 +292,11 @@ export default function RegisterPage() {
           {/* Progress indicator */}
           <div className="flex items-center gap-3">
             <div className={`flex items-center gap-2 ${step === 1 ? 'text-blue-600' : 'text-green-600'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 1 ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                  step === 1 ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
+                }`}
+              >
                 {step === 1 ? '1' : <Check className="w-5 h-5" />}
               </div>
               <span className="text-sm font-semibold hidden sm:inline">Tu cuenta</span>
@@ -249,7 +305,11 @@ export default function RegisterPage() {
               <div className={`h-full bg-blue-600 transition-all duration-500 ${step === 2 ? 'w-full' : 'w-0'}`} />
             </div>
             <div className={`flex items-center gap-2 ${step === 2 ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${step === 2 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                  step === 2 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
+                }`}
+              >
                 2
               </div>
               <span className="text-sm font-semibold hidden sm:inline">Tu negocio</span>
@@ -259,83 +319,151 @@ export default function RegisterPage() {
           {/* Header */}
           <div className="space-y-2">
             <h1 className="text-4xl font-black text-gray-900">
-              {step === 1 ? '¡Empecemos!' : 'Configura tu negocio'}
+              {step === 1 ? (emailSent ? 'Revisá tu email' : '¡Empecemos!') : 'Configura tu negocio'}
             </h1>
             <p className="text-lg text-gray-600">
-              {step === 1 
-                ? 'Crea tu cuenta y empieza gratis por 14 días' 
+              {step === 1
+                ? emailSent
+                  ? 'Te enviamos un link para confirmar tu cuenta.'
+                  : 'Crea tu cuenta y empieza gratis por 14 días'
                 : 'Solo te tomará 1 minuto más'}
             </p>
           </div>
 
-          {/* Forms */}
+          {/* Step 1 */}
           {step === 1 ? (
-            <form onSubmit={handleCreateAccount} className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-500" />
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="tu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                  />
+            emailSent ? (
+              <div className="space-y-5">
+                <div className="p-5 rounded-2xl border-2 border-blue-200 bg-blue-50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow">
+                      <Mail className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-blue-900 font-semibold">Email de confirmación enviado</p>
+                      <p className="text-sm text-blue-800">
+                        Lo mandamos a <span className="font-bold">{sentTo}</span>. Abrí el mail y tocá “Confirm”.
+                      </p>
+                      <p className="text-xs text-blue-700">
+                        Cuando confirmes, te vamos a llevar directo al paso 2 automáticamente.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-gray-500" />
-                    Contraseña
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Mínimo 6 caracteres"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                  />
-                  <p className="text-xs text-gray-500">Usa al menos 6 caracteres</p>
+                {error && (
+                  <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700 font-medium">{error}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    onClick={handleResendEmail}
+                    variant="outline"
+                    className="h-12 text-base font-semibold border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 flex-1"
+                    disabled={loading}
+                  >
+                    {loading ? 'Reenviando...' : 'Reenviar email'}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    className="h-12 text-base font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 flex-1"
+                    onClick={() => {
+                      setEmailSent(false)
+                      setError('')
+                      // opcional: limpiar password para que la re-escriba
+                      setPassword('')
+                    }}
+                  >
+                    Cambiar email
+                  </Button>
+                </div>
+
+                <div className="text-center">
+                  <Link href="/login" className="text-sm text-gray-500 hover:text-blue-600 transition-colors font-medium">
+                    ¿Ya confirmaste? Iniciá sesión →
+                  </Link>
                 </div>
               </div>
+            ) : (
+              <form onSubmit={handleCreateAccount} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="tu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
+                    />
+                  </div>
 
-              {error && (
-                <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-gray-500" />
+                      Contraseña
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Mínimo 6 caracteres"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
+                    />
+                    <p className="text-xs text-gray-500">Usa al menos 6 caracteres</p>
+                  </div>
                 </div>
-              )}
 
-              <Button 
-                type="submit" 
-                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all hover:scale-[1.02] group"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Creando cuenta...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Continuar
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
+                {error && (
+                  <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700 font-medium">{error}</p>
+                  </div>
                 )}
-              </Button>
 
-              <p className="text-xs text-gray-500 text-center">
-                Al continuar, aceptás nuestros <a href="#" className="text-blue-600 hover:underline">Términos</a> y <a href="#" className="text-blue-600 hover:underline">Privacidad</a>
-              </p>
-            </form>
+                <Button
+                  type="submit"
+                  className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all hover:scale-[1.02] group"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Creando cuenta...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Continuar
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+
+                <p className="text-xs text-gray-500 text-center">
+                  Al continuar, aceptás nuestros{' '}
+                  <a href="#" className="text-blue-600 hover:underline">
+                    Términos
+                  </a>{' '}
+                  y{' '}
+                  <a href="#" className="text-blue-600 hover:underline">
+                    Privacidad
+                  </a>
+                </p>
+              </form>
+            )
           ) : (
+            // Step 2 (igual que tu código)
             <form onSubmit={handleCreateNegocio} className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -407,27 +535,23 @@ export default function RegisterPage() {
                           ¡Disponible!
                         </p>
                       )}
-                      {slugStatus === 'taken' && (
-                        <p className="text-sm text-red-600 font-semibold">❌ Ese slug ya está en uso</p>
-                      )}
-                      {slugStatus === 'error' && (
-                        <p className="text-sm text-red-600 font-semibold">⚠️ Error al verificar</p>
-                      )}
+                      {slugStatus === 'taken' && <p className="text-sm text-red-600 font-semibold">❌ Ese slug ya está en uso</p>}
+                      {slugStatus === 'error' && <p className="text-sm text-red-600 font-semibold">⚠️ Error al verificar</p>}
                     </div>
                   )}
-                  
+
                   <p className="text-xs text-gray-500">
-                    Tu página será: <span className="font-semibold text-blue-600">{(slug || 'tu-negocio')}.getsolo.site</span>
+                    Tu página será:{' '}
+                    <span className="font-semibold text-blue-600">{(slug || 'tu-negocio')}.getsolo.site</span>
                   </p>
                 </div>
 
-                {/* Optional fields */}
                 <details className="group">
                   <summary className="cursor-pointer text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors list-none flex items-center gap-2">
                     <span>+ Información opcional</span>
                     <span className="text-xs text-gray-500">(lo podés completar después)</span>
                   </summary>
-                  
+
                   <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
                     <div className="space-y-2">
                       <Label htmlFor="direccion" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -491,9 +615,9 @@ export default function RegisterPage() {
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   Volver
                 </Button>
-                
-                <Button 
-                  type="submit" 
+
+                <Button
+                  type="submit"
                   className="h-14 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all hover:scale-[1.02] group flex-[2]"
                   disabled={loading || slugStatus === 'taken' || slugStatus === 'checking' || slugStatus === 'error'}
                 >
@@ -514,56 +638,45 @@ export default function RegisterPage() {
           )}
 
           {/* Footer */}
-          {step === 1 && (
+          {step === 1 && !emailSent && (
             <>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t-2 border-gray-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500 font-medium">
-                    ¿Ya tienes cuenta?
-                  </span>
+                  <span className="px-4 bg-white text-gray-500 font-medium">¿Ya tienes cuenta?</span>
                 </div>
               </div>
 
-              <Button 
-                asChild 
-                variant="outline" 
+              <Button
+                asChild
+                variant="outline"
                 className="w-full h-12 text-base font-semibold border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 transition-all"
               >
-                <Link href="/login">
-                  Iniciar Sesión
-                </Link>
+                <Link href="/login">Iniciar Sesión</Link>
               </Button>
             </>
           )}
 
           <div className="text-center">
-            <Link 
-              href="/" 
-              className="text-sm text-gray-500 hover:text-blue-600 transition-colors font-medium"
-            >
+            <Link href="/" className="text-sm text-gray-500 hover:text-blue-600 transition-colors font-medium">
               ← Volver al inicio
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Right side - Visual */}
+      {/* Visual side (ahora a la izquierda en desktop) */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
-        
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px]" />
+
         <div className="relative z-10 flex flex-col items-center justify-center p-12 text-white">
           <div className="max-w-lg space-y-8">
             <div className="space-y-4">
               <Sparkles className="w-16 h-16 text-yellow-300" />
-              <h2 className="text-5xl font-black leading-tight">
-                Todo listo en 5 minutos
-              </h2>
-              <p className="text-xl text-blue-100">
-                Configurá tu negocio y empezá a recibir reservas online hoy mismo.
-              </p>
+              <h2 className="text-5xl font-black leading-tight">Todo listo en 5 minutos</h2>
+              <p className="text-xl text-blue-100">Configurá tu negocio y empezá a recibir reservas online hoy mismo.</p>
             </div>
 
             <div className="space-y-4">
@@ -606,16 +719,17 @@ export default function RegisterPage() {
                   </svg>
                 ))}
               </div>
-              <p className="text-blue-100 text-sm">
-                "En 10 minutos ya estaba recibiendo reservas. Increíble."
-              </p>
+              <p className="text-blue-100 text-sm">"En 10 minutos ya estaba recibiendo reservas. Increíble."</p>
               <p className="text-white font-bold mt-2">— María G., Estudio de Uñas</p>
             </div>
           </div>
         </div>
 
-        <div className="absolute w-64 h-64 bg-blue-400/20 rounded-full blur-[100px] top-10 right-10 animate-pulse"></div>
-        <div className="absolute w-96 h-96 bg-purple-400/20 rounded-full blur-[100px] bottom-10 left-10 animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute w-64 h-64 bg-blue-400/20 rounded-full blur-[100px] top-10 right-10 animate-pulse" />
+        <div
+          className="absolute w-96 h-96 bg-purple-400/20 rounded-full blur-[100px] bottom-10 left-10 animate-pulse"
+          style={{ animationDelay: '1s' }}
+        />
       </div>
     </div>
   )
