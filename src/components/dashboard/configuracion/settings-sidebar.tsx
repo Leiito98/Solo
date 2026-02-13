@@ -56,7 +56,9 @@ const SETTINGS_NAV: NavItem[] = [
     children: [
       { name: "Inicio", href: "/dashboard/configuracion/integraciones" },
       { name: "MercadoPago", href: "/dashboard/configuracion/integraciones/mercadopago" },
-      { name: "Google Calendar", href: "/dashboard/configuracion/integraciones/google" },
+      { name: "Facebook", href: "/dashboard/configuracion/integraciones/facebook" },
+      { name: "Instagram", href: "/dashboard/configuracion/integraciones/instagram" },
+      //{ name: "Google Calendar", href: "/dashboard/configuracion/integraciones/google" },
       { name: "WhatsApp Business", href: "/dashboard/configuracion/integraciones/whatsapp" },
     ],
   },

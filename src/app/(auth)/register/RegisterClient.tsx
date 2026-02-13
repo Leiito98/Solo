@@ -577,11 +577,11 @@ export default function RegisterClient() {
 
                   <p className="text-center text-xs text-white/20">
                     Al continuar, aceptás los{' '}
-                    <a href="#" className="text-white/40 hover:text-white/70 underline transition-colors">
+                    <a href="/terminos-y-condiciones" className="text-white/40 hover:text-white/70 underline transition-colors">
                       Términos
                     </a>{' '}
                     y la{' '}
-                    <a href="#" className="text-white/40 hover:text-white/70 underline transition-colors">
+                    <a href="/politica-de-privacidad" className="text-white/40 hover:text-white/70 underline transition-colors">
                       Privacidad
                     </a>
                   </p>

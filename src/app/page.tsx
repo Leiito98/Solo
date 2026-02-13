@@ -440,7 +440,7 @@ export default function LandingPage() {
                 <div className="relative w-8 h-8"><Image src="/logo/solo.png" alt="Solo" fill className="object-contain" /></div>
                 <span className="heading-font text-lg font-800 text-white">Solo</span>
               </Link>
-              <p className="text-sm text-white/30 max-w-xs leading-relaxed">La plataforma todo-en-uno para gestionar tu negocio de servicios. Hecho con ❤️ en Argentina.</p>
+              <p className="text-sm text-white/30 max-w-xs leading-relaxed">La plataforma todo-en-uno para gestionar tu negocio de servicios.</p>
             </div>
             <div className="grid grid-cols-3 gap-10 text-sm">
               <div>

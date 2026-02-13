@@ -134,12 +134,6 @@ export async function Footer({ negocio }: FooterProps) {
               >
                 <Facebook className="w-5 h-5 text-gray-400 group-hover:text-blue-400 transition-colors" />
               </a>
-              <a
-                href="#"
-                className="group w-11 h-11 bg-white/5 hover:bg-white/10 rounded-xl flex items-center justify-center transition-all hover:scale-110 border border-white/10"
-              >
-                <Twitter className="w-5 h-5 text-gray-400 group-hover:text-sky-400 transition-colors" />
-              </a>
             </div>
 
             {/* Si querés ver errores en dev */}
@@ -314,9 +308,7 @@ export async function Footer({ negocio }: FooterProps) {
           </div>
 
           <div className="flex items-center gap-2 text-sm text-gray-400">
-            <span>Hecho con</span>
-            <Heart className="w-4 h-4 text-red-500 fill-red-500 animate-pulse" />
-            <span>en Argentina</span>
+            <span>Hecho en Argentina</span>
           </div>
         </div>
       </div>

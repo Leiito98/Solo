@@ -45,7 +45,7 @@ export function MercadoPagoConfig({ configurado, token_preview, token_tipo }: Pr
 
     setLoading(true)
     try {
-      const res = await fetch('/api/configuracion/integraciones/mercadopago', {
+      const res = await fetch('/api/configuracion/mercadopago', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mp_access_token: token.trim() }),
@@ -82,7 +82,7 @@ export function MercadoPagoConfig({ configurado, token_preview, token_tipo }: Pr
   async function handleDesvincular() {
     setDeleting(true)
     try {
-      const res = await fetch('/api/configuracion/integraciones/mercadopago', {
+      const res = await fetch('/api/configuracion/mercadopago', {
         method: 'DELETE',
       })
 

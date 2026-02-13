@@ -78,10 +78,15 @@ function isGroupRoute(pathname: string, groupHref: string) {
   return pathname === groupHref || pathname.startsWith(groupHref + "/");
 }
 
-// ✅ Para items simples e hijos (toma subrutas)
+// ✅ Para items principales: activo por subruta
 function isItemActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(href + "/");
+}
+
+// ✅ Para children: SOLO exact match (evita que Resumen quede activo en /gastos)
+function isChildActive(pathname: string, href: string) {
+  return pathname === href;
 }
 
 export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
@@ -132,15 +137,20 @@ export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
       <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200">
         <div className="flex items-center gap-2.5">
           <div className="relative w-8 h-8">
-            <Image 
-              src="/logo/solo.png" 
-              alt="Solo" 
-              fill 
+            <Image
+              src="/logo/solo.png"
+              alt="Solo"
+              fill
               className="object-contain"
               priority
             />
           </div>
-          <span className="font-bold text-gray-900 text-lg tracking-tight" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>Solo</span>
+          <span
+            className="font-bold text-gray-900 text-lg tracking-tight"
+            style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
+          >
+            Solo
+          </span>
         </div>
       </div>
 
@@ -247,7 +257,7 @@ export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
                       } space-y-1`}
                     >
                       {item.children?.map((c) => {
-                        const childActive = isItemActive(pathname, c.href);
+                        const childActive = isChildActive(pathname, c.href);
                         return (
                           <Link
                             key={c.href}
