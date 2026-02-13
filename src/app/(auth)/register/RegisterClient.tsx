@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
-  Zap,
   ArrowRight,
   ArrowLeft,
   Check,
@@ -21,11 +21,15 @@ import {
   MapPin,
   Phone,
   User as UserIcon,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  Users,
 } from 'lucide-react'
 
 const VERTICALES = [
   { value: 'barberia', label: '💈 Barbería' },
-  { value: 'peluqueria', label: '✂️ Peluquería' }, // ✅ NUEVO
+  { value: 'peluqueria', label: '✂️ Peluquería' },
   { value: 'belleza', label: '💅 Belleza (Lashes, Uñas)' },
   { value: 'nutricion', label: '🥗 Nutrición' },
   { value: 'psicologia', label: '🧠 Psicología' },
@@ -68,7 +72,6 @@ function firstNameFromFullName(full: string) {
   return clean.split(' ')[0] || ''
 }
 
-// ✅ IMPORTANTE: export default (si no, te tira "is not a module")
 export default function RegisterClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -76,7 +79,7 @@ export default function RegisterClient() {
 
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [creatingUI, setCreatingUI] = useState(false) // ✅ overlay “Creando negocio”
+  const [creatingUI, setCreatingUI] = useState(false)
   const [error, setError] = useState('')
   const inFlight = useRef(false)
 
@@ -85,25 +88,19 @@ export default function RegisterClient() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-
-  // ✅ NUEVO: nombre dueño
   const [ownerNombre, setOwnerNombre] = useState('')
-
   const [nombreNegocio, setNombreNegocio] = useState('')
   const [slug, setSlug] = useState('')
   const [vertical, setVertical] = useState<string>('')
   const [direccion, setDireccion] = useState('')
   const [telefono, setTelefono] = useState('')
   const [emailNegocio, setEmailNegocio] = useState('')
-
   const [slugStatus, setSlugStatus] = useState<SlugStatus>('idle')
 
-  // ✅ Callback real: /callback
   const getEmailRedirectTo = () => {
     const base =
       (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '') ||
       (typeof window !== 'undefined' ? window.location.origin : '')
-
     return `${base}/callback?next=${encodeURIComponent('/register?step=2')}`
   }
 
@@ -189,7 +186,7 @@ export default function RegisterClient() {
 
       if (signUpErr) {
         if (isRateLimitError(signUpErr.message)) {
-          setError('No se pudo enviar el email (o llegaste al límite). Probá de nuevo en unos minutos.')
+          setError('No se pudo enviar el email. Probá de nuevo en unos minutos.')
         } else {
           setError(signUpErr.message)
         }
@@ -222,11 +219,10 @@ export default function RegisterClient() {
 
       if (resendErr) {
         if (isRateLimitError(resendErr.message)) {
-          setError('No se pudo reenviar el email. Esperá unos minutos y probá de nuevo.')
+          setError('No se pudo reenviar. Esperá unos minutos.')
         } else {
           setError(resendErr.message)
         }
-        return
       }
     } finally {
       setLoading(false)
@@ -239,7 +235,7 @@ export default function RegisterClient() {
     inFlight.current = true
 
     setLoading(true)
-    setCreatingUI(true) // ✅ mostramos overlay
+    setCreatingUI(true)
     setError('')
 
     try {
@@ -262,7 +258,6 @@ export default function RegisterClient() {
         if (userErr || !userId) return setError('No hay sesión activa.')
       }
 
-      // ✅ Guardar en metadata (para usar en el dashboard)
       const first = firstNameFromFullName(ownerFull)
       const { error: metaErr } = await supabase.auth.updateUser({
         data: {
@@ -270,10 +265,7 @@ export default function RegisterClient() {
           first_name: first,
         },
       })
-      // Si falla metadata no frenamos todo (pero avisamos suave)
-      if (metaErr) {
-        console.warn('metadata update failed', metaErr)
-      }
+      if (metaErr) console.warn('metadata update failed', metaErr)
 
       const finalSlug = slugify(slug || nombreNegocio)
       if (!finalSlug) return setError('El slug no puede estar vacío.')
@@ -283,12 +275,11 @@ export default function RegisterClient() {
         nombre: nombreNegocio,
         slug: finalSlug,
         vertical,
-        nombrecliente: ownerNombre.trim(), // ✅ NUEVO
+        nombrecliente: ownerNombre.trim(),
         direccion: direccion || null,
         telefono: telefono || null,
         email: emailNegocio || null,
       })
-
 
       if (insertErr) {
         const msg = String(insertErr.message || '')
@@ -311,259 +302,371 @@ export default function RegisterClient() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row-reverse relative overflow-hidden">
-      {/* Form side */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10 bg-white">
-        <div className="w-full max-w-md space-y-8">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <Zap className="w-7 h-7 text-white" />
+    <div
+      className="min-h-screen bg-[#0a0a0a] text-white flex"
+      style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=Cabinet+Grotesk:wght@400;500;700;800;900&display=swap');
+        .heading-font { font-family: 'Cabinet Grotesk', 'DM Sans', system-ui, sans-serif; }
+
+        .dark-input {
+          background: rgba(255,255,255,0.04) !important;
+          border: 1px solid rgba(255,255,255,0.1) !important;
+          color: white !important;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .dark-input::placeholder { color: rgba(255,255,255,0.25) !important; }
+        .dark-input:focus {
+          border-color: rgba(59,130,246,0.6) !important;
+          box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important;
+          outline: none !important;
+        }
+        .dark-input:hover:not(:focus) { border-color: rgba(255,255,255,0.2) !important; }
+
+        .glow-btn {
+          box-shadow: 0 0 30px rgba(59,130,246,0.3);
+          transition: all 0.2s;
+        }
+        .glow-btn:hover:not(:disabled) {
+          box-shadow: 0 0 50px rgba(59,130,246,0.5);
+          transform: scale(1.02);
+        }
+        .glow-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .card-feature {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.07);
+          transition: all 0.25s;
+        }
+        .card-feature:hover {
+          background: rgba(255,255,255,0.05);
+          border-color: rgba(59,130,246,0.3);
+        }
+
+        .blob { filter: blur(80px); border-radius: 50%; position: absolute; pointer-events: none; }
+
+        .creating-pulse {
+          animation: cpulse 1.4s ease-in-out infinite;
+        }
+        @keyframes cpulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+
+        .progress-fill {
+          background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+          transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        [data-radix-popper-content-wrapper] { z-index: 9999 !important; }
+      `}</style>
+
+      {/* ── LEFT PANEL (form) ── */}
+      <div className="w-full lg:w-[52%] flex flex-col min-h-screen relative z-10">
+
+        {/* Background blobs */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="blob w-[500px] h-[500px] bg-blue-600/8 top-[-150px] left-[-150px]" />
+          <div className="blob w-[400px] h-[400px] bg-violet-600/6 bottom-[-100px] right-[-100px]" />
+        </div>
+
+        {/* Nav */}
+        <div className="relative z-10 px-8 pt-7 pb-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="relative w-8 h-8">
+              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
             </div>
-            <span className="text-3xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Solo
-            </span>
+            <span className="heading-font text-lg font-800 text-white">Solo</span>
           </Link>
+          <Link
+            href="/"
+            className="text-xs text-white/30 hover:text-white/60 transition-colors flex items-center gap-1"
+          >
+            <ArrowLeft className="w-3 h-3" />
+            Volver al inicio
+          </Link>
+        </div>
 
-          {/* Progress indicator */}
-          <div className="flex items-center gap-3">
-            <div className={`flex items-center gap-2 ${step === 1 ? 'text-blue-600' : 'text-green-600'}`}>
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                  step === 1 ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
-                }`}
-              >
-                {step === 1 ? '1' : <Check className="w-5 h-5" />}
-              </div>
-              <span className="text-sm font-semibold hidden sm:inline">Tu cuenta</span>
-            </div>
-            <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-              <div className={`h-full bg-blue-600 transition-all duration-500 ${step === 2 ? 'w-full' : 'w-0'}`} />
-            </div>
-            <div className={`flex items-center gap-2 ${step === 2 ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                  step === 2 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
-                }`}
-              >
-                2
-              </div>
-              <span className="text-sm font-semibold hidden sm:inline">Tu negocio</span>
-            </div>
-          </div>
+        {/* Form container */}
+        <div className="relative z-10 flex-1 flex items-start justify-center px-8 py-8">
+          <div className="w-full max-w-[420px] space-y-7">
 
-          {/* Header */}
-          <div className="space-y-2">
-            <h1 className="text-4xl font-black text-gray-900">
-              {step === 1 ? (emailSent ? 'Revisá tu email' : '¡Empecemos!') : 'Configura tu negocio'}
-            </h1>
-            <p className="text-lg text-gray-600">
-              {step === 1
-                ? emailSent
-                  ? 'Te enviamos un link para confirmar tu cuenta.'
-                  : 'Crea tu cuenta y empieza gratis por 14 días'
-                : 'Solo te tomará 1 minuto más'}
-            </p>
-          </div>
-
-          {/* Step 1 */}
-          {step === 1 ? (
-            emailSent ? (
-              <div className="space-y-5">
-                <div className="p-5 rounded-2xl border-2 border-blue-200 bg-blue-50">
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow">
-                      <Mail className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-blue-900 font-semibold">Email de confirmación enviado</p>
-                      <p className="text-sm text-blue-800">
-                        Lo mandamos a <span className="font-bold">{sentTo}</span>. Abrí el mail y tocá “Confirm”.
-                      </p>
-                      <p className="text-xs text-blue-700">
-                        Cuando confirmes, te vamos a llevar directo al paso 2 automáticamente.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700 font-medium">{error}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    onClick={handleResendEmail}
-                    variant="outline"
-                    className="h-12 text-base font-semibold border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 flex-1"
-                    disabled={loading}
-                  >
-                    {loading ? 'Reenviando...' : 'Reenviar email'}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    className="h-12 text-base font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 flex-1"
-                    onClick={() => {
-                      setEmailSent(false)
-                      setError('')
-                      setPassword('')
-                    }}
-                  >
-                    Cambiar email
-                  </Button>
-                </div>
-
-                <div className="text-center">
-                  <Link href="/login" className="text-sm text-gray-500 hover:text-blue-600 transition-colors font-medium">
-                    ¿Ya confirmaste? Iniciá sesión →
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleCreateAccount} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="tu@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-gray-500" />
-                      Contraseña
-                    </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Mínimo 6 caracteres"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                    />
-                    <p className="text-xs text-gray-500">Usa al menos 6 caracteres</p>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700 font-medium">{error}</p>
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all hover:scale-[1.02] group"
-                  disabled={loading}
+            {/* Step indicator */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                    step === 1
+                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/40'
+                      : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                  }`}
                 >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Creando cuenta...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      Continuar
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  )}
-                </Button>
+                  {step > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
+                </div>
+                <span
+                  className={`text-xs font-semibold hidden sm:block ${
+                    step === 1 ? 'text-white/70' : 'text-white/30'
+                  }`}
+                >
+                  Tu cuenta
+                </span>
+              </div>
 
-                <p className="text-xs text-gray-500 text-center">
-                  Al continuar, aceptás nuestros{' '}
-                  <a href="#" className="text-blue-600 hover:underline">
-                    Términos
-                  </a>{' '}
-                  y{' '}
-                  <a href="#" className="text-blue-600 hover:underline">
-                    Privacidad
-                  </a>
-                </p>
-              </form>
-            )
-          ) : (
-            // Step 2
-            <div className="relative">
-              {/* ✅ Overlay lindo al crear */}
-              {creatingUI && (
-                <div className="absolute inset-0 z-50 rounded-2xl overflow-hidden">
-                  <div className="absolute inset-0 bg-white/70 backdrop-blur-md" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-purple-600/10" />
-                  <div className="relative h-full w-full flex items-center justify-center p-6">
-                    <div className="w-full max-w-sm rounded-2xl border border-blue-200 bg-white shadow-2xl p-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow">
-                          <Sparkles className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-lg font-black text-gray-900">Creando negocio</p>
-                          <p className="text-sm text-gray-600">Estamos preparando tu dashboard…</p>
-                        </div>
+              <div className="flex-1 h-[2px] bg-white/[0.08] rounded-full overflow-hidden">
+                <div className={`h-full progress-fill rounded-full ${step === 2 ? 'w-full' : 'w-0'}`} />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                    step === 2
+                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/40'
+                      : 'bg-white/[0.06] text-white/25 border border-white/[0.08]'
+                  }`}
+                >
+                  2
+                </div>
+                <span
+                  className={`text-xs font-semibold hidden sm:block ${
+                    step === 2 ? 'text-white/70' : 'text-white/25'
+                  }`}
+                >
+                  Tu negocio
+                </span>
+              </div>
+            </div>
+
+            {/* Heading */}
+            <div>
+              <h1 className="heading-font text-3xl font-900 text-white leading-tight">
+                {step === 1
+                  ? emailSent ? 'Revisá tu email' : 'Crear cuenta'
+                  : 'Configurá tu negocio'}
+              </h1>
+              <p className="text-sm text-white/40 mt-1.5">
+                {step === 1
+                  ? emailSent
+                    ? `Enviamos un link de confirmación a ${sentTo}`
+                    : '14 días gratis · Sin tarjeta de crédito'
+                  : 'Solo te tomará 1 minuto más'}
+              </p>
+            </div>
+
+            {/* ── STEP 1 ── */}
+            {step === 1 && (
+              emailSent ? (
+                /* Email sent state */
+                <div className="space-y-5">
+                  <div className="rounded-xl border border-blue-500/20 bg-blue-500/[0.07] p-5">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                        <Mail className="w-5 h-5 text-blue-400" />
                       </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-white">Email enviado</p>
+                        <p className="text-xs text-white/50 leading-relaxed">
+                          Abrí el mail en{' '}
+                          <span className="text-blue-400 font-medium">{sentTo}</span>{' '}
+                          y tocá "Confirm your email". Te llevaremos al paso 2 automáticamente.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-                      <div className="mt-5">
-                        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full w-1/2 bg-blue-600 rounded-full animate-pulse" />
+                  {error && (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/[0.07] px-4 py-3">
+                      <p className="text-xs text-red-400">{error}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2.5">
+                    <Button
+                      type="button"
+                      onClick={handleResendEmail}
+                      disabled={loading}
+                      className="flex-1 h-11 text-sm font-semibold bg-white/[0.06] hover:bg-white/[0.10] text-white/70 hover:text-white border border-white/[0.08] rounded-xl transition-all"
+                    >
+                      {loading ? 'Reenviando...' : 'Reenviar email'}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setEmailSent(false)
+                        setError('')
+                        setPassword('')
+                      }}
+                      className="flex-1 h-11 text-sm font-semibold bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/20 rounded-xl transition-all"
+                    >
+                      Cambiar email
+                    </Button>
+                  </div>
+
+                  <div className="text-center">
+                    <Link
+                      href="/login"
+                      className="text-xs text-white/30 hover:text-white/60 transition-colors"
+                    >
+                      ¿Ya confirmaste? Iniciá sesión →
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                /* Sign up form */
+                <form onSubmit={handleCreateAccount} className="space-y-5">
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-white/50 uppercase tracking-widest">
+                        Email
+                      </Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 pointer-events-none" />
+                        <Input
+                          type="email"
+                          placeholder="tu@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          className="dark-input h-11 pl-10 text-sm rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-white/50 uppercase tracking-widest">
+                        Contraseña
+                      </Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 pointer-events-none" />
+                        <Input
+                          type="password"
+                          placeholder="Mínimo 6 caracteres"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          minLength={6}
+                          className="dark-input h-11 pl-10 text-sm rounded-xl"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/[0.07] px-4 py-3">
+                      <p className="text-xs text-red-400">{error}</p>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="glow-btn w-full h-11 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold flex items-center justify-center gap-2 group"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Creando cuenta...
+                      </>
+                    ) : (
+                      <>
+                        Continuar
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-center text-xs text-white/20">
+                    Al continuar, aceptás los{' '}
+                    <a href="#" className="text-white/40 hover:text-white/70 underline transition-colors">
+                      Términos
+                    </a>{' '}
+                    y la{' '}
+                    <a href="#" className="text-white/40 hover:text-white/70 underline transition-colors">
+                      Privacidad
+                    </a>
+                  </p>
+
+                  <div className="relative flex items-center gap-3">
+                    <div className="flex-1 h-px bg-white/[0.07]" />
+                    <span className="text-xs text-white/20">¿Ya tenés cuenta?</span>
+                    <div className="flex-1 h-px bg-white/[0.07]" />
+                  </div>
+
+                  <Link
+                    href="/login"
+                    className="flex items-center justify-center w-full h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-sm text-white/50 hover:text-white/80 transition-all font-medium"
+                  >
+                    Iniciar Sesión
+                  </Link>
+                </form>
+              )
+            )}
+
+            {/* ── STEP 2 ── */}
+            {step === 2 && (
+              <div className="relative">
+
+                {/* Creating overlay */}
+                {creatingUI && (
+                  <div className="absolute inset-0 z-50 rounded-2xl overflow-hidden">
+                    <div className="absolute inset-0 bg-[#0a0a0a]/80 backdrop-blur-md" />
+                    <div className="relative h-full w-full flex items-center justify-center p-6">
+                      <div className="w-full max-w-xs rounded-2xl border border-white/[0.08] bg-[#111] p-6 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-blue-400 creating-pulse" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-white">Creando tu negocio</p>
+                            <p className="text-xs text-white/40">Preparando tu dashboard…</p>
+                          </div>
                         </div>
-                        <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
-                          <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-                          Un segundo…
+                        <div className="h-1 w-full bg-white/[0.06] rounded-full overflow-hidden">
+                          <div className="h-full w-2/3 progress-fill rounded-full creating-pulse" />
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <form onSubmit={handleCreateNegocio} className="space-y-6">
-                <div className="space-y-4">
-                  {/* ✅ NUEVO: Tu nombre (arriba de todo) */}
-                  <div className="space-y-2">
-                    <Label htmlFor="ownerNombre" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <UserIcon className="w-4 h-4 text-gray-500" />
+                <form onSubmit={handleCreateNegocio} className="space-y-4">
+
+                  {/* Owner name */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-white/50 uppercase tracking-widest">
                       Tu nombre
                     </Label>
-                    <Input
-                      id="ownerNombre"
-                      placeholder="Ej: Juan Pérez"
-                      value={ownerNombre}
-                      onChange={(e) => setOwnerNombre(e.target.value)}
-                      required
-                      className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                    />
-                    <p className="text-xs text-gray-500">
-                      Esto se usa para saludarte en el dashboard (solo tu primer nombre).
+                    <div className="relative">
+                      <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 pointer-events-none" />
+                      <Input
+                        placeholder="Ej: Juan Pérez"
+                        value={ownerNombre}
+                        onChange={(e) => setOwnerNombre(e.target.value)}
+                        required
+                        className="dark-input h-11 pl-10 text-sm rounded-xl"
+                      />
+                    </div>
+                    <p className="text-[11px] text-white/25 pl-1">
+                      Se usará para saludarte en el dashboard
                     </p>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="vertical" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-gray-500" />
+                  {/* Vertical */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-white/50 uppercase tracking-widest">
                       Tipo de negocio
                     </Label>
                     <Select value={vertical} onValueChange={setVertical} required>
-                      <SelectTrigger className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600">
-                        <SelectValue placeholder="Selecciona tu rubro" />
+                      <SelectTrigger className="dark-input h-11 text-sm rounded-xl [&>span]:text-white/60 data-[placeholder]:text-white/25">
+                        <SelectValue placeholder="Seleccioná tu rubro" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-[#141414] border border-white/[0.1] rounded-xl shadow-2xl">
                         {VERTICALES.map((v) => (
-                          <SelectItem key={v.value} value={v.value} className="text-lg py-3">
+                          <SelectItem
+                            key={v.value}
+                            value={v.value}
+                            className="text-sm text-white/70 hover:text-white hover:bg-white/[0.06] focus:bg-white/[0.06] focus:text-white cursor-pointer py-2.5"
+                          >
                             {v.label}
                           </SelectItem>
                         ))}
@@ -571,252 +674,318 @@ export default function RegisterClient() {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="nombre" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Building className="w-4 h-4 text-gray-500" />
-                      Nombre de tu negocio
+                  {/* Business name */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-white/50 uppercase tracking-widest">
+                      Nombre del negocio
                     </Label>
-                    <Input
-                      id="nombre"
-                      placeholder="Ej: Barbería El Clásico"
-                      value={nombreNegocio}
-                      onChange={(e) => {
-                        const v = e.target.value
-                        setNombreNegocio(v)
-                        setSlug(slugify(v))
-                      }}
-                      required
-                      className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                    />
+                    <div className="relative">
+                      <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 pointer-events-none" />
+                      <Input
+                        placeholder="Ej: Barbería El Clásico"
+                        value={nombreNegocio}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          setNombreNegocio(v)
+                          setSlug(slugify(v))
+                        }}
+                        required
+                        className="dark-input h-11 pl-10 text-sm rounded-xl"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="slug" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-gray-500" />
+                  {/* Slug */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-white/50 uppercase tracking-widest">
                       Tu página web
                     </Label>
                     <div className="flex items-center gap-2">
-                      <Input
-                        id="slug"
-                        value={slug}
-                        onChange={(e) => setSlug(slugify(e.target.value))}
-                        placeholder="mi-negocio"
-                        required
-                        className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                      />
-                      <span className="text-sm text-gray-500 whitespace-nowrap font-medium">.getsolo.site</span>
+                      <div className="relative flex-1">
+                        <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25 pointer-events-none" />
+                        <Input
+                          value={slug}
+                          onChange={(e) => setSlug(slugify(e.target.value))}
+                          placeholder="mi-negocio"
+                          required
+                          className="dark-input h-11 pl-10 text-sm rounded-xl"
+                        />
+                      </div>
+                      <span className="text-xs text-white/30 whitespace-nowrap font-medium">
+                        .getsolo.site
+                      </span>
                     </div>
 
                     {slug && (
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-2">
                         {slugStatus === 'checking' && (
-                          <p className="text-sm text-gray-500 flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+                          <p className="text-xs text-white/40 flex items-center gap-1.5">
+                            <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
                             Verificando...
                           </p>
                         )}
                         {slugStatus === 'available' && (
-                          <p className="text-sm text-green-600 font-semibold flex items-center gap-2">
-                            <Check className="w-4 h-4" />¡Disponible!
+                          <p className="text-xs text-green-400 font-semibold flex items-center gap-1.5">
+                            <Check className="w-3 h-3" /> Disponible
                           </p>
                         )}
-                        {slugStatus === 'taken' && <p className="text-sm text-red-600 font-semibold">❌ Ese slug ya está en uso</p>}
-                        {slugStatus === 'error' && <p className="text-sm text-red-600 font-semibold">⚠️ Error al verificar</p>}
+                        {slugStatus === 'taken' && (
+                          <p className="text-xs text-red-400 font-semibold">✗ Ya está en uso</p>
+                        )}
+                        {slugStatus === 'error' && (
+                          <p className="text-xs text-yellow-400 font-semibold">⚠ Error al verificar</p>
+                        )}
                       </div>
                     )}
 
-                    <p className="text-xs text-gray-500">
-                      Tu página será:{' '}
-                      <span className="font-semibold text-blue-600">{(slug || 'tu-negocio')}.getsolo.site</span>
+                    <p className="text-[11px] text-white/25 pl-1">
+                      URL:{' '}
+                      <span className="text-blue-400/70">
+                        {(slug || 'tu-negocio')}.getsolo.site
+                      </span>
                     </p>
                   </div>
 
+                  {/* Optional fields */}
                   <details className="group">
-                    <summary className="cursor-pointer text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors list-none flex items-center gap-2">
-                      <span>+ Información opcional</span>
-                      <span className="text-xs text-gray-500">(lo podés completar después)</span>
+                    <summary className="cursor-pointer text-xs font-semibold text-white/30 hover:text-white/60 transition-colors list-none flex items-center gap-1.5 py-1">
+                      <span className="group-open:rotate-90 transition-transform inline-block">›</span>
+                      Información opcional{' '}
+                      <span className="text-white/20 font-normal">(lo completás después)</span>
                     </summary>
 
-                    <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
-                      <div className="space-y-2">
-                        <Label htmlFor="direccion" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-500" />
+                    <div className="mt-3 space-y-3 pl-3 border-l border-white/[0.06]">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
                           Dirección
                         </Label>
-                        <Input
-                          id="direccion"
-                          placeholder="Av. Siempre Viva 123"
-                          value={direccion}
-                          onChange={(e) => setDireccion(e.target.value)}
-                          className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                        />
+                        <div className="relative">
+                          <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
+                          <Input
+                            placeholder="Av. Siempre Viva 123"
+                            value={direccion}
+                            onChange={(e) => setDireccion(e.target.value)}
+                            className="dark-input h-10 pl-10 text-sm rounded-xl"
+                          />
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="telefono" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-gray-500" />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
                           Teléfono
                         </Label>
-                        <Input
-                          id="telefono"
-                          placeholder="+54 11 1234-5678"
-                          value={telefono}
-                          onChange={(e) => setTelefono(e.target.value)}
-                          className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                        />
+                        <div className="relative">
+                          <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
+                          <Input
+                            placeholder="+54 11 1234-5678"
+                            value={telefono}
+                            onChange={(e) => setTelefono(e.target.value)}
+                            className="dark-input h-10 pl-10 text-sm rounded-xl"
+                          />
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="emailNegocio" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-gray-500" />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
                           Email del negocio
                         </Label>
-                        <Input
-                          id="emailNegocio"
-                          type="email"
-                          placeholder="contacto@negocio.com"
-                          value={emailNegocio}
-                          onChange={(e) => setEmailNegocio(e.target.value)}
-                          className="h-12 text-lg border-2 border-gray-300 focus:border-blue-600 transition-colors"
-                        />
+                        <div className="relative">
+                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
+                          <Input
+                            type="email"
+                            placeholder="contacto@negocio.com"
+                            value={emailNegocio}
+                            onChange={(e) => setEmailNegocio(e.target.value)}
+                            className="dark-input h-10 pl-10 text-sm rounded-xl"
+                          />
+                        </div>
                       </div>
                     </div>
                   </details>
-                </div>
 
-                {error && (
-                  <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700 font-medium">{error}</p>
+                  {error && (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/[0.07] px-4 py-3">
+                      <p className="text-xs text-red-400">{error}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      disabled={loading}
+                      className="h-11 px-4 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-white/50 hover:text-white/80 text-sm font-medium transition-all flex items-center gap-1.5"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Atrás
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={
+                        loading ||
+                        slugStatus === 'taken' ||
+                        slugStatus === 'checking' ||
+                        slugStatus === 'error'
+                      }
+                      className="glow-btn flex-1 h-11 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:bg-blue-500/40 text-white text-sm font-semibold flex items-center justify-center gap-2 group"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Creando...
+                        </>
+                      ) : (
+                        <>
+                          Crear mi negocio
+                          <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                        </>
+                      )}
+                    </button>
                   </div>
-                )}
-
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    variant="outline"
-                    className="h-14 text-lg font-bold border-2 border-gray-300 hover:border-gray-400 flex-1"
-                    disabled={loading}
-                  >
-                    <ArrowLeft className="w-5 h-5 mr-2" />
-                    Volver
-                  </Button>
-
-                  <Button
-                    type="submit"
-                    className="h-14 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all hover:scale-[1.02] group flex-[2]"
-                    disabled={loading || slugStatus === 'taken' || slugStatus === 'checking' || slugStatus === 'error'}
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Creando...
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        Crear mi Negocio
-                        <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                      </span>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Footer */}
-          {step === 1 && !emailSent && (
-            <>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t-2 border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500 font-medium">¿Ya tienes cuenta?</span>
-                </div>
+                </form>
               </div>
+            )}
 
-              <Button
-                asChild
-                variant="outline"
-                className="w-full h-12 text-base font-semibold border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50 transition-all"
-              >
-                <Link href="/login">Iniciar Sesión</Link>
-              </Button>
-            </>
-          )}
-
-          <div className="text-center">
-            <Link href="/" className="text-sm text-gray-500 hover:text-blue-600 transition-colors font-medium">
-              ← Volver al inicio
-            </Link>
           </div>
         </div>
       </div>
 
-      {/* Visual side */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px]" />
+      {/* ── RIGHT PANEL (visual) ── */}
+      <div className="hidden lg:flex lg:w-[48%] relative overflow-hidden border-l border-white/[0.06]">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0d1117] via-[#0a0a14] to-[#0a0a0a]" />
+        <div className="blob w-[500px] h-[500px] bg-blue-600/12 top-[-100px] right-[-100px]" />
+        <div className="blob w-[400px] h-[400px] bg-violet-600/10 bottom-[-80px] left-[-80px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:48px_48px]" />
 
-        <div className="relative z-10 flex flex-col items-center justify-center p-12 text-white">
-          <div className="max-w-lg space-y-8">
-            <div className="space-y-4">
-              <Sparkles className="w-16 h-16 text-yellow-300" />
-              <h2 className="text-5xl font-black leading-tight">Todo listo en 5 minutos</h2>
-              <p className="text-xl text-blue-100">Configurá tu negocio y empezá a recibir reservas online hoy mismo.</p>
+        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+
+          {/* Headline */}
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+              Todo listo en 5 minutos
+            </div>
+            <h2 className="heading-font text-4xl font-900 text-white leading-tight">
+              Tu negocio,
+              <br />
+              <span className="text-blue-400">en modo pro</span>
+            </h2>
+            <p className="text-white/40 text-sm leading-relaxed max-w-xs">
+              Configurá tu negocio y empezá a recibir reservas online con pagos anticipados hoy mismo.
+            </p>
+          </div>
+
+          {/* ── DASHBOARD MOCK — identical to login ── */}
+          <div className="my-8">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#0f0f0f]/80 backdrop-blur-sm overflow-hidden shadow-2xl">
+              {/* Window bar */}
+              <div className="flex items-center gap-1.5 px-4 py-3 border-b border-white/[0.06]">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+                <div className="ml-3 text-[10px] text-white/20 font-mono">Dashboard · Solo</div>
+              </div>
+
+              <div className="p-4 space-y-3">
+                {/* 4 stats in 2x2 grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { icon: DollarSign, label: 'Caja hoy', value: '$84.500', color: 'text-green-400', bg: 'bg-green-500/10' },
+                    { icon: Calendar, label: 'Turnos', value: '12', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                    { icon: TrendingUp, label: 'Mes', value: '$1.2M', color: 'text-violet-400', bg: 'bg-violet-500/10' },
+                    { icon: Users, label: 'Clientes', value: '8', color: 'text-orange-400', bg: 'bg-orange-500/10' },
+                  ].map((s) => {
+                    const Icon = s.icon
+                    return (
+                      <div key={s.label} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                        <div className={`w-6 h-6 rounded-lg ${s.bg} flex items-center justify-center mb-2`}>
+                          <Icon className={`w-3 h-3 ${s.color}`} />
+                        </div>
+                        <div className={`heading-font text-base font-700 ${s.color}`}>{s.value}</div>
+                        <div className="text-[10px] text-white/30">{s.label}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Próximo turno */}
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/[0.06] p-3 flex items-center gap-3">
+                  <div className="text-center min-w-[52px]">
+                    <div className="heading-font text-lg font-700 text-blue-400">10:30</div>
+                    <div className="text-[10px] text-white/30">próximo</div>
+                  </div>
+                  <div className="w-px h-10 bg-blue-500/20" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold text-white/80 truncate">Valentina R.</div>
+                    <div className="text-[11px] text-white/40 truncate">Corte & Color · Sofía M.</div>
+                  </div>
+                  <div className="text-[10px] px-2 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20 whitespace-nowrap">
+                    En 8 min
+                  </div>
+                </div>
+
+                {/* Top profesionales */}
+                <div className="rounded-xl border border-white/[0.06] overflow-hidden">
+                  <div className="px-3 py-2 border-b border-white/[0.04]">
+                    <span className="text-[10px] font-semibold text-white/30 uppercase tracking-wide">
+                      Top del mes
+                    </span>
+                  </div>
+                  {[
+                    { name: 'Sofía M.', amount: '$340.000', turnos: 42, medal: '🥇' },
+                    { name: 'Tomás G.', amount: '$280.000', turnos: 35, medal: '🥈' },
+                  ].map((p, i) => (
+                    <div
+                      key={i}
+                      className="px-3 py-2.5 flex items-center gap-2.5 border-t border-white/[0.03]"
+                    >
+                      <span className="text-sm">{p.medal}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-medium text-white/70">{p.name}</div>
+                        <div className="text-[10px] text-white/30">{p.turnos} turnos</div>
+                      </div>
+                      <div className="text-xs font-semibold text-white/60">{p.amount}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Checklist + testimonial */}
+          <div className="space-y-5">
+            <div className="space-y-2.5">
+              {[
+                '14 días gratis, sin tarjeta de crédito',
+                'Agenda + pagos + finanzas en un lugar',
+                'Soporte en español por WhatsApp',
+                'Cancelá cuando quieras, sin penalidades',
+              ].map((item, i) => (
+                <div key={i} className="card-feature rounded-xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-500/15 border border-green-500/25 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-green-400" />
+                  </div>
+                  <span className="text-sm text-white/55">{item}</span>
+                </div>
+              ))}
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-                <div className="w-8 h-8 bg-green-400 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Check className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-lg">14 días gratis</p>
-                  <p className="text-blue-100">Sin tarjeta de crédito. Cancelá cuando quieras.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-                <div className="w-8 h-8 bg-green-400 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Check className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-lg">Todo incluido</p>
-                  <p className="text-blue-100">Agenda, pagos, finanzas y más en un solo lugar.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-                <div className="w-8 h-8 bg-green-400 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Check className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-lg">Soporte en español</p>
-                  <p className="text-blue-100">Equipo local listo para ayudarte por WhatsApp.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-8 border-t border-white/20">
-              <div className="flex gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 fill-yellow-400" viewBox="0 0 20 20">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <div className="flex gap-0.5 mb-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg key={i} className="w-3.5 h-3.5 fill-yellow-400" viewBox="0 0 20 20">
                     <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                   </svg>
                 ))}
               </div>
-              <p className="text-blue-100 text-sm">"En 10 minutos ya estaba recibiendo reservas. Increíble."</p>
-              <p className="text-white font-bold mt-2">— María G., Estudio de Uñas</p>
+              <p className="text-xs text-white/45 leading-relaxed italic">
+                "En 10 minutos ya estaba recibiendo reservas. No puedo creer que antes lo hacía todo por WhatsApp."
+              </p>
+              <p className="text-xs font-semibold text-white/60 mt-2">— María G. · Estudio de Uñas</p>
             </div>
           </div>
-        </div>
 
-        <div className="absolute w-64 h-64 bg-blue-400/20 rounded-full blur-[100px] top-10 right-10 animate-pulse" />
-        <div
-          className="absolute w-96 h-96 bg-purple-400/20 rounded-full blur-[100px] bottom-10 left-10 animate-pulse"
-          style={{ animationDelay: '1s' }}
-        />
+        </div>
       </div>
     </div>
   )

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import Image from "next/image";
 import {
   LayoutDashboard,
   Calendar,
@@ -44,7 +45,7 @@ const NAVIGATION: NavItem[] = [
     href: "/dashboard/profesionales",
     icon: Users,
     children: [
-      { name: "Listado", href: "/dashboard/profesionales" },
+      { name: "Agregar Profesionales", href: "/dashboard/profesionales" },
       { name: "Configurar Comisiones", href: "/dashboard/profesionales/comisiones" },
     ],
   },
@@ -127,13 +128,19 @@ export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      {/* Header */}
+      {/* Header con Logo */}
       <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
+        <div className="flex items-center gap-2.5">
+          <div className="relative w-8 h-8">
+            <Image 
+              src="/logo/solo.png" 
+              alt="Solo" 
+              fill 
+              className="object-contain"
+              priority
+            />
           </div>
-          <span className="font-semibold text-gray-900">Solo</span>
+          <span className="font-bold text-gray-900 text-lg tracking-tight" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>Solo</span>
         </div>
       </div>
 
@@ -175,16 +182,6 @@ export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
                 <ExternalLink className="w-4 h-4" />
                 Ver mi página
               </a>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem asChild>
-              <Link
-                href="/dashboard/configuracion"
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <Settings className="w-4 h-4" />
-                Configuración
-              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -306,6 +303,31 @@ export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
           })}
         </div>
       </nav>
+
+      {/* Configuración */}
+      <div className="px-3 pb-3 border-t border-gray-200 pt-3">
+        <Link
+          href="/dashboard/configuracion"
+          className={`
+            group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+            transition-all duration-150
+            ${
+              isItemActive(pathname, "/dashboard/configuracion")
+                ? "bg-primary text-white shadow-sm"
+                : "text-gray-700 hover:bg-gray-100"
+            }
+          `}
+        >
+          <Settings
+            className={`w-5 h-5 ${
+              isItemActive(pathname, "/dashboard/configuracion")
+                ? "text-white"
+                : "text-gray-500 group-hover:text-gray-700"
+            }`}
+          />
+          <span>Configuración</span>
+        </Link>
+      </div>
 
       {/* User + Logout */}
       <div className="p-4 border-t border-gray-200">

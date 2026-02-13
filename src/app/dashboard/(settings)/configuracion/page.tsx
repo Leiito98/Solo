@@ -1,263 +1,152 @@
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import { PageHeader } from "@/components/dashboard/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Store,
-  Image as ImageIcon,
-  Users,
-  Briefcase,
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { PageHeader } from '@/components/dashboard/page-header'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { 
+  Store, 
+  User, 
+  Clock, 
+  Zap, 
+  Bell, 
+  Shield, 
   CreditCard,
-  Clock,
-  Bell,
-  Shield,
-  ExternalLink,
-  ArrowRight,
-} from "lucide-react";
+  ChevronRight 
+} from 'lucide-react'
+import Link from 'next/link'
 
-export default async function ConfiguracionHomePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+export const dynamic = 'force-dynamic'
+
+export default async function ConfiguracionPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) redirect('/login')
 
   const { data: negocio } = await supabase
-    .from("negocios")
-    .select("id, nombre, slug, mp_access_token")
-    .eq("owner_id", user.id)
-    .single();
+    .from('negocios')
+    .select('*')
+    .eq('owner_id', user.id)
+    .single()
 
-  if (!negocio) redirect("/register");
+  if (!negocio) redirect('/onboarding')
 
-  const hasMp = !!negocio.mp_access_token;
-  const publicUrl = `https://${negocio.slug}.getsolo.site`;
+  const sections = [
+    {
+      title: 'Mi Negocio',
+      description: 'Información, branding y landing page',
+      icon: Store,
+      href: '/dashboard/configuracion/negocio',
+      color: 'blue'
+    },
+    {
+      title: 'Cuenta y Seguridad',
+      description: 'Perfil, contraseña y autenticación',
+      icon: User,
+      href: '/dashboard/configuracion/cuenta',
+      color: 'purple'
+    },
+    {
+      title: 'Horarios del local',
+      description: 'Días y horarios de atención',
+      icon: Clock,
+      href: '/dashboard/configuracion/horarios',
+      color: 'orange'
+    },
+    {
+      title: 'Integraciones',
+      description: 'MercadoPago, Google Calendar, WhatsApp',
+      icon: Zap,
+      href: '/dashboard/configuracion/integraciones',
+      color: 'yellow'
+    },
+    {
+      title: 'Notificaciones',
+      description: 'Email, recordatorios y alertas',
+      icon: Bell,
+      href: '/dashboard/configuracion/notificaciones',
+      color: 'green'
+    },
+    {
+      title: 'Políticas y Legal',
+      description: 'Cancelaciones, términos y privacidad',
+      icon: Shield,
+      href: '/dashboard/configuracion/politicas',
+      color: 'red'
+    },
+    {
+      title: 'Plan y Facturación',
+      description: 'Plan actual, pagos e historial',
+      icon: CreditCard,
+      href: '/dashboard/configuracion/plan',
+      color: 'indigo'
+    },
+  ]
+
+  const colorClasses: Record<string, { bg: string; icon: string; hover: string }> = {
+    blue: { bg: 'bg-blue-100', icon: 'text-blue-600', hover: 'hover:border-blue-300' },
+    purple: { bg: 'bg-purple-100', icon: 'text-purple-600', hover: 'hover:border-purple-300' },
+    orange: { bg: 'bg-orange-100', icon: 'text-orange-600', hover: 'hover:border-orange-300' },
+    yellow: { bg: 'bg-yellow-100', icon: 'text-yellow-600', hover: 'hover:border-yellow-300' },
+    green: { bg: 'bg-green-100', icon: 'text-green-600', hover: 'hover:border-green-300' },
+    red: { bg: 'bg-red-100', icon: 'text-red-600', hover: 'hover:border-red-300' },
+    indigo: { bg: 'bg-indigo-100', icon: 'text-indigo-600', hover: 'hover:border-indigo-300' },
+  }
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Configuración"
-        description="Ajustá el negocio, integraciones, horarios y reglas de reservas."
+    <div className="space-y-6">
+      <PageHeader 
+        title="Configuración" 
+        description="Gestioná tu negocio, integraciones y preferencias"
       />
 
-      {/* Resumen rápido */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Store className="w-4 h-4 text-gray-500" />
-              Negocio
-            </CardTitle>
-            <CardDescription>Tu identidad pública</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-gray-700">
-              <span className="font-medium">Nombre:</span> {negocio.nombre}
-            </p>
-            <p className="text-sm text-gray-700">
-              <span className="font-medium">URL:</span>{" "}
-              <a className="underline" href={publicUrl} target="_blank" rel="noreferrer">
-                {negocio.slug}.getsolo.site
-              </a>
-            </p>
-            <Button asChild variant="outline" size="sm" className="gap-2 mt-2">
-              <a href={publicUrl} target="_blank" rel="noreferrer">
-                Ver mi página <ExternalLink className="w-4 h-4" />
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {sections.map((section) => {
+          const Icon = section.icon
+          const colors = colorClasses[section.color]
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-gray-500" />
-              MercadoPago
-            </CardTitle>
-            <CardDescription>Pagos online para señas</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className={`text-sm ${hasMp ? "text-green-700" : "text-amber-700"}`}>
-              {hasMp ? "✅ Conectado" : "⚠️ No configurado"}
-            </p>
-            <Button asChild size="sm" className="gap-2">
-              <Link href="/dashboard/configuracion/mercadopago">
-                {hasMp ? "Administrar" : "Configurar"} <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gray-500" />
-              Horario del local
-            </CardTitle>
-            <CardDescription>Se muestra en el footer y en la landing</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-gray-600">
-              Configurá el horario general (distinto a los horarios de cada profesional).
-            </p>
-            <Button asChild size="sm" variant="outline" className="gap-2">
-              <Link href="/dashboard/configuracion/horarios">
-                Configurar <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+          return (
+            <Link key={section.href} href={section.href}>
+              <Card className={`cursor-pointer transition-all hover:shadow-md ${colors.hover}`}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`p-3 rounded-lg ${colors.bg}`}>
+                      <Icon className={`w-6 h-6 ${colors.icon}`} />
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">{section.title}</h3>
+                  <p className="text-sm text-gray-500">{section.description}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          )
+        })}
       </div>
 
-      {/* Perfil del negocio (lo principal) */}
+      {/* Quick Info */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Store className="w-5 h-5 text-gray-500" />
-            Perfil del negocio
-          </CardTitle>
-          <CardDescription>
-            Esto impacta en la landing pública: logo, imágenes, presentación y contenido visible.
-          </CardDescription>
+          <CardTitle className="text-base">Información Rápida</CardTitle>
         </CardHeader>
-
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          {/* Branding */}
-          <Card className="border-dashed">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-gray-500" />
-                Logo + portada
-              </CardTitle>
-              <CardDescription>
-                Logo para el header y una imagen destacada (hero/portada).
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between gap-3">
-              <p className="text-sm text-gray-600">
-                Recomendado para que la página se vea profesional.
-              </p>
-              <Button asChild size="sm" className="gap-2">
-                <Link href="/dashboard/configuracion/negocio">
-                  Configurar <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Fotos servicios */}
-          <Card className="border-dashed">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-gray-500" />
-                Fotos de servicios
-              </CardTitle>
-              <CardDescription>
-                Imagen por servicio (Corte, Barba, etc). Aparece en el catálogo.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between gap-3">
-              <p className="text-sm text-gray-600">
-                Mejora conversión: el cliente entiende rápido qué reservar.
-              </p>
-              <Button asChild size="sm" variant="outline" className="gap-2">
-                <Link href="/dashboard/servicios">
-                  Ir a Servicios <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Fotos profesionales */}
-          <Card className="border-dashed">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="w-4 h-4 text-gray-500" />
-                Fotos de profesionales
-              </CardTitle>
-              <CardDescription>
-                Foto de perfil y especialidad (se muestra en la landing y en reservas).
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between gap-3">
-              <p className="text-sm text-gray-600">
-                Aumenta confianza del cliente y hace la experiencia más “humana”.
-              </p>
-              <Button asChild size="sm" variant="outline" className="gap-2">
-                <Link href="/dashboard/profesionales">
-                  Ir a Profesionales <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Extras recomendados */}
-          <Card className="border-dashed">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="w-4 h-4 text-gray-500" />
-                Reglas y políticas
-              </CardTitle>
-              <CardDescription>
-                Cancelación, tolerancia, seña, confirmación, no-show, etc.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between gap-3">
-              <p className="text-sm text-gray-600">
-                Reduce problemas: el cliente ve reglas claras antes de reservar.
-              </p>
-              <Button asChild size="sm" variant="outline" className="gap-2">
-                <Link href="/dashboard/configuracion/politicas">
-                  Configurar <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+        <CardContent className="space-y-3">
+          <div className="flex justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-600">Negocio</span>
+            <span className="text-sm font-medium text-gray-900">{negocio.nombre}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-600">URL Pública</span>
+            <span className="text-sm font-medium text-blue-600">{negocio.slug}.getsolo.site</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100">
+            <span className="text-sm text-gray-600">Email</span>
+            <span className="text-sm font-medium text-gray-900">{negocio.email}</span>
+          </div>
+          <div className="flex justify-between py-2">
+            <span className="text-sm text-gray-600">Plan</span>
+            <span className="text-sm font-medium text-gray-900">{negocio.plan?.charAt(0).toUpperCase() + negocio.plan?.slice(1)}</span>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Otros módulos de configuración */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Bell className="w-4 h-4 text-gray-500" />
-              Notificaciones
-            </CardTitle>
-            <CardDescription>
-              Emails/WhatsApp: confirmación, recordatorios, cancelación, etc.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between gap-3">
-            <p className="text-sm text-gray-600">Se agregará en breve.</p>
-            <Button asChild size="sm" variant="outline" className="gap-2">
-              <Link href="/dashboard/configuracion/notificaciones">
-                Configurar <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-gray-500" />
-              Integraciones
-            </CardTitle>
-            <CardDescription>Pagos y herramientas externas</CardDescription>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between gap-3">
-            <p className="text-sm text-gray-600">
-              MercadoPago hoy, después podés sumar otras integraciones.
-            </p>
-            <Button asChild size="sm" className="gap-2">
-              <Link href="/dashboard/configuracion/mercadopago">
-                MercadoPago <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
     </div>
-  );
+  )
 }

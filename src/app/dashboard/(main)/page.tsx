@@ -22,6 +22,7 @@ import { RefreshButton } from '@/components/dashboard/refresh-button'
 import { toZonedTime } from 'date-fns-tz'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0

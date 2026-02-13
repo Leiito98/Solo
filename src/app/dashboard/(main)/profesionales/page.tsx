@@ -20,7 +20,7 @@ export default async function ProfesionalesPage() {
 
   const { data: profesionales } = await supabase
     .from('profesionales')
-    .select('*')
+    .select('id,nombre,email,telefono,especialidad,foto_url,bio,activo,auth_user_id')
     .eq('negocio_id', negocio.id)
     .order('nombre')
 

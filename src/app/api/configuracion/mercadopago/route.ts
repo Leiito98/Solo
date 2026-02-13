@@ -33,7 +33,7 @@ async function verificarTokenMP(token: string): Promise<{ valido: boolean; error
   }
 }
 
-// GET /api/configuracion/mercadopago
+// GET /api/configuracion/integraciones/mercadopago
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -63,7 +63,7 @@ export async function GET() {
   })
 }
 
-// POST /api/configuracion/mercadopago
+// POST /api/configuracion/integraciones/mercadopago
 export async function POST(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
   })
 }
 
-// DELETE /api/configuracion/mercadopago
+// DELETE /api/configuracion/integraciones/mercadopago
 export async function DELETE() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
