@@ -5,29 +5,34 @@ import { headers } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import "./globals.css"
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-})
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "getsolo.site"
+const RESERVED_SUBDOMAINS = new Set(["www", "app", "admin", "dashboard", "api"])
 
 function pickHost(h: Headers) {
-  // En prod muchas veces viene por proxy
-  return (
-    h.get("x-forwarded-host") ||
-    h.get("host") ||
-    ""
-  )
+  return h.get("x-forwarded-host") || h.get("host") || ""
 }
 
 function getSubdomainFromHost(host: string) {
-  // "ovejas-negras.lvh.me:3000" -> "ovejas-negras"
-  const clean = host.split(":")[0]
+  const clean = host.split(":")[0].toLowerCase()
   if (!clean || clean === "localhost") return null
 
-  const parts = clean.split(".")
-  if (parts.length < 3) return null
+  // Si estás entrando por dominio de Vercel (preview o prod), tratá como plataforma
+  if (clean.endsWith(".vercel.app")) return null
 
-  return parts[0]
+  // Si es el dominio raíz o www del root
+  if (clean === ROOT_DOMAIN || clean === `www.${ROOT_DOMAIN}`) return null
+
+  // Si termina en el root domain => extraer subdominio
+  if (clean.endsWith(`.${ROOT_DOMAIN}`)) {
+    const sub = clean.replace(`.${ROOT_DOMAIN}`, "")
+    if (!sub || RESERVED_SUBDOMAINS.has(sub)) return null
+    return sub
+  }
+
+  // Otros hosts raros => no asumir tenant
+  return null
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -35,7 +40,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = pickHost(h)
   const sub = getSubdomainFromHost(host)
 
-  // Sin subdominio => título plataforma
   if (!sub) {
     return {
       title: "Solo - Tu negocio online",
@@ -44,29 +48,33 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   const supabase = await createClient()
-
-  const { data: negocio} = await supabase
+  const { data: negocio } = await supabase
     .from("negocios")
     .select("nombre, logo_url")
-    .eq("slug", sub) // ✅ "ovejas-negras"
-    .single()
+    .eq("slug", sub)
+    .maybeSingle()
 
   const nombre = negocio?.nombre?.trim()
-  const logo = negocio?.logo_url
+  const logo = negocio?.logo_url || undefined
 
   return {
-    title: nombre ? `${nombre} | Reservas Online` : "Reservas Online",
-    icons: {
-      icon: logo,
-      shortcut: logo,
-      apple: logo,
-    },
+    title: nombre ? `${nombre} | Reservas Online` : "Solo - Tu negocio online",
+    description: nombre
+      ? `Reservas online para ${nombre}`
+      : "Plataforma para profesionales independientes",
+    ...(logo
+      ? {
+          icons: {
+            icon: logo,
+            shortcut: logo,
+            apple: logo,
+          },
+        }
+      : {}),
   }
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>{children}</body>

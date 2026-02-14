@@ -152,28 +152,38 @@ function normalizeFacebook(raw: string | null) {
 }
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+
   const supabase = await createClient()
+
   const { data: negocio } = await supabase
     .from("negocios")
     .select("nombre, logo_url")
     .eq("slug", slug)
-    .single()
+    .maybeSingle()
 
   const nombre = negocio?.nombre?.trim()
-  const logo = negocio?.logo_url
+  const logo = negocio?.logo_url || undefined
 
   return {
-    title: nombre ? `${nombre} | Reservas Online` : "Reservas Online",
-    icons: { icon: logo, shortcut: logo, apple: logo },
+    title: nombre ? `${nombre} | Reservas Online` : "Solo - Tu negocio online",
+    description: nombre
+      ? `Reservas online de ${nombre}`
+      : "Plataforma para profesionales independientes",
+    ...(logo
+      ? {
+          icons: { icon: logo, shortcut: logo, apple: logo },
+        }
+      : {}),
   }
 }
+
+
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
