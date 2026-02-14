@@ -7,6 +7,9 @@ import crypto from 'crypto'
 
 export const runtime = 'nodejs'
 
+const APP_TZ = 'America/Argentina/Buenos_Aires'
+const MIN_BUFFER_MINUTES = 0 // poné 10 o 15 si querés “no reservar ya mismo”
+
 function normalizeTime(t: string) {
   const s = String(t || '').trim()
 
@@ -29,6 +32,57 @@ function addMinutesToTime(timeHHMMSS: string, minutesToAdd: number) {
   const h = Math.floor(total / 60)
   const m = total % 60
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`
+}
+
+function toHHMMSS(h: string) {
+  if (/^\d{2}:\d{2}:\d{2}$/.test(h)) return h
+  if (/^\d{2}:\d{2}$/.test(h)) return `${h}:00`
+  return h
+}
+
+function minutesSinceMidnight(hhmmss: string) {
+  const [hh, mm, ss] = hhmmss.split(':').map(Number)
+  return hh * 60 + mm + Math.floor((ss || 0) / 60)
+}
+
+function dayOfWeek0Sunday(fechaYYYYMMDD: string) {
+  const d = new Date(`${fechaYYYYMMDD}T00:00:00`)
+  return d.getDay()
+}
+
+// ── TZ helpers ───────────────────────────────────────────────
+
+function getNowPartsInTZ(timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date())
+
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || '00'
+
+  return {
+    y: get('year'),
+    m: get('month'),
+    d: get('day'),
+    hh: get('hour'),
+    mm: get('minute'),
+  }
+}
+
+function isTodayInTZ(fechaYYYYMMDD: string, timeZone: string) {
+  const n = getNowPartsInTZ(timeZone)
+  const today = `${n.y}-${n.m}-${n.d}`
+  return fechaYYYYMMDD === today
+}
+
+function minutesNowInTZ(timeZone: string) {
+  const n = getNowPartsInTZ(timeZone)
+  return Number(n.hh) * 60 + Number(n.mm)
 }
 
 function signWebhook(turno_id: string, negocio_id: string) {
@@ -58,7 +112,6 @@ export async function POST(req: Request) {
     const fecha = String(body.fecha || '').trim()
     const hora_inicio_raw = String(body.hora_inicio || '').trim()
     const metodo_pago = body.metodo_pago as 'online' | 'local'
-
     const cliente = body.cliente as Body['cliente'] | undefined
 
     if (!negocio_id || !servicio_id || !profesional_id || !fecha || !hora_inicio_raw) {
@@ -98,9 +151,70 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Servicio no encontrado' }, { status: 404 })
     }
 
+    const duracionMin = Number(servicio.duracion_min || 0)
+    if (!Number.isFinite(duracionMin) || duracionMin <= 0) {
+      return NextResponse.json({ error: 'Duración inválida' }, { status: 400 })
+    }
+
     // 3) Hora fin
     const hora_inicio = normalizeTime(hora_inicio_raw)
-    const hora_fin = addMinutesToTime(hora_inicio, Number(servicio.duracion_min || 0))
+    const hora_fin = addMinutesToTime(hora_inicio, duracionMin)
+
+    // ✅ 3.1) BLOQUEAR reservar en el pasado (si fecha es HOY en AR)
+    if (isTodayInTZ(fecha, APP_TZ)) {
+      const nowMin = minutesNowInTZ(APP_TZ) + MIN_BUFFER_MINUTES
+      const startMin = minutesSinceMidnight(toHHMMSS(hora_inicio))
+      if (startMin < nowMin) {
+        return NextResponse.json(
+          { error: 'No podés reservar en un horario pasado.' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // ✅ 3.2) VALIDAR que el profesional TRABAJE ese día y que el turno entre en su horario
+    const dow = dayOfWeek0Sunday(fecha)
+
+    // valida que el profesional pertenezca al negocio
+    const { data: pro, error: proErr } = await supabase
+      .from('profesionales')
+      .select('id, activo, negocio_id')
+      .eq('id', profesional_id)
+      .eq('negocio_id', negocio_id)
+      .maybeSingle()
+
+    if (proErr || !pro || pro.activo === false) {
+      return NextResponse.json({ error: 'Profesional no válido' }, { status: 400 })
+    }
+
+    const { data: horario, error: horErr } = await supabase
+      .from('horarios_trabajo')
+      .select('hora_inicio, hora_fin')
+      .eq('profesional_id', profesional_id)
+      .eq('dia_semana', dow)
+      .eq('activo', true)
+      .maybeSingle()
+
+    if (horErr) {
+      console.error('Error horario profesional:', horErr)
+      return NextResponse.json({ error: 'Error verificando horario' }, { status: 500 })
+    }
+
+    if (!horario) {
+      return NextResponse.json({ error: 'Ese profesional no trabaja ese día.' }, { status: 400 })
+    }
+
+    const hStart = minutesSinceMidnight(toHHMMSS(String(horario.hora_inicio)))
+    const hEnd = minutesSinceMidnight(toHHMMSS(String(horario.hora_fin)))
+    const tStart = minutesSinceMidnight(toHHMMSS(hora_inicio))
+    const tEnd = minutesSinceMidnight(toHHMMSS(hora_fin))
+
+    if (!(hEnd > hStart) || tStart < hStart || tEnd > hEnd) {
+      return NextResponse.json(
+        { error: 'Ese horario está fuera del horario laboral del profesional.' },
+        { status: 400 }
+      )
+    }
 
     // 4) Cliente (buscar/crear por email dentro del negocio)
     let clienteId: string
@@ -148,6 +262,7 @@ export async function POST(req: Request) {
     }
 
     // 5) Conflictos (solapamiento)
+    // Regla: existe conflicto si (exist.hora_inicio < nuevo.hora_fin) AND (exist.hora_fin > nuevo.hora_inicio)
     const { data: turnosExistentes, error: conflictErr } = await supabase
       .from('turnos')
       .select('id')
@@ -211,7 +326,7 @@ export async function POST(req: Request) {
       .eq('id', profesional_id)
       .single()
 
-    // baseUrl público (en prod va a ser https://getsolo.site)
+    // baseUrl público
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
@@ -233,7 +348,6 @@ export async function POST(req: Request) {
       }
 
       try {
-        // notification_url firmada (multi-tenant seguro)
         const sig = signWebhook(turno.id, negocio_id)
         const notification_url = `${baseUrl}/api/webhooks/mercadopago?turno_id=${turno.id}&negocio_id=${negocio_id}&sig=${sig}`
 
@@ -274,15 +388,10 @@ export async function POST(req: Request) {
           },
         })
 
-        // Importante: priorizar prod
         payment_url = pref.init_point || pref.sandbox_init_point || null
 
-        // Guardar preference id
         if (pref.id) {
-          await admin
-            .from('turnos')
-            .update({ mp_preference_id: String(pref.id) })
-            .eq('id', turno.id)
+          await admin.from('turnos').update({ mp_preference_id: String(pref.id) }).eq('id', turno.id)
         }
       } catch (mpError) {
         console.error('Error creating MP preference:', mpError)

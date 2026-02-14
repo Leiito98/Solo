@@ -1,3 +1,4 @@
+//app/components/reserva/cliente-step.tsx
 'use client'
 
 import { useState } from 'react'

@@ -1,3 +1,4 @@
+//app/components/reserva/servicio-step.tsx
 import { Button } from '@/components/ui/button'
 import { Check, Clock, DollarSign } from 'lucide-react'
 

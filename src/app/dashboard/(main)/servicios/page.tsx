@@ -1,3 +1,4 @@
+//app/dashboard/servicios/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { ServiciosTable } from '@/components/dashboard/servicios/servicios-table'

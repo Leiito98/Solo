@@ -1,3 +1,4 @@
+//components/dashboard/servicios/servicio-productos-config
 'use client'
 
 import { useMemo, useState, useEffect } from 'react'

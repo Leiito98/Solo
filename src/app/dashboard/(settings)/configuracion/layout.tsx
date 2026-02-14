@@ -1,7 +1,8 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { SettingsSidebar } from '@/components/dashboard/configuracion/settings-sidebar'
-import { Toaster } from '@/components/ui/toaster'
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { SettingsSidebar } from "@/components/dashboard/configuracion/settings-sidebar"
+import { Toaster } from "@/components/ui/toaster"
+import Image from "next/image"
 
 export default async function ConfiguracionLayout({
   children,
@@ -13,27 +14,49 @@ export default async function ConfiguracionLayout({
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) redirect('/login')
+  if (!user) redirect("/login")
 
   const { data: negocio } = await supabase
-    .from('negocios')
-    .select('id, nombre, slug')
-    .eq('owner_id', user.id)
+    .from("negocios")
+    .select("id, nombre, slug, logo_url")
+    .eq("owner_id", user.id)
     .single()
 
-  if (!negocio) redirect('/register')
+  if (!negocio) redirect("/register")
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar Settings */}
       <aside className="w-[280px] border-r bg-white">
-        <div className="p-6">
-          <div className="mb-6">
-            <p className="text-xs text-gray-500">Configuración</p>
-            <p className="text-lg font-semibold text-gray-900">{negocio.nombre}</p>
+        {/* ✅ HEADER ARRIBA: Solo + Configuración + Nombre */}
+        <div className="h-16 px-6 flex items-center gap-3 border-b border-gray-200">
+          <div className="relative w-9 h-9 flex-shrink-0">
+            <Image
+              src="/logo/solo.png"
+              alt="Solo"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
-          <SettingsSidebar negocio={{ nombre: negocio.nombre, slug: negocio.slug }} />
+
+          <div className="min-w-0">
+            <p className="text-xs text-gray-500 leading-none">Configuración</p>
+            <p className="text-sm font-semibold text-gray-900 truncate">
+              {negocio.nombre}
+            </p>
+          </div>
         </div>
+
+        {/* ✅ Sidebar: sin header "Solo" interno */}
+        <SettingsSidebar
+          negocio={{
+            nombre: negocio.nombre,
+            slug: negocio.slug,
+            logo_url: negocio.logo_url,
+          }}
+          hideSoloHeader
+        />
       </aside>
 
       {/* Content */}

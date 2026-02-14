@@ -10,11 +10,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Pencil, Trash2, Package } from 'lucide-react'
+import { Pencil, Trash2, Package, ImageIcon } from 'lucide-react'
 import { EditServicioDialog } from './edit-servicio-dialog'
 import { DeleteServicioDialog } from './delete-servicio-dialog'
 import { ServicioProductosDialog } from '@/components/dashboard/servicios/servicio-productos-dialog'
+import { SubirImagenServicioDialog } from './SubirImagenServicioDialog'
 
 interface Servicio {
   id: string
@@ -22,18 +24,27 @@ interface Servicio {
   descripcion?: string | null
   duracion_min: number
   precio: number
+  imagen_url: string | null
 }
 
 interface ServiciosTableProps {
   servicios: Servicio[]
 }
 
-export function ServiciosTable({ servicios }: ServiciosTableProps) {
+export function ServiciosTable({ servicios: initialServicios }: ServiciosTableProps) {
+  // Estado local para update optimista de imagen_url
+  const [servicios, setServicios] = useState<Servicio[]>(initialServicios)
+
   const [editingServicio, setEditingServicio] = useState<Servicio | null>(null)
   const [deletingServicio, setDeletingServicio] = useState<Servicio | null>(null)
-
-  // ✅ modal productos
   const [productosServicioId, setProductosServicioId] = useState<string | null>(null)
+  const [imagenServicio, setImagenServicio] = useState<Servicio | null>(null)
+
+  function handleImagenUpdated(id: string, imagen_url: string | null) {
+    setServicios((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, imagen_url } : s))
+    )
+  }
 
   if (servicios.length === 0) {
     return (
@@ -59,6 +70,7 @@ export function ServiciosTable({ servicios }: ServiciosTableProps) {
                 <TableHead>Descripción</TableHead>
                 <TableHead className="text-right">Duración</TableHead>
                 <TableHead className="text-right">Precio</TableHead>
+                <TableHead className="text-right">Imagen de servicio</TableHead>
                 <TableHead className="text-right">Productos por servicio</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -79,17 +91,40 @@ export function ServiciosTable({ servicios }: ServiciosTableProps) {
                     ${Number(servicio.precio).toLocaleString('es-AR')}
                   </TableCell>
 
+                  <TableCell className="text-right ">
+                    <div className="flex items-center justify-end gap-6">
+                      {servicio.imagen_url ? (
+                        <img
+                          src={servicio.imagen_url}
+                          alt={servicio.nombre}
+                          className="h-9 w-9 rounded-md object-cover border"
+                        />
+                      ) : (
+                        <div className="h-9 w-9 rounded-md border bg-gray-50 flex items-center justify-center">
+                          <ImageIcon className="h-4 w-4 text-gray-400" />
+                        </div>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setImagenServicio(servicio)}
+                        className="text-xs h-7 px-2"
+                      >
+                        {servicio.imagen_url ? 'Cambiar' : 'Subir'}
+                      </Button>
+                    </div>
+                  </TableCell>
+
                   <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => setProductosServicioId(servicio.id)}
-                      title="Configurar productos del servicio"
-                    >
-                      <Package className="w-4 h-4" />
-                      Productos
-                    </Button>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="gap-8"
+                        onClick={() => setProductosServicioId(servicio.id)}
+                      >
+                        <Package className="w-4 h-4" />
+                        Productos
+                      </Button>
                   </TableCell>
 
                   <TableCell className="text-right">
@@ -136,7 +171,6 @@ export function ServiciosTable({ servicios }: ServiciosTableProps) {
         />
       )}
 
-      {/* ✅ Modal Productos */}
       <ServicioProductosDialog
         open={!!productosServicioId}
         servicioId={productosServicioId || ''}
@@ -144,6 +178,18 @@ export function ServiciosTable({ servicios }: ServiciosTableProps) {
           if (!open) setProductosServicioId(null)
         }}
       />
+
+      {imagenServicio && (
+        <SubirImagenServicioDialog
+          servicio={imagenServicio}
+          onClose={(updatedImagenUrl) => {
+            if (updatedImagenUrl !== undefined) {
+              handleImagenUpdated(imagenServicio.id, updatedImagenUrl)
+            }
+            setImagenServicio(null)
+          }}
+        />
+      )}
     </>
   )
 }

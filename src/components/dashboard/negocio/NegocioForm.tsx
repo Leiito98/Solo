@@ -36,6 +36,7 @@ export default function NegocioForm({
   initialDireccion,
   initialTelefono,
   initialEmail,
+  initialDescripcion,
 }: {
   negocioId: string
   initialNombre: string
@@ -44,6 +45,7 @@ export default function NegocioForm({
   initialDireccion: string
   initialTelefono: string
   initialEmail: string
+  initialDescripcion: string
 }) {
   const { toast } = useToast()
   const router = useRouter()
@@ -54,6 +56,7 @@ export default function NegocioForm({
   const [direccion, setDireccion] = useState(initialDireccion)
   const [telefono, setTelefono] = useState(initialTelefono)
   const [email, setEmail] = useState(initialEmail)
+  const [descripcion, setDescripcion] = useState(initialDescripcion)
 
   const [saving, setSaving] = useState(false)
 
@@ -80,7 +83,11 @@ export default function NegocioForm({
     const t = setTimeout(async () => {
       try {
         setCheckingSlug(true)
-        const res = await fetch(`/api/negocio/check-slug?slug=${encodeURIComponent(slugNormalized)}&current=${encodeURIComponent(initialSlug)}`)
+        const res = await fetch(
+          `/api/negocio/check-slug?slug=${encodeURIComponent(slugNormalized)}&current=${encodeURIComponent(
+            initialSlug
+          )}`
+        )
         const json = await res.json().catch(() => ({}))
         if (!res.ok) throw new Error(json?.error || 'No se pudo chequear')
 
@@ -100,20 +107,42 @@ export default function NegocioForm({
   async function onSave() {
     const nombreClean = nombre.trim()
     const slugClean = slugify(slug)
+    const descClean = descripcion.trim()
 
     if (!nombreClean) {
-      toast({ title: 'Falta el nombre', description: 'Ingresá el nombre del negocio.', variant: 'destructive' })
+      toast({
+        title: 'Falta el nombre',
+        description: 'Ingresá el nombre del negocio.',
+        variant: 'destructive',
+      })
       return
     }
 
     if (!slugClean) {
-      toast({ title: 'Slug inválido', description: 'Ingresá un slug válido.', variant: 'destructive' })
+      toast({
+        title: 'Slug inválido',
+        description: 'Ingresá un slug válido.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (descClean.length > 240) {
+      toast({
+        title: 'Descripción muy larga',
+        description: 'Máximo 240 caracteres.',
+        variant: 'destructive',
+      })
       return
     }
 
     // si cambió y sabemos que no está disponible
     if (slugClean !== initialSlug && slugAvailable === false) {
-      toast({ title: 'Slug no disponible', description: 'Elegí otro slug.', variant: 'destructive' })
+      toast({
+        title: 'Slug no disponible',
+        description: 'Elegí otro slug.',
+        variant: 'destructive',
+      })
       return
     }
 
@@ -130,6 +159,7 @@ export default function NegocioForm({
           direccion: direccion.trim() || null,
           telefono: telefono.trim() || null,
           email: email.trim() || null,
+          descripcion: descClean || null,
         }),
       })
 
@@ -139,7 +169,11 @@ export default function NegocioForm({
       toast({ title: 'Guardado', description: 'Datos del negocio actualizados.' })
       router.refresh()
     } catch (e: any) {
-      toast({ title: 'Error', description: e?.message || 'No se pudo guardar', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: e?.message || 'No se pudo guardar',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }
@@ -152,7 +186,12 @@ export default function NegocioForm({
     setDireccion(initialDireccion)
     setTelefono(initialTelefono)
     setEmail(initialEmail)
-    toast({ title: 'Cambios descartados', description: 'Se restauraron los valores anteriores.' })
+    setDescripcion(initialDescripcion)
+
+    toast({
+      title: 'Cambios descartados',
+      description: 'Se restauraron los valores anteriores.',
+    })
   }
 
   return (
@@ -171,6 +210,20 @@ export default function NegocioForm({
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
           placeholder="Ej: Barbería Elite"
         />
+      </div>
+
+      {/* Descripción */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Descripción (se verá en tu página)</label>
+        <textarea
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+          rows={3}
+          maxLength={240}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+          placeholder="Ej: Barbería premium en el corazón de la ciudad. Cortes modernos, fades y atención personalizada."
+        />
+        <div className="mt-1 text-xs text-gray-500 flex justify-end">{descripcion.length}/240</div>
       </div>
 
       {/* Slug */}
@@ -218,8 +271,10 @@ export default function NegocioForm({
           onChange={(e) => setVertical(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
         >
-          {VERTICALES.map(v => (
-            <option key={v.value} value={v.value}>{v.label}</option>
+          {VERTICALES.map((v) => (
+            <option key={v.value} value={v.value}>
+              {v.label}
+            </option>
           ))}
         </select>
       </div>

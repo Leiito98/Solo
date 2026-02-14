@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ProDashboardPollRefresh } from '@/components/pro/pro-dashboard-poll-refresh'
 import {
   Calendar,
   DollarSign,
@@ -77,7 +78,7 @@ export default async function ProDashboardHome() {
     .select(
       'id, fecha, hora_inicio, hora_fin, estado, pago_estado, pago_monto, servicios(nombre, precio), clientes(nombre, telefono)'
     )
-    .eq('fecha', hoyStr)
+    .eq('profesional_id', profesional.id)
     .order('hora_inicio', { ascending: true })
 
   const turnosTotalesHoy = turnosHoy?.length || 0
@@ -213,6 +214,12 @@ export default async function ProDashboardHome() {
   )
 
   return (
+    <>
+    <ProDashboardPollRefresh
+      fecha={hoyStr}
+      intervalMs={60000}
+      profesionalId={profesional.id}
+    />
     <div className="space-y-6">
       <PageHeader
         title={tituloHeader}
@@ -442,5 +449,6 @@ export default async function ProDashboardHome() {
         </div>
       </div>
     </div>
+  </>
   )
 }

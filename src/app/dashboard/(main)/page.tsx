@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { TurnosPollRefresh } from '@/components/dashboard/turnos-realtime-refresh'
 import {
   Calendar,
   Users,
@@ -88,6 +89,9 @@ export default async function DashboardHome() {
 
   const turnosCompletadosHoy =
     turnosHoyCompletos?.filter((t: any) => t.estado === 'completado').length || 0
+
+  const turnosCanceladosHoy =
+    turnosHoyCompletos?.filter((t: any) => t.estado === 'cancelado').length || 0
 
   const turnosPendientesHoy =
     turnosHoyCompletos?.filter((t: any) => t.estado === 'pendiente' || t.estado === 'confirmado').length || 0
@@ -301,7 +305,7 @@ export default async function DashboardHome() {
       <PageHeader title={tituloHeader} description={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })} />
 
       <div className="flex justify-end">
-        <RefreshButton />
+        <RefreshButton autoIntervalMs={60000} />
       </div>
 
       {/* KPIs Principales - Enfoque en CAJA DE HOY */}
@@ -336,8 +340,9 @@ export default async function DashboardHome() {
               <p className="text-sm font-medium text-gray-600 mb-1">Turnos Hoy</p>
               <p className="text-2xl font-bold text-gray-900 mb-1">{turnosTotalesHoy}</p>
               <div className="flex gap-2 text-xs">
-                <span className="text-green-600 font-medium">✓ {turnosCompletadosHoy}</span>
+                <span className="text-green-600 font-medium">✔️ {turnosCompletadosHoy}</span>
                 <span className="text-blue-600 font-medium">⏱ {turnosPendientesHoy}</span>
+                <span className="text-red-600 font-medium">❌ {turnosCanceladosHoy}</span>
               </div>
             </div>
           </CardContent>

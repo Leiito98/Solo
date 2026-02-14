@@ -1,3 +1,4 @@
+//app/components/reserva/step-indicator.tsx
 import { Check } from 'lucide-react'
 
 interface StepIndicatorProps {

@@ -27,7 +27,9 @@ const ALLOWED_VERTICALS = new Set([
 export async function PATCH(req: Request) {
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
@@ -41,10 +43,18 @@ export async function PATCH(req: Request) {
   const telefono = body?.telefono === null ? null : String(body?.telefono || '').trim() || null
   const email = body?.email === null ? null : String(body?.email || '').trim() || null
 
+  const descripcion =
+    body?.descripcion === null ? null : String(body?.descripcion || '').trim() || null
+
   if (!negocioId) return NextResponse.json({ error: 'negocioId requerido' }, { status: 400 })
   if (!nombre) return NextResponse.json({ error: 'El nombre no puede estar vacío.' }, { status: 400 })
   if (!slug) return NextResponse.json({ error: 'Slug inválido.' }, { status: 400 })
-  if (!ALLOWED_VERTICALS.has(vertical)) return NextResponse.json({ error: 'Tipo de negocio inválido.' }, { status: 400 })
+  if (!ALLOWED_VERTICALS.has(vertical))
+    return NextResponse.json({ error: 'Tipo de negocio inválido.' }, { status: 400 })
+
+  if (descripcion && descripcion.length > 240) {
+    return NextResponse.json({ error: 'La descripción no puede superar 240 caracteres.' }, { status: 400 })
+  }
 
   // asegurar que el negocio le pertenece al owner
   const { data: myBiz, error: myBizErr } = await supabase
@@ -73,10 +83,11 @@ export async function PATCH(req: Request) {
     .update({
       nombre,
       slug,
-      vertical,   
+      vertical,
       direccion,
       telefono,
       email,
+      descripcion, // 👈 nuevo
     })
     .eq('id', negocioId)
     .eq('owner_id', user.id)

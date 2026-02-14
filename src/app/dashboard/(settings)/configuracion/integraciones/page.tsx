@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge'
 import { RequestIntegrationDialogButton } from '@/components/dashboard/integraciones/request-integration-dialog'
 import {
   CreditCard,
-  Calendar,
   MessageSquare,
   Instagram,
   Facebook,
@@ -91,6 +90,40 @@ function tokenPreview(token: string | null) {
   return `****${last4}`
 }
 
+function cleanStr(v: unknown) {
+  const s = typeof v === 'string' ? v.trim() : ''
+  return s.length ? s : null
+}
+
+function isValidUrl(u: string) {
+  try {
+    const url = new URL(u)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function normalizeInstagram(raw: string | null) {
+  if (!raw) return null
+  const s = raw.trim()
+  if (!s) return null
+  if (isValidUrl(s)) return s
+  if (/instagram\.com/i.test(s)) return `https://${s.replace(/^\/+/, '').replace(/^https?:\/\//, '')}`
+  const username = s.replace(/^@/, '').replace(/^\/+/, '')
+  return username ? `https://instagram.com/${encodeURIComponent(username)}` : null
+}
+
+function normalizeFacebook(raw: string | null) {
+  if (!raw) return null
+  const s = raw.trim()
+  if (!s) return null
+  if (isValidUrl(s)) return s
+  if (/facebook\.com/i.test(s)) return `https://${s.replace(/^\/+/, '').replace(/^https?:\/\//, '')}`
+  const handle = s.replace(/^@/, '').replace(/^\/+/, '')
+  return handle ? `https://facebook.com/${encodeURIComponent(handle)}` : null
+}
+
 export default async function IntegracionesPage() {
   const supabase = await createClient()
   const {
@@ -99,9 +132,10 @@ export default async function IntegracionesPage() {
 
   if (!user) redirect('/login')
 
+  // ✅ Traemos también instagram/facebook
   const { data: negocio } = await supabase
     .from('negocios')
-    .select('id, mp_access_token')
+    .select('id, mp_access_token, instagram, facebook')
     .eq('owner_id', user.id)
     .single()
 
@@ -109,6 +143,12 @@ export default async function IntegracionesPage() {
 
   const mpToken = (negocio.mp_access_token as string | null) ?? null
   const mpConectado = !!mpToken
+
+  // ✅ flags redes sociales
+  const instagramUrl = normalizeInstagram(cleanStr(negocio.instagram))
+  const facebookUrl = normalizeFacebook(cleanStr(negocio.facebook))
+  const igConectado = !!instagramUrl
+  const fbConectado = !!facebookUrl
 
   const integraciones = [
     {
@@ -122,7 +162,9 @@ export default async function IntegracionesPage() {
       color: 'blue' as ColorKey,
       href: '/dashboard/configuracion/integraciones/mercadopago',
       detalles: mpConectado
-        ? `Cuenta conectada · ${tokenTipo(mpToken) === 'test' ? 'TEST' : tokenTipo(mpToken) === 'produccion' ? 'PROD' : 'TOKEN'} · ${tokenPreview(mpToken)}`
+        ? `Cuenta conectada · ${
+            tokenTipo(mpToken) === 'test' ? 'TEST' : tokenTipo(mpToken) === 'produccion' ? 'PROD' : 'TOKEN'
+          } · ${tokenPreview(mpToken)}`
         : null,
       disconnectApi: '/api/integraciones/mercadopago/disconnect',
     },
@@ -141,31 +183,39 @@ export default async function IntegracionesPage() {
       detalles: null,
       proximamente: true,
     },
+
+    // ✅ Instagram (ya no “próximamente” si querés manejarlo por URL)
     {
       id: 'instagram',
       nombre: 'Instagram',
-      descripcion: 'Permite que tus clientes reserven desde Instagram',
+      descripcion: 'Mostrá tu Instagram y llevá clientes a reservar',
       categoria: 'Redes Sociales',
       icon: Instagram,
-      conectado: false,
+      conectado: igConectado,
       esencial: false,
       color: 'purple' as ColorKey,
-      href: '#',
-      detalles: null,
-      proximamente: true,
+      // a dónde “configurar/vincular”: tu página donde el owner pega el link (o modal)
+      href: '/dashboard/configuracion/integraciones/redes-sociales',
+      detalles: igConectado ? `Vinculado · ${instagramUrl}` : null,
+      // si más adelante querés “desvincular” con un endpoint:
+      // disconnectApi: '/api/negocio/redes/instagram/disconnect',
+      // verUrl para abrir la red si está conectado
+      viewUrl: instagramUrl,
     },
+
+    // ✅ Facebook
     {
       id: 'facebook',
       nombre: 'Facebook',
-      descripcion: 'Integrá tu página de Facebook con tu sistema de reservas',
+      descripcion: 'Mostrá tu Facebook y llevá clientes a reservar',
       categoria: 'Redes Sociales',
       icon: Facebook,
-      conectado: false,
+      conectado: fbConectado,
       esencial: false,
       color: 'indigo' as ColorKey,
-      href: '#',
-      detalles: null,
-      proximamente: true,
+      href: '/dashboard/configuracion/integraciones/redes-sociales',
+      detalles: fbConectado ? `Vinculado · ${facebookUrl}` : null,
+      viewUrl: facebookUrl,
     },
   ]
 
@@ -240,9 +290,7 @@ export default async function IntegracionesPage() {
                 <Card
                   key={integracion.id}
                   className={
-                    integracion.conectado
-                      ? `border-2 ${colors.border} ${colors.gradient}`
-                      : 'border-gray-200'
+                    integracion.conectado ? `border-2 ${colors.border} ${colors.gradient}` : 'border-gray-200'
                   }
                 >
                   <CardContent className="p-6">
@@ -280,7 +328,6 @@ export default async function IntegracionesPage() {
                             </Link>
                           </Button>
 
-                          {/* Desconectar via POST */}
                           <form action={integracion.disconnectApi} method="POST" className="flex-1">
                             <Button
                               type="submit"
@@ -323,7 +370,12 @@ export default async function IntegracionesPage() {
               const colors = colorClasses[integracion.color as ColorKey]
 
               return (
-                <Card key={integracion.id} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={integracion.id}
+                  className={
+                    integracion.conectado ? `border-2 ${colors.border} ${colors.gradient}` : 'hover:shadow-md transition-shadow'
+                  }
+                >
                   <CardContent className="p-5">
                     <div className="flex items-start gap-3 mb-3">
                       <div className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center flex-shrink-0`}>
@@ -333,15 +385,30 @@ export default async function IntegracionesPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-semibold text-gray-900 text-sm truncate">{integracion.nombre}</h4>
-                          {integracion.proximamente && (
+
+                          {integracion.proximamente ? (
                             <Badge variant="outline" className="text-xs flex-shrink-0">
                               Pronto
+                            </Badge>
+                          ) : integracion.conectado ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-300 text-xs flex-shrink-0">
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                              Conectado
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs flex-shrink-0">
+                              Vincular
                             </Badge>
                           )}
                         </div>
 
                         <Badge className={`${colors.badge} text-xs mb-2`}>{integracion.categoria}</Badge>
                         <p className="text-xs text-gray-500 leading-relaxed">{integracion.descripcion}</p>
+
+                        {/* opcional: mostrar el link cuando está conectado */}
+                        {integracion.detalles && (
+                          <p className="text-[11px] text-gray-400 mt-2 break-all">{integracion.detalles}</p>
+                        )}
                       </div>
                     </div>
 
@@ -350,15 +417,30 @@ export default async function IntegracionesPage() {
                         Próximamente
                       </Button>
                     ) : integracion.conectado ? (
-                      <Button variant="outline" size="sm" className="w-full" asChild>
-                        <Link href={integracion.href}>
-                          <Settings className="w-4 h-4 mr-2" />
-                          Configurar
-                        </Link>
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1" asChild>
+                          <Link href={integracion.href}>
+                            <Settings className="w-4 h-4 mr-2" />
+                            Configurar
+                          </Link>
+                        </Button>
+
+                        {/* Ver (abre IG/FB) */}
+                        {integracion.viewUrl ? (
+                          <Button variant="outline" size="sm" className="flex-1" asChild>
+                            <a href={integracion.viewUrl} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Ver
+                            </a>
+                          </Button>
+                        ) : null}
+                      </div>
                     ) : (
                       <Button size="sm" className="w-full" asChild>
-                        <Link href={integracion.href}>Conectar</Link>
+                        <Link href={integracion.href}>
+                          Vincular
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Link>
                       </Button>
                     )}
                   </CardContent>
@@ -390,17 +472,16 @@ export default async function IntegracionesPage() {
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <ExternalLink className="w-6 h-6 text-purple-600" />
+              <ExternalLink className="w-6 h-6 text-purple-600" />
             </div>
 
             <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-2">¿Necesitás otra integración?</h4>
-                <p className="text-sm text-gray-600 mb-4">
+              <h4 className="font-semibold text-gray-900 mb-2">¿Necesitás otra integración?</h4>
+              <p className="text-sm text-gray-600 mb-4">
                 Si querés conectar Solo con otra herramienta, lo evaluamos para próximas versiones.
-                </p>
+              </p>
 
-                {/* ✅ Botón que abre el Dialog (envía a support@getsolo.site) */}
-                <RequestIntegrationDialogButton />
+              <RequestIntegrationDialogButton />
             </div>
           </div>
         </CardContent>

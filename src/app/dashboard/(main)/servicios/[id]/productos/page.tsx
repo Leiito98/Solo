@@ -1,3 +1,4 @@
+//app/dashboard/servicios/[id]/productos/page.tsx
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";

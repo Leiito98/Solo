@@ -215,7 +215,7 @@ export function ProfesionalesTable({ profesionales }: { profesionales: Profesion
               <TableHead>Contacto</TableHead>
               <TableHead>Especialidad</TableHead>
               <TableHead>Estado</TableHead>
-              <TableHead>Acceso</TableHead>
+              <TableHead>Cuenta</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -259,7 +259,7 @@ export function ProfesionalesTable({ profesionales }: { profesionales: Profesion
                   </TableCell>
 
                   <TableCell>
-                    {hasAccess ? <Badge variant="secondary">Vinculado</Badge> : <Badge variant="outline">Sin acceso</Badge>}
+                    {hasAccess ? <Badge variant="secondary">Vinculado</Badge> : <Badge variant="outline">Sin cuenta</Badge>}
                   </TableCell>
 
                   <TableCell className="text-right">
@@ -270,7 +270,7 @@ export function ProfesionalesTable({ profesionales }: { profesionales: Profesion
                           size="sm"
                           onClick={() => openAccessDialog(profesional)}
                           disabled={!profesional.email}
-                          title={!profesional.email ? 'Agregá un email para crear acceso' : 'Crear acceso (email + contraseña)'}
+                          title={!profesional.email ? 'Agregá un email para crear cuenta' : 'Crear cuenta (email + contraseña)'}
                         >
                           <KeyRound className="w-4 h-4" />
                         </Button>
@@ -307,7 +307,7 @@ export function ProfesionalesTable({ profesionales }: { profesionales: Profesion
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-blue-600" />
-              Crear acceso para profesional
+              Crear cuenta para profesional
             </DialogTitle>
             <DialogDescription>
               Se creará un usuario para que el profesional pueda iniciar sesión y ver <b>solo</b> sus turnos y ganancias.
@@ -376,7 +376,6 @@ export function ProfesionalesTable({ profesionales }: { profesionales: Profesion
                   Copiar
                 </Button>
               </div>
-              <p className="text-xs text-gray-500">Pasásela al profesional. Después podés agregar una pantalla para que la cambie.</p>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
@@ -384,7 +383,7 @@ export function ProfesionalesTable({ profesionales }: { profesionales: Profesion
                 Cancelar
               </Button>
               <Button type="button" onClick={handleCreateAccess} disabled={creatingAccess || !accessEmail.trim() || !accessPassword.trim()}>
-                {creatingAccess ? 'Creando...' : 'Crear acceso'}
+                {creatingAccess ? 'Creando...' : 'Crear cuenta'}
               </Button>
             </div>
           </div>

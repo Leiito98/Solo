@@ -1,3 +1,4 @@
+//app/components/reserva/confirmacion-step.tsx
 'use client'
 
 import { useState, useEffect } from 'react'

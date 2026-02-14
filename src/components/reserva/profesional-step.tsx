@@ -1,3 +1,4 @@
+//app/components/reserva/profesional-step.tsx
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Check, ChevronLeft, Users } from 'lucide-react'

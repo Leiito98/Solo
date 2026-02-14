@@ -1,3 +1,4 @@
+//components/dashboard/servicios/delete-servicio-dialog
 'use client'
 
 import { useState } from 'react'

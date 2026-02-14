@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import {
   Settings,
@@ -35,7 +35,6 @@ const SETTINGS_NAV: NavItem[] = [
     children: [
       { name: "Información general", href: "/dashboard/configuracion/negocio" },
       { name: "Branding y logo", href: "/dashboard/configuracion/negocio/branding" },
-      { name: "Landing page", href: "/dashboard/configuracion/negocio/landing" },
     ],
   },
   {
@@ -56,10 +55,9 @@ const SETTINGS_NAV: NavItem[] = [
     children: [
       { name: "Inicio", href: "/dashboard/configuracion/integraciones" },
       { name: "MercadoPago", href: "/dashboard/configuracion/integraciones/mercadopago" },
-      { name: "Facebook", href: "/dashboard/configuracion/integraciones/facebook" },
-      { name: "Instagram", href: "/dashboard/configuracion/integraciones/instagram" },
-      //{ name: "Google Calendar", href: "/dashboard/configuracion/integraciones/google" },
-      { name: "WhatsApp Business", href: "/dashboard/configuracion/integraciones/whatsapp" },
+      { name: "Redes Sociales", href: "/dashboard/configuracion/integraciones/redes-sociales" },
+      { name: "WhatsApp", href: "/dashboard/configuracion/integraciones/whatsapp" },
+
     ],
   },
   {
@@ -94,25 +92,22 @@ const SETTINGS_NAV: NavItem[] = [
   },
 ];
 
-// Grupo activo si estás en el grupo o en cualquiera de sus subrutas
 function isGroupRoute(pathname: string, groupHref: string) {
   return pathname === groupHref || pathname.startsWith(groupHref + "/");
 }
 
-// Active helper con opción exact
 function isActive(pathname: string, href: string, exact = false) {
   if (exact) return pathname === href;
-
-  // para /dashboard
   if (href === "/dashboard") return pathname === "/dashboard";
-
   return pathname === href || pathname.startsWith(href + "/");
 }
 
 export function SettingsSidebar({
   negocio,
+  hideSoloHeader = false,
 }: {
-  negocio: { nombre: string; slug: string };
+  negocio: { nombre: string; slug: string; logo_url: string | null };
+  hideSoloHeader?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -147,31 +142,40 @@ export function SettingsSidebar({
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      {/* Header con Logo */}
-      <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200">
-        <div className="flex items-center gap-2.5">
-          <div className="relative w-8 h-8">
-            <Image
-              src="/logo/solo.png"
-              alt="Solo"
-              fill
-              className="object-contain"
-              priority
-            />
+      {/* ✅ Header Solo (opcional) */}
+      {!hideSoloHeader && (
+        <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200">
+          <div className="flex items-center gap-2.5">
+            <div className="relative w-8 h-8">
+              <Image
+                src="/logo/solo.png"
+                alt="Solo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+            <span
+              className="font-bold text-gray-900 text-lg tracking-tight"
+              style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
+            >
+              Solo
+            </span>
           </div>
-          <span
-            className="font-bold text-gray-900 text-lg tracking-tight"
-            style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
-          >
-            Solo
-          </span>
         </div>
-      </div>
+      )}
 
-      {/* Negocio (simple, sin dropdown) */}
+      {/* Negocio */}
       <div className="px-4 py-4 border-b border-gray-200">
         <div className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
           <Avatar className="w-9 h-9">
+            {/* ✅ NO lo envuelvo en && para que Radix maneje fallback si falla */}
+            <AvatarImage
+              src={negocio?.logo_url || ""}
+              alt={negocio?.nombre || "Negocio"}
+              className="object-cover"
+              referrerPolicy="no-referrer"
+            />
             <AvatarFallback className="bg-primary-100 text-primary-700 text-sm font-medium">
               {initials}
             </AvatarFallback>
@@ -198,11 +202,8 @@ export function SettingsSidebar({
           {SETTINGS_NAV.map((item) => {
             const Icon = item.icon;
 
-            // GROUP (acordeón)
             if ("children" in item) {
               const groupActive = isGroupRoute(pathname, item.href);
-
-              // Hijo activo: usamos exact para TODOS los children (evita que "Inicio" quede activo por prefijo)
               const hasActiveChild =
                 item.children?.some((c) => isActive(pathname, c.href, true)) || false;
 
@@ -278,8 +279,6 @@ export function SettingsSidebar({
               );
             }
 
-            // ITEM simple
-            // ✅ Home debe ser exacto para que no quede activo en todas las subrutas
             const exact = item.href === "/dashboard/configuracion";
             const active = isActive(pathname, item.href, exact);
 

@@ -1,3 +1,4 @@
+//app/negocio/[slug]/reservar/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ReservaFlow } from '@/components/reserva/reserva-flow'

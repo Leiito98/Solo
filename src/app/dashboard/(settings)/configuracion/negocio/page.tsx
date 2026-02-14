@@ -14,7 +14,7 @@ export default async function NegocioPage() {
 
   const { data: negocio } = await supabase
     .from('negocios')
-    .select('id, nombre, slug, vertical, direccion, telefono, email')
+    .select('id, nombre, descripcion, slug, vertical, direccion, telefono, email')
     .eq('owner_id', user.id)
     .single()
 
@@ -35,6 +35,7 @@ export default async function NegocioPage() {
           <NegocioForm
             negocioId={negocio.id}
             initialNombre={negocio.nombre || ''}
+            initialDescripcion={negocio.descripcion || ''}
             initialSlug={negocio.slug || ''}
             initialVertical={negocio.vertical || 'otros'}
             initialDireccion={negocio.direccion || ''}

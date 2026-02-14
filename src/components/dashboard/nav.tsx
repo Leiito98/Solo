@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage  } from "@/components/ui/avatar";
 import Image from "next/image";
 import {
   LayoutDashboard,
@@ -47,6 +47,7 @@ const NAVIGATION: NavItem[] = [
     children: [
       { name: "Agregar Profesionales", href: "/dashboard/profesionales" },
       { name: "Configurar Comisiones", href: "/dashboard/profesionales/comisiones" },
+      { name: "Subir Foto del Profesional", href: "/dashboard/profesionales/fotos" },
     ],
   },
   {
@@ -160,11 +161,16 @@ export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
           <DropdownMenuTrigger asChild>
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
               <Avatar className="w-9 h-9">
+                {negocio.logo_url && (
+                  <AvatarImage
+                    src={negocio.logo_url}
+                    className="object-cover"
+                  />
+                )}
                 <AvatarFallback className="bg-primary-100 text-primary-700 text-sm font-medium">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {negocio?.nombre}
@@ -344,9 +350,15 @@ export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback className="bg-gray-200 text-gray-700 text-xs">
-                  {userInitial}
+            <Avatar className="w-9 h-9">
+                {negocio.logo_url && (
+                  <AvatarImage
+                    src={negocio.logo_url}
+                    className="object-cover"
+                  />
+                )}
+                <AvatarFallback className="bg-primary-100 text-primary-700 text-sm font-medium">
+                  {initials}
                 </AvatarFallback>
               </Avatar>
 
