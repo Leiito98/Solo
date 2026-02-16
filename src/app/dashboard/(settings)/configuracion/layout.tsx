@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { SettingsSidebar } from "@/components/dashboard/configuracion/settings-sidebar"
 import { Toaster } from "@/components/ui/toaster"
+import { OnboardingPanel } from "@/components/dashboard/onboarding/onboarding-panel"
 import Image from "next/image"
 
 export default async function ConfiguracionLayout({
@@ -18,11 +19,21 @@ export default async function ConfiguracionLayout({
 
   const { data: negocio } = await supabase
     .from("negocios")
-    .select("id, nombre, slug, logo_url")
+    .select("id, nombre, slug, logo_url, nombrecliente")
     .eq("owner_id", user.id)
     .single()
 
   if (!negocio) redirect("/register")
+
+  // Extraer nombre del usuario para el onboarding
+  const firstName = 
+    (negocio.nombrecliente || '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .split(' ')[0] || 
+    (user?.user_metadata?.first_name || '')
+      .trim() ||
+    'Usuario'
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -63,6 +74,12 @@ export default async function ConfiguracionLayout({
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-8 py-8">{children}</div>
       </main>
+
+      {/* ✨ Panel de Onboarding - También aparece en configuración */}
+      <OnboardingPanel
+        negocioId={negocio.id}
+        userFirstName={firstName}
+      />
 
       <Toaster />
     </div>

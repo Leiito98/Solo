@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TurnosPollRefresh } from '@/components/dashboard/turnos-realtime-refresh'
 import {
   Calendar,
   Users,
@@ -18,12 +17,10 @@ import { format, startOfMonth, endOfMonth, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { IngresosDiariosConGrafico } from '@/components/dashboard/ingresos-diarios-grafico'
 import { ProximosTurnosHoy } from '@/components/dashboard/proximos-turnos-hoy'
-import { TurnosAtrasadosHoy } from '@/components/dashboard/turnos-atrasados-hoy'
 import { RefreshButton } from '@/components/dashboard/refresh-button'
 import { toZonedTime } from 'date-fns-tz'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -301,6 +298,7 @@ export default async function DashboardHome() {
   const totalGastosPendientes = (gastosPendientes || []).reduce((sum, g: any) => sum + (Number(g.monto) || 0), 0)
 
   return (
+    <div>
     <div className="space-y-6">
       <PageHeader title={tituloHeader} description={format(hoyAR, "EEEE d 'de' MMMM", { locale: es })} />
 
@@ -510,6 +508,7 @@ export default async function DashboardHome() {
           </CardContent>
         </Card>
       )}
+    </div>
     </div>
   )
 }

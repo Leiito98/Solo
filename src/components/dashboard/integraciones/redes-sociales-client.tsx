@@ -116,7 +116,7 @@ export default function RedesSocialesClient({
           <div className="rounded-lg border bg-gray-50 p-3 text-sm text-gray-600">
             <span className="font-semibold text-gray-900">{negocioNombre}</span>
             <span className="text-gray-500"> · </span>
-            Estos links se verán en tu landing pública.
+            Esto se vera en tu página web.
           </div>
 
           {/* FACEBOOK */}

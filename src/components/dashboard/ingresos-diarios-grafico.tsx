@@ -109,8 +109,8 @@ export function IngresosDiariosConGrafico({ ingresosDiarios }: IngresosDiariosPr
           )}
 
           {/* Gráfico de barras */}
-          <div className="h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full" style={{ minHeight: '180px', height: '180px' }}>
+            <ResponsiveContainer width="100%" height={180}>
               <BarChart data={datosGrafico}>
                 <XAxis 
                   dataKey="dia" 

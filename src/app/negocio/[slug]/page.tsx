@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { ReservaDialog } from "@/components/reserva/reserva-dialog"
 import { ReservaButton } from "@/components/reserva/reserva-button"
-
+import { TrackPublicPreview } from "@/components/public/track-public-preview"
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Negocio = {
@@ -306,6 +306,7 @@ export default async function NegocioPage({
       className="min-h-screen bg-[#f7f7f8] text-gray-900"
       style={{ fontFamily: "'Plus Jakarta Sans','DM Sans',system-ui,sans-serif" }}
     >
+      <TrackPublicPreview slug={slug} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         :root { --p:${primary};--s:${secondary};--p-r:${pr};--p-g:${pg};--p-b:${pb}; }

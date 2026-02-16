@@ -47,7 +47,6 @@ const SETTINGS_NAV: NavItem[] = [
       { name: "Autenticación", href: "/dashboard/configuracion/cuenta/seguridad" },
     ],
   },
-  { name: "Horarios del local", href: "/dashboard/configuracion/horarios", icon: Clock },
   {
     name: "Integraciones",
     href: "/dashboard/configuracion/integraciones",
