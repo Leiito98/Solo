@@ -7,8 +7,8 @@ import { MercadoPagoConfig, PreApproval } from 'mercadopago'
 export const runtime = 'nodejs'
 
 const PLANES = {
-  solo: { nombre: 'GetSolo — Plan Solo', precio: 15 },
-  pro: { nombre: 'GetSolo — Plan Pro', precio: 20 },
+  solo: { nombre: 'GetSolo — Plan Solo', precio: 20000 },
+  pro: { nombre: 'GetSolo — Plan Pro', precio: 29990 },
 } as const
 
 function isEmail(v: string) {
