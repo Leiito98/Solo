@@ -5,41 +5,77 @@ export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // ─────────────────────────────────────────────────────────
-  // 1) Rutas que SIEMPRE deben pasar sin auth y SIN rewrites raros
-  //    (webhook / callback / auth / suscripción / home)
+  // 0) Webhooks y API: nunca los toques
   // ─────────────────────────────────────────────────────────
-  const ALWAYS_PUBLIC = [
-    "/", // landing
-    "/login",
-    "/register",
-    "/callback",
-    "/suscripcion",
-  ];
-
-  // Webhooks/API: nunca los toques
-  if (pathname.startsWith("/api/suscripcion/webhook")) {
-    return NextResponse.next();
-  }
-
-  // Todo api también pasa
   if (pathname.startsWith("/api/")) {
     return NextResponse.next();
   }
 
-  // Rutas públicas “normales”
-  if (ALWAYS_PUBLIC.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    // OJO: para estas rutas NO queremos rewrite a /negocio/... por subdominio,
-    // porque rompen el back_url/return en ngrok y auth.
+  // ─────────────────────────────────────────────────────────
+  // 1) Detectar subdominio de negocio PRIMERO
+  //    Esto tiene que ir antes que cualquier otra regla,
+  //    porque "/" matchea ALWAYS_PUBLIC y corta el flujo.
+  // ─────────────────────────────────────────────────────────
+  const hostHeader = req.headers.get("host") || "";
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  const hostToUse =
+    forwardedHost && forwardedHost.includes(".") ? forwardedHost : hostHeader;
+  const host = hostToUse.split(":")[0]; // quitar puerto
+
+  // Slug por query param (ej: localhost:3000/?slug=ovejas-negras)
+  const slugFromQuery = req.nextUrl.searchParams.get("slug");
+  if (slugFromQuery && !pathname.startsWith("/negocio/")) {
+    return NextResponse.rewrite(
+      new URL(`/negocio/${slugFromQuery}${pathname}`, req.url)
+    );
+  }
+
+  // Subdominio: soporta tanto xxx.getsolo.site (3 partes) como 
+  // subdominios con guiones (ovejas-negras.getsolo.site también es 3 partes)
+  const parts = host.split(".");
+  const ROOT_DOMAINS = ["getsolo.site", "localhost"]; // añadí tus dominios raíz acá
+
+  let subdomain: string | null = null;
+
+  if (parts.length === 3) {
+    // ovejas-negras.getsolo.site → ["ovejas-negras", "getsolo", "site"]
+    subdomain = parts[0];
+  } else if (parts.length === 4) {
+    // por si usás www.ovejas-negras.getsolo.site (poco probable, pero cubierto)
+    subdomain = parts[1];
+  }
+
+  // Si hay subdominio y no es "www", reescribir a /negocio/:slug
+  if (
+    subdomain &&
+    subdomain !== "www" &&
+    !pathname.startsWith("/negocio/") &&
+    !pathname.startsWith("/_next/") &&
+    !pathname.startsWith("/api/")
+  ) {
+    return NextResponse.rewrite(
+      new URL(`/negocio/${subdomain}${pathname}`, req.url)
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 2) Rutas que siempre pasan sin auth (solo en dominio raíz)
+  // ─────────────────────────────────────────────────────────
+  const ALWAYS_PUBLIC = ["/", "/login", "/register", "/callback", "/suscripcion"];
+
+  if (
+    ALWAYS_PUBLIC.some((p) => pathname === p || pathname.startsWith(p + "/"))
+  ) {
     return NextResponse.next();
   }
 
-  // Páginas públicas de negocio por slug (sí reescribimos)
+  // Páginas /negocio/* son públicas
   if (pathname.startsWith("/negocio/")) {
     return NextResponse.next();
   }
 
   // ─────────────────────────────────────────────────────────
-  // 2) Bloqueo solo para app interna (dashboard / pro)
+  // 3) Protección de dashboard / pro con check de suscripción
   // ─────────────────────────────────────────────────────────
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/pro")) {
     const res = NextResponse.next();
@@ -66,8 +102,6 @@ export async function middleware(req: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Si no está logueado, dejalo pasar (o si querés, redirigí a /login)
-    // Yo lo dejo pasar porque vos no pediste gate de auth acá.
     if (user) {
       const { data: negocio } = await supabase
         .from("negocios")
@@ -93,46 +127,6 @@ export async function middleware(req: NextRequest) {
     }
 
     return res;
-  }
-
-  // ─────────────────────────────────────────────────────────
-  // 3) Para el resto de rutas, aplicamos tu rewrite de subdominio
-  // ─────────────────────────────────────────────────────────
-  return handleSubdomain(req);
-}
-
-// Tu lógica de subdominios (ajustada para ngrok)
-function handleSubdomain(req: NextRequest) {
-  const pathname = req.nextUrl.pathname;
-
-  // Nunca reescribas assets / api / negocio
-  if (pathname.startsWith("/api/")) return NextResponse.next();
-  if (pathname.startsWith("/negocio/")) return NextResponse.next();
-
-  // Host: en dev/ngrok a veces forwarded-host viene raro
-  const hostHeader = req.headers.get("host") || "";
-  const forwardedHost = req.headers.get("x-forwarded-host");
-  const hostToUse = (forwardedHost && forwardedHost.includes(".")) ? forwardedHost : hostHeader;
-  const host = hostToUse.split(":")[0];
-
-  // Si pasan slug por query, reescribimos a /negocio/:slug
-  const slugFromQuery = req.nextUrl.searchParams.get("slug");
-  if (slugFromQuery) {
-    return NextResponse.rewrite(
-      new URL(`/negocio/${slugFromQuery}${pathname}`, req.url)
-    );
-  }
-
-  // Subdominio: solo para dominios tipo xxx.tudominio.com
-  // NO para ngrok-free.app (tiene más niveles)
-  const parts = host.split(".");
-  let subdomain: string | null = null;
-
-  // Ej: barberia.getsolo.site => 3 partes => subdomain ok
-  if (parts.length === 3) subdomain = parts[0];
-
-  if (subdomain && subdomain !== "www") {
-    return NextResponse.rewrite(new URL(`/negocio/${subdomain}${pathname}`, req.url));
   }
 
   return NextResponse.next();
