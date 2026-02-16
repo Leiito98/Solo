@@ -1,250 +1,175 @@
+// src/app/dashboard/(settings)/configuracion/plan/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { PageHeader } from '@/components/dashboard/page-header'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Check, CreditCard, Calendar, Users, TrendingUp } from 'lucide-react'
+import { MercadoPagoConfig, PreApproval } from 'mercadopago'
+import PlanClient from './plan-client'
 
 export const dynamic = 'force-dynamic'
+
+const PLANES = {
+  solo: {
+    nombre: 'Solo',
+    precio: 20000,
+    descripcion: 'Para emprendedores y profesionales independientes',
+    caracteristicas: [
+      '1-2 profesionales',
+      'Agenda online ilimitada',
+      'Landing page personalizada',
+      'Pagos con MercadoPago',
+      'Recordatorios automáticos',
+      'Soporte por WhatsApp',
+    ],
+  },
+  pro: {
+    nombre: 'Pro',
+    precio: 28000,
+    descripcion: 'Para negocios con equipo',
+    caracteristicas: [
+      'Profesionales ilimitados',
+      'Todo lo del plan Solo',
+      'Sistema de comisiones',
+      'Control de gastos fijos',
+      'Analytics avanzados',
+      'Exportar a Excel/PDF',
+      'Soporte prioritario',
+    ],
+  },
+} as const
+
+type PlanKey = keyof typeof PLANES
+
+function ars(n: number) {
+  return `$${Math.round(n).toLocaleString('es-AR')}`
+}
+
+function formatFechaAR(iso?: string | null) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+function addFrequency(startISO: string, frequency: number, frequencyType: string) {
+  const d = new Date(startISO)
+  if (Number.isNaN(d.getTime())) return null
+
+  if (frequencyType === 'months') {
+    const nd = new Date(d)
+    nd.setMonth(nd.getMonth() + frequency)
+    return nd.toISOString()
+  }
+  if (frequencyType === 'days') {
+    const nd = new Date(d)
+    nd.setDate(nd.getDate() + frequency)
+    return nd.toISOString()
+  }
+  return null
+}
+
+// Mapea tus estados internos a UI (sin tocar DB)
+function statusUI(s: string | null | undefined) {
+  const v = String(s || '').toLowerCase()
+  if (v === 'activa') return { label: 'Suscripción activa', dot: 'bg-green-500', text: 'text-green-700', badge: 'bg-green-100 text-green-700 border-green-300' }
+  if (v === 'trial') return { label: 'En prueba', dot: 'bg-blue-500', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-700 border-blue-300' }
+  if (v === 'bloqueada') return { label: 'Bloqueada', dot: 'bg-red-500', text: 'text-red-700', badge: 'bg-red-100 text-red-700 border-red-300' }
+  if (v === 'cancelada') return { label: 'Cancelada', dot: 'bg-gray-400', text: 'text-gray-600', badge: 'bg-gray-100 text-gray-700 border-gray-300' }
+  return { label: 'Estado desconocido', dot: 'bg-gray-400', text: 'text-gray-600', badge: 'bg-gray-100 text-gray-700 border-gray-300' }
+}
+
+async function fetchMpPreapproval(preapprovalId: string) {
+  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || ''
+  if (!accessToken) return null
+
+  try {
+    const client = new MercadoPagoConfig({ accessToken })
+    const preapproval = new PreApproval(client)
+    const mp = await preapproval.get({ id: preapprovalId })
+    return mp as any
+  } catch {
+    return null
+  }
+}
 
 export default async function PlanPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
   if (!user) redirect('/login')
 
   const { data: negocio } = await supabase
     .from('negocios')
-    .select('*')
+    .select('id, owner_id, plan, suscripcion_estado, trial_ends_at, mp_preapproval_id, mp_preapproval_status')
     .eq('owner_id', user.id)
     .single()
 
   if (!negocio) redirect('/onboarding')
 
-  // Simular plan actual (después conectar con tu DB)
-  const planActual = {
-    nombre: 'Pro',
-    precio: 28000,
-    profesionales: 'Ilimitados',
-    proximaFacturacion: '15 de marzo, 2026',
-    estadoPago: 'activo' // activo | vencido | cancelado
+  const planKey = (negocio.plan === 'pro' ? 'pro' : 'solo') as PlanKey
+  const planInfo = PLANES[planKey]
+  const st = statusUI(negocio.suscripcion_estado)
+
+  // Datos en vivo desde MP (si hay preapproval)
+  const mp = negocio.mp_preapproval_id ? await fetchMpPreapproval(negocio.mp_preapproval_id) : null
+
+  const mpStatus = String(mp?.status || negocio.mp_preapproval_status || '')
+  const nextPaymentDate =
+    mp?.next_payment_date ||
+    mp?.auto_recurring?.next_payment_date ||
+    null
+
+  const fallbackNext =
+    !nextPaymentDate &&
+    mp?.auto_recurring?.start_date &&
+    mp?.auto_recurring?.frequency &&
+    mp?.auto_recurring?.frequency_type
+      ? addFrequency(
+          String(mp.auto_recurring.start_date),
+          Number(mp.auto_recurring.frequency),
+          String(mp.auto_recurring.frequency_type)
+        )
+      : null
+
+  // Trial vencido
+  const ahora = new Date()
+  const trialEnds = negocio.trial_ends_at ? new Date(negocio.trial_ends_at) : null
+  const trialVencido = Boolean(trialEnds && trialEnds.getTime() < ahora.getTime())
+
+  // Próxima facturación UI
+  let proximaFacturacion = '—'
+  if (String(negocio.suscripcion_estado).toLowerCase() === 'activa') {
+    proximaFacturacion = formatFechaAR(nextPaymentDate || fallbackNext)
+  } else if (String(negocio.suscripcion_estado).toLowerCase() === 'trial') {
+    proximaFacturacion = negocio.trial_ends_at ? formatFechaAR(negocio.trial_ends_at) : '—'
   }
 
-  const planes = [
-    {
-      nombre: 'Solo',
-      precio: 20000,
-      descripcion: 'Para emprendedores y profesionales independientes',
-      caracteristicas: [
-        '1-2 profesionales',
-        'Agenda online ilimitada',
-        'Landing page personalizada',
-        'Pagos con MercadoPago',
-        'Recordatorios automáticos',
-        'Soporte por WhatsApp'
-      ],
-      actual: false,
-      color: 'gray'
-    },
-    {
-      nombre: 'Pro',
-      precio: 28000,
-      descripcion: 'Para negocios con equipo',
-      caracteristicas: [
-        'Profesionales ilimitados',
-        'Todo lo del plan Solo',
-        'Sistema de comisiones',
-        'Control de gastos fijos',
-        'Analytics avanzados',
-        'Exportar a Excel/PDF',
-        'Soporte prioritario'
-      ],
-      actual: true,
-      color: 'blue'
-    }
-  ]
+  const planes = (['solo', 'pro'] as const).map((k) => ({
+    key: k,
+    nombre: PLANES[k].nombre,
+    precio: PLANES[k].precio,
+    descripcion: PLANES[k].descripcion,
+    caracteristicas: [...PLANES[k].caracteristicas],
+    actual: k === planKey,
+  }))
+
+  const puedeCambiarPlan =
+    String(negocio.suscripcion_estado).toLowerCase() === 'activa' ||
+    String(negocio.suscripcion_estado).toLowerCase() === 'trial'
 
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Plan y Suscripción" 
-        description="Gestioná tu plan, facturación y métodos de pago"
-      />
-
-      {/* Plan Actual */}
-      <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-white">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-blue-600" />
-              Plan Actual
-            </CardTitle>
-            <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-              {planActual.nombre}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Precio Mensual</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${planActual.precio.toLocaleString('es-AR')}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Profesionales</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {planActual.profesionales}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Próxima Facturación</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {planActual.proximaFacturacion}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 pt-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-sm text-green-700 font-medium">Suscripción activa</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Comparación de Planes */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Cambiar Plan</h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          {planes.map((plan) => (
-            <Card 
-              key={plan.nombre} 
-              className={`${
-                plan.actual 
-                  ? 'border-2 border-blue-500 shadow-lg' 
-                  : 'border-gray-200'
-              }`}
-            >
-              <CardHeader>
-                <div className="flex items-center justify-between mb-2">
-                  <CardTitle className="text-xl">{plan.nombre}</CardTitle>
-                  {plan.actual && (
-                    <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                      Plan Actual
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-gray-500">{plan.descripcion}</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="mb-4">
-                  <span className="text-4xl font-bold text-gray-900">
-                    ${plan.precio.toLocaleString('es-AR')}
-                  </span>
-                  <span className="text-gray-500">/mes</span>
-                </div>
-
-                <ul className="space-y-2 mb-6">
-                  {plan.caracteristicas.map((caracteristica, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-600">{caracteristica}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {plan.actual ? (
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    disabled
-                  >
-                    Plan Actual
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    className="w-full hover:bg-blue-50 hover:border-blue-300"
-                  >
-                    Cambiar a {plan.nombre}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Accesos Rápidos */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-purple-600" />
-              </div>
-              <h4 className="font-semibold text-gray-900">Métodos de Pago</h4>
-            </div>
-            <p className="text-sm text-gray-500 mb-3">
-              Gestioná tus tarjetas y formas de pago
-            </p>
-            <Button variant="link" className="p-0 h-auto text-blue-600" asChild>
-              <a href="/dashboard/configuracion/plan/pagos">
-                Ver métodos →
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-green-600" />
-              </div>
-              <h4 className="font-semibold text-gray-900">Facturas</h4>
-            </div>
-            <p className="text-sm text-gray-500 mb-3">
-              Descargá tus facturas anteriores
-            </p>
-            <Button variant="link" className="p-0 h-auto text-blue-600" asChild>
-              <a href="/dashboard/configuracion/plan/facturas">
-                Ver historial →
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-red-600" />
-              </div>
-              <h4 className="font-semibold text-gray-900">Cancelar Plan</h4>
-            </div>
-            <p className="text-sm text-gray-500 mb-3">
-              Cancelá tu suscripción cuando quieras
-            </p>
-            <Button variant="link" className="p-0 h-auto text-red-600">
-              Cancelar suscripción →
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Info Adicional */}
-      <Card className="bg-gray-50 border-gray-200">
-        <CardContent className="p-4">
-          <p className="text-sm text-gray-600">
-            💡 <strong>Recordá:</strong> Podés cambiar de plan en cualquier momento. 
-            Si bajás de plan, el cambio se aplica en la próxima facturación. 
-            Si subís de plan, se prorratea la diferencia inmediatamente.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <PlanClient
+      negocioId={negocio.id}
+      planKey={planKey}
+      planNombre={planInfo.nombre}
+      planPrecio={planInfo.precio}
+      suscripcionEstado={String(negocio.suscripcion_estado || '')}
+      trialEndsAt={negocio.trial_ends_at}
+      trialVencido={trialVencido}
+      mpPreapprovalId={negocio.mp_preapproval_id}
+      mpStatus={mpStatus}
+      proximaFacturacion={proximaFacturacion}
+      statusUi={st}
+      planes={planes}
+      puedeCambiarPlan={puedeCambiarPlan}
+      requirePayerEmail={process.env.NODE_ENV !== 'production'}
+    />
   )
 }

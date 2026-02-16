@@ -14,6 +14,8 @@ interface Negocio {
   id: string
   nombre: string
   slug: string
+  tiene_mp?: boolean
+  mp_sena_pct?: number
 }
 
 interface Servicio {

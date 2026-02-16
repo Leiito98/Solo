@@ -12,13 +12,14 @@ export default async function ConfiguracionPage() {
 
   const { data: negocio } = await supabase
     .from('negocios')
-    .select('id, mp_access_token')
+    .select('id, mp_access_token, mp_sena_pct')
     .eq('owner_id', user.id)
     .single()
 
   if (!negocio) redirect('/register')
 
   const token = negocio.mp_access_token as string | null
+  const senaPct = (negocio as any).mp_sena_pct ?? 50
 
   return (
     <div>
@@ -51,6 +52,7 @@ export default async function ConfiguracionPage() {
                   : 'desconocido'
                 : null
             }
+            mp_sena_pct={senaPct}
           />
         </div>
       </div>

@@ -20,6 +20,7 @@ import {
   Sparkles,
   ArrowLeft,
 } from 'lucide-react'
+import { useEffect } from 'react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -28,6 +29,16 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
+
+
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        router.replace('/dashboard')
+      }
+    })
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()

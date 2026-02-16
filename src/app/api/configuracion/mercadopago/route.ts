@@ -74,6 +74,7 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}))
   const token = String(body?.mp_access_token || '').trim()
+  const senaPct = Math.min(100, Math.max(1, Number(body?.mp_sena_pct ?? 50)))
 
   if (!token) {
     return NextResponse.json({ error: 'El token no puede estar vacío' }, { status: 400 })
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
   // Guardar el token
   const { error: updateErr } = await supabase
     .from('negocios')
-    .update({ mp_access_token: token })
+    .update({ mp_access_token: token, mp_sena_pct: senaPct })
     .eq('id', negocio.id)
     .eq('owner_id', user.id)
 
@@ -124,6 +125,34 @@ export async function POST(req: Request) {
     token_preview: `****${token.slice(-4)}`,
     token_tipo: token.startsWith('TEST-') ? 'test' : 'produccion',
   })
+}
+
+// PATCH /api/configuracion/mercadopago — actualizar solo mp_sena_pct sin tocar el token
+export async function PATCH(req: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+
+  const body = await req.json().catch(() => ({}))
+  const senaPct = Math.min(100, Math.max(1, Number(body?.mp_sena_pct ?? 50)))
+
+  const { data: negocio, error: negocioErr } = await supabase
+    .from('negocios')
+    .select('id')
+    .eq('owner_id', user.id)
+    .single()
+
+  if (negocioErr || !negocio) return NextResponse.json({ error: 'Negocio no encontrado' }, { status: 404 })
+
+  const { error: updateErr } = await supabase
+    .from('negocios')
+    .update({ mp_sena_pct: senaPct })
+    .eq('id', negocio.id)
+    .eq('owner_id', user.id)
+
+  if (updateErr) return NextResponse.json({ error: 'Error al guardar' }, { status: 500 })
+
+  return NextResponse.json({ ok: true, mp_sena_pct: senaPct })
 }
 
 // DELETE /api/configuracion/integraciones/mercadopago

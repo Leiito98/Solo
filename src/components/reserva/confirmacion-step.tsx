@@ -30,6 +30,8 @@ interface Negocio {
   id: string
   nombre: string
   slug: string
+  tiene_mp?: boolean
+  mp_sena_pct?: number
 }
 
 interface Servicio {
@@ -72,14 +74,16 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [turnoCreado, setTurnoCreado] = useState<any>(null)
-  const [metodoPago, setMetodoPago] = useState<'online' | 'local'>('online')
+  const [metodoPago, setMetodoPago] = useState<'online' | 'local'>(negocio.tiene_mp ? 'online' : 'local')
 
   const { servicio, profesional, fecha, hora, cliente } = reservaData
 
-  // Calcular seña (50%)
+  // Calcular seña según porcentaje configurado (default 50%)
   const precioTotal = servicio?.precio || 0
-  const seña = Math.round(precioTotal * 0.5)
+  const senaPct = (negocio.mp_sena_pct ?? 50) / 100
+  const seña = Math.round(precioTotal * senaPct)
   const resto = precioTotal - seña
+  const esPagoCompleto = (negocio.mp_sena_pct ?? 50) === 100
 
   // Formatear fecha
   const fechaFormateada = fecha
@@ -163,7 +167,6 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
       
-        // ✅ si se ocupó mientras el usuario estaba en el flow
         if (response.status === 409) {
           throw new Error('Ese horario se acaba de ocupar. Volvé y elegí otro horario.')
         }
@@ -178,7 +181,6 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
       if (metodoPago === 'online' && data.payment_url) {
         window.location.href = data.payment_url
       } else {
-        // Si eligió pagar en local, mostrar éxito
         setSuccess(true)
       }
     } catch (err) {
@@ -193,14 +195,12 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
   if (success && turnoCreado) {
     return (
       <div className="text-center space-y-6 py-8 animate-in fade-in duration-500">
-        {/* Success Icon */}
         <div className="flex justify-center">
           <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center animate-in zoom-in duration-300">
             <CheckCircle2 className="w-12 h-12 text-green-600" />
           </div>
         </div>
 
-        {/* Title */}
         <div className="space-y-2 animate-in slide-in-from-bottom-4 duration-500 delay-100">
           <h2 className="text-3xl font-bold text-gray-900">
             ¡Reserva Confirmada!
@@ -210,45 +210,34 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
           </p>
         </div>
 
-        {/* Reservation Details */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 text-left max-w-md mx-auto shadow-sm animate-in slide-in-from-bottom-4 duration-500 delay-200">
           <h3 className="font-semibold text-gray-900 mb-4 text-center text-lg">
             Detalles de tu reserva
           </h3>
-          
           <div className="space-y-3">
             <div className="flex justify-between py-2 border-b border-blue-100">
               <span className="text-gray-600">Negocio:</span>
               <span className="font-medium text-gray-900">{negocio.nombre}</span>
             </div>
-            
             <div className="flex justify-between py-2 border-b border-blue-100">
               <span className="text-gray-600">Servicio:</span>
               <span className="font-medium text-gray-900">{servicio?.nombre || 'N/A'}</span>
             </div>
-            
             <div className="flex justify-between py-2 border-b border-blue-100">
               <span className="text-gray-600">Profesional:</span>
               <span className="font-medium text-gray-900">{profesional?.nombre || 'N/A'}</span>
             </div>
-            
             <div className="flex justify-between py-2 border-b border-blue-100">
               <span className="text-gray-600">Fecha:</span>
-              <span className="font-medium text-gray-900 capitalize">
-                {fechaFormateada}
-              </span>
+              <span className="font-medium text-gray-900 capitalize">{fechaFormateada}</span>
             </div>
-            
             <div className="flex justify-between py-2">
               <span className="text-gray-600">Hora:</span>
-              <span className="font-medium text-gray-900 text-lg">
-                {hora}
-              </span>
+              <span className="font-medium text-gray-900 text-lg">{hora}</span>
             </div>
           </div>
         </div>
 
-        {/* Payment Reminder */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-md mx-auto animate-in slide-in-from-bottom-4 duration-500 delay-300">
           <p className="text-sm text-amber-900">
             💰 <strong>Recordatorio:</strong> Abonás el servicio completo ({' '}
@@ -256,14 +245,12 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
           </p>
         </div>
 
-        {/* Email Confirmation Notice */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto animate-in slide-in-from-bottom-4 duration-500 delay-400">
           <p className="text-sm text-blue-800">
             📧 Hemos enviado un email de confirmación a <strong>{cliente?.email || 'tu correo'}</strong>
           </p>
         </div>
 
-        {/* Next Steps */}
         <div className="max-w-md mx-auto text-left bg-gray-50 rounded-lg p-5 animate-in slide-in-from-bottom-4 duration-500 delay-500">
           <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
             <span className="text-xl mr-2">📋</span>
@@ -289,7 +276,6 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
           </ul>
         </div>
 
-        {/* CTA Buttons */}
         <div className="pt-6 flex flex-col sm:flex-row gap-3 justify-center animate-in slide-in-from-bottom-4 duration-500 delay-600">
           <Button
             size="lg"
@@ -316,7 +302,6 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
           </Button>
         </div>
 
-        {/* Thank you message */}
         <p className="text-sm text-gray-500 pt-4 animate-in fade-in duration-500 delay-700">
           ¡Gracias por usar {negocio.nombre}! 🎉
         </p>
@@ -391,7 +376,6 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
         {/* Datos del cliente */}
         <div className="p-4 bg-gray-50 rounded-lg space-y-3">
           <p className="text-sm font-medium text-gray-500">Tus datos</p>
-          
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <User className="w-4 h-4 text-gray-400" />
@@ -419,44 +403,56 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
         </div>
 
         <RadioGroup value={metodoPago} onValueChange={(v) => setMetodoPago(v as 'online' | 'local')}>
-          {/* Opción 1: Pagar seña online (RECOMENDADO) */}
-          <div className="relative">
-            <label
-              htmlFor="online"
-              className={`flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                metodoPago === 'online'
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-gray-200 hover:border-primary/50'
-              }`}
-            >
-              <RadioGroupItem value="online" id="online" className="mt-1" />
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-primary" />
-                  <span className="font-semibold text-gray-900">
-                    Pagar Seña Online (Recomendado)
-                  </span>
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                    -50% HOY
-                  </span>
+          {/* Opción 1: Pagar online — solo si el negocio tiene MP configurado */}
+          {negocio.tiene_mp && (
+            <div className="relative">
+              <label
+                htmlFor="online"
+                className={`flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  metodoPago === 'online'
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-gray-200 hover:border-primary/50'
+                }`}
+              >
+                <RadioGroupItem value="online" id="online" className="mt-1" />
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-primary" />
+                    <span className="font-semibold text-gray-900">
+                      {esPagoCompleto ? 'Pagar Online (Recomendado)' : 'Pagar Seña Online (Recomendado)'}
+                    </span>
+                    {!esPagoCompleto && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                        -{negocio.mp_sena_pct ?? 50}% HOY
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    {esPagoCompleto ? (
+                      <p className="text-gray-600">
+                        • Pagás el total <strong className="text-primary">${precioTotal.toLocaleString('es-AR')}</strong> ahora online
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-gray-600">
+                          • Pagás solo <strong className="text-primary">${seña.toLocaleString('es-AR')}</strong> ahora
+                        </p>
+                        <p className="text-gray-600">
+                          • Resto <strong>${resto.toLocaleString('es-AR')}</strong> en el local
+                        </p>
+                      </>
+                    )}
+                    <p className="text-gray-600">
+                      • ✅ Tu turno queda <strong>confirmado</strong> instantáneamente
+                    </p>
+                    <p className="text-xs text-primary font-medium mt-2">
+                      💳 Pagás seguro con MercadoPago
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1 text-sm">
-                  <p className="text-gray-600">
-                    • Pagás solo <strong className="text-primary">${seña.toLocaleString('es-AR')}</strong> ahora
-                  </p>
-                  <p className="text-gray-600">
-                    • Resto <strong>${resto.toLocaleString('es-AR')}</strong> en el local
-                  </p>
-                  <p className="text-gray-600">
-                    • ✅ Tu turno queda <strong>confirmado</strong> instantáneamente
-                  </p>
-                  <p className="text-xs text-primary font-medium mt-2">
-                    💳 Pagás seguro con MercadoPago
-                  </p>
-                </div>
-              </div>
-            </label>
-          </div>
+              </label>
+            </div>
+          )}
 
           {/* Opción 2: Pagar en local */}
           <div className="relative">
@@ -550,7 +546,10 @@ export function ConfirmacionStep({ negocio, reservaData, onBack }: ConfirmacionS
           ) : metodoPago === 'online' ? (
             <>
               <CreditCard className="w-4 h-4" />
-              Pagar Seña ${seña.toLocaleString('es-AR')}
+              {esPagoCompleto
+                ? `Pagar $${precioTotal.toLocaleString('es-AR')}`
+                : `Pagar Seña $${seña.toLocaleString('es-AR')}`
+              }
             </>
           ) : (
             <>

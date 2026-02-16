@@ -14,7 +14,7 @@ export default async function ReservarPage({ params }: PageProps) {
   // Fetch negocio
   const { data: negocio } = await supabase
     .from('negocios')
-    .select('*')
+    .select('id, nombre, slug, mp_access_token, mp_sena_pct')
     .eq('slug', slug)
     .single()
 
@@ -67,7 +67,11 @@ export default async function ReservarPage({ params }: PageProps) {
 
         {/* Flow Component */}
         <ReservaFlow
-          negocio={negocio}
+          negocio={{
+            ...negocio,
+            tiene_mp: !!negocio.mp_access_token,
+            mp_sena_pct: negocio.mp_sena_pct ?? 50,
+          }}
           servicios={servicios}
           profesionales={profesionales || []}
         />

@@ -23,39 +23,69 @@ export function CreateProfesionalDialog({ negocioId, onClose }: Props) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
-
+  
     const formData = new FormData(e.currentTarget)
     const supabase = createClient()
-
-    const { error } = await supabase
-      .from('profesionales')
-      .insert({
-        negocio_id: negocioId,
-        nombre: formData.get('nombre') as string,
-        email: formData.get('email') as string || null,
-        telefono: formData.get('telefono') as string || null,
-        especialidad: formData.get('especialidad') as string || null,
-        bio: formData.get('bio') as string || null,
-        activo: true,
-      })
-
-    setLoading(false)
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      })
-    } else {
-      toast({
-        title: 'Éxito',
-        description: 'Profesional creado correctamente',
-      })
-      router.refresh()
-      onClose()
+  
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast({ title: 'Error', description: 'Sesión no válida', variant: 'destructive' })
+        return
+      }
+  
+      const { data: negocio, error: negErr } = await supabase
+        .from('negocios')
+        .select('plan')
+        .eq('id', negocioId)
+        .single()
+  
+      if (negErr) {
+        toast({ title: 'Error', description: negErr.message, variant: 'destructive' })
+        return
+      }
+  
+      if (negocio?.plan === 'solo') {
+        const { count } = await supabase
+          .from('profesionales')
+          .select('id', { count: 'exact', head: true })
+          .eq('negocio_id', negocioId)
+          .eq('activo', true)
+  
+        if ((count ?? 0) >= 2) {
+          toast({
+            title: 'Límite del plan Solo',
+            description: 'Tu plan Solo permite hasta 2 profesionales. Actualizá a Plan Pro para agregar más.',
+            variant: 'destructive',
+          })
+          return
+        }
+      }
+  
+      const { error } = await supabase
+        .from('profesionales')
+        .insert({
+          negocio_id: negocioId,
+          nombre: formData.get('nombre') as string,
+          email: (formData.get('email') as string) || null,
+          telefono: (formData.get('telefono') as string) || null,
+          especialidad: (formData.get('especialidad') as string) || null,
+          bio: (formData.get('bio') as string) || null,
+          activo: true,
+        })
+  
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' })
+      } else {
+        toast({ title: 'Éxito', description: 'Profesional creado correctamente' })
+        router.refresh()
+        onClose()
+      }
+    } finally {
+      setLoading(false)
     }
   }
+  
 
   return (
     <Dialog open onOpenChange={onClose}>

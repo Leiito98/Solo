@@ -280,12 +280,14 @@ export default async function NegocioPage({
 
   // Serializable data for client components
   const negocioDialog = {
-    id: (negocio as Negocio).id,
-    nombre: (negocio as Negocio).nombre,
-    slug: (negocio as Negocio).slug,
-    color_primario: (negocio as Negocio).color_primario,
-    color_secundario: (negocio as Negocio).color_secundario,
-    logo_url: (negocio as Negocio).logo_url,
+    id: (negocio as any).id,
+    nombre: (negocio as any).nombre,
+    slug: (negocio as any).slug,
+    color_primario: (negocio as any).color_primario,
+    color_secundario: (negocio as any).color_secundario,
+    logo_url: (negocio as any).logo_url,
+    tiene_mp: !!((negocio as any).mp_access_token),
+    mp_sena_pct: (negocio as any).mp_sena_pct ?? 50,
   }
   const serviciosDialog = (servicios || []).map((s) => ({
     id: s.id,

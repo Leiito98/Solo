@@ -30,12 +30,15 @@ interface Props {
   configurado: boolean
   token_preview: string | null
   token_tipo: 'test' | 'produccion' | 'desconocido' | null
+  mp_sena_pct: number
 }
 
-export function MercadoPagoConfig({ configurado, token_preview, token_tipo }: Props) {
+export function MercadoPagoConfig({ configurado, token_preview, token_tipo, mp_sena_pct }: Props) {
   const [token, setToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [senaPct, setSenaPct] = useState(mp_sena_pct ?? 50)
+  const [savingPct, setSavingPct] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -108,6 +111,24 @@ export function MercadoPagoConfig({ configurado, token_preview, token_tipo }: Pr
       })
     } finally {
       setDeleting(false)
+    }
+  }
+
+  async function handleGuardarPct() {
+    setSavingPct(true)
+    try {
+      const res = await fetch('/api/configuracion/mercadopago', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mp_sena_pct: senaPct }),
+      })
+      if (!res.ok) throw new Error()
+      toast({ title: 'Porcentaje actualizado', description: `La seña quedó en ${senaPct}%` })
+      router.refresh()
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo guardar el porcentaje.', variant: 'destructive' })
+    } finally {
+      setSavingPct(false)
     }
   }
 
@@ -194,6 +215,61 @@ export function MercadoPagoConfig({ configurado, token_preview, token_tipo }: Pr
           )}
         </CardContent>
       </Card>
+
+      {/* Configuración de porcentaje de seña — solo visible cuando MP está configurado */}
+      {configurado && (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <span>💳</span> Porcentaje de seña
+          </CardTitle>
+          <CardDescription>
+            Cuánto paga el cliente al reservar. El resto lo abona en el local.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Seña online</span>
+              <span className="text-2xl font-bold text-primary">{senaPct}%</span>
+            </div>
+            <input
+              type="range"
+              min={10}
+              max={100}
+              step={5}
+              value={senaPct}
+              onChange={(e) => setSenaPct(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>10%</span>
+              <span className="relative -left-7">50%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800 space-y-1">
+            <p className="font-medium">Vista previa para el cliente:</p>
+            <p>• Paga online: <strong>{senaPct}%</strong> del precio del servicio</p>
+            <p>• Resto al llegar al local: <strong>{100 - senaPct}%</strong></p>
+          </div>
+
+          <Button
+            onClick={handleGuardarPct}
+            disabled={savingPct || senaPct === (mp_sena_pct ?? 50)}
+            className="w-full"
+          >
+            {savingPct ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Guardando...
+              </span>
+            ) : 'Guardar porcentaje'}
+          </Button>
+        </CardContent>
+      </Card>
+      )}
 
       {/* Formulario para guardar/actualizar token */}
       <Card>

@@ -132,7 +132,7 @@ export async function POST(req: Request) {
     // 1) Negocio
     const { data: negocio, error: negocioErr } = await supabase
       .from('negocios')
-      .select('id, nombre, slug, mp_access_token')
+      .select('id, nombre, slug, mp_access_token, mp_sena_pct')
       .eq('id', negocio_id)
       .single()
 
@@ -282,9 +282,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El horario ya no está disponible' }, { status: 409 })
     }
 
-    // 6) Montos
+    // 6) Montos — usar mp_sena_pct del negocio (default 50%)
     const precioTotal = Number(servicio.precio || 0)
-    const sena = Math.round(precioTotal * 0.5)
+    const senaPct = Number((negocio as any).mp_sena_pct ?? 50) / 100
+    const sena = Math.round(precioTotal * senaPct)
     const resto = precioTotal - sena
 
     // 7) Estado inicial
@@ -360,7 +361,7 @@ export async function POST(req: Request) {
               {
                 id: servicio_id,
                 title: `${servicio.nombre} - ${negocio.nombre}`,
-                description: `Seña 50% - Turno: ${fecha} ${hora_inicio_raw}`,
+                description: `Seña ${Math.round(senaPct * 100)}% - Turno: ${fecha} ${hora_inicio_raw}`,
                 quantity: 1,
                 unit_price: sena,
                 currency_id: 'ARS',

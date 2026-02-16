@@ -23,6 +23,8 @@ export interface NegocioDialogData {
   color_primario?: string | null
   color_secundario?: string | null
   logo_url?: string | null
+  tiene_mp?: boolean       // si el negocio tiene MP configurado
+  mp_sena_pct?: number     // porcentaje de seña (0-100), default 50
 }
 
 export interface ServicioData {
@@ -98,7 +100,7 @@ export function ReservaDialog({
   const [fecha, setFecha] = useState<Date | null>(null)
   const [hora, setHora] = useState<string | null>(null)
   const [cliente, setCliente] = useState<ClienteData>({ nombre: '', email: '', telefono: '' })
-  const [metodoPago, setMetodoPago] = useState<'online' | 'local'>('online')
+  const [metodoPago, setMetodoPago] = useState<'online' | 'local'>(negocio.tiene_mp ? 'online' : 'local')
 
   // Loading
   const [loadingSlots, setLoadingSlots] = useState(false)
@@ -207,7 +209,7 @@ export function ReservaDialog({
     setFecha(null)
     setHora(null)
     setCliente({ nombre: '', email: '', telefono: '' })
-    setMetodoPago('online')
+    setMetodoPago(negocio.tiene_mp ? 'online' : 'local')
     setSlots([])
     setProfesDisponibles([])
     setTurnoCreado(null)
@@ -282,7 +284,9 @@ export function ReservaDialog({
 
   const progress = step === 'success' ? 100 : (stepIndex / (STEP_ORDER.length - 1)) * 100
   const precioTotal = servicio?.precio || 0
-  const seña = Math.round(precioTotal * 0.5)
+  const senaPct = (negocio.mp_sena_pct ?? 50) / 100
+  const seña = Math.round(precioTotal * senaPct)
+  const esPagoCompleto = (negocio.mp_sena_pct ?? 50) === 100
   const fechaFormateada = fecha ? format(fecha, "EEEE d 'de' MMMM", { locale: es }) : ''
 
   if (!open) return null
@@ -753,6 +757,7 @@ export function ReservaDialog({
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Método de pago</p>
                 <div className="space-y-2">
+                  {negocio.tiene_mp && (
                   <div className={`rd-pay ${metodoPago === 'online' ? 'sel' : ''}`} onClick={() => setMetodoPago('online')}>
                     <div className="flex items-start gap-3">
                       <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5"
@@ -762,14 +767,24 @@ export function ReservaDialog({
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <CreditCard className="w-4 h-4" style={{ color: primary }} />
-                          <span className="font-bold text-gray-900 text-sm">Pagar seña online</span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Recomendado</span>
+                          <span className="font-bold text-gray-900 text-sm">
+                            {esPagoCompleto ? 'Pagar online' : 'Pagar seña online'}
+                          </span>
+                          {!esPagoCompleto && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Recomendado</span>
+                          )}
                         </div>
-                        <p className="text-xs text-gray-500">Pagás solo <strong>{formatPrice(seña)}</strong> ahora · resto en el local</p>
+                        <p className="text-xs text-gray-500">
+                          {esPagoCompleto
+                            ? <><strong>{formatPrice(precioTotal)}</strong> — pago total online</>
+                            : <>Pagás solo <strong>{formatPrice(seña)}</strong> ahora · resto en el local</>
+                          }
+                        </p>
                         <p className="text-xs font-medium mt-1" style={{ color: primary }}>💳 Pago seguro con MercadoPago</p>
                       </div>
                     </div>
                   </div>
+                  )}
                   <div className={`rd-pay ${metodoPago === 'local' ? 'sel' : ''}`} onClick={() => setMetodoPago('local')}>
                     <div className="flex items-start gap-3">
                       <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5"
@@ -802,7 +817,7 @@ export function ReservaDialog({
                   {loadingConfirm
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Procesando...</>
                     : metodoPago === 'online'
-                      ? <><CreditCard className="w-4 h-4" /> Pagar {formatPrice(seña)}</>
+                      ? <><CreditCard className="w-4 h-4" /> Pagar {esPagoCompleto ? formatPrice(precioTotal) : formatPrice(seña)}</>
                       : <><CheckCircle2 className="w-4 h-4" /> Confirmar reserva</>
                   }
                 </button>

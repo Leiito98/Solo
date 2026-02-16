@@ -75,7 +75,16 @@ function firstNameFromFullName(full: string) {
 export default function RegisterClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const planElegido = (searchParams?.get('plan') === 'pro' ? 'pro' : 'solo') as 'solo' | 'pro'
   const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        router.replace('/dashboard')
+      }
+    })
+  }, [])
 
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -270,6 +279,9 @@ export default function RegisterClient() {
       const finalSlug = slugify(slug || nombreNegocio)
       if (!finalSlug) return setError('El slug no puede estar vacío.')
 
+      const trialEndsAt = new Date()
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+
       const { error: insertErr } = await supabase.from('negocios').insert({
         owner_id: userId,
         nombre: nombreNegocio,
@@ -279,6 +291,10 @@ export default function RegisterClient() {
         direccion: direccion || null,
         telefono: telefono || null,
         email: emailNegocio || null,
+
+        plan: planElegido,
+        trial_ends_at: trialEndsAt.toISOString(),
+        suscripcion_estado: 'trial',
       })
 
       if (insertErr) {

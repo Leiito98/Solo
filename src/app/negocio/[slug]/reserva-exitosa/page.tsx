@@ -1,195 +1,365 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { CheckCircle2, Calendar, Clock, User, ArrowRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import Image from 'next/image'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { Calendar, Clock, User, ArrowLeft, RotateCcw } from 'lucide-react'
 
 type PageProps = {
   params: Promise<{ slug: string }>
   searchParams: Promise<{ turno_id?: string }>
 }
 
+function isValidHex(h: string | null | undefined): h is string {
+  return typeof h === 'string' && /^#[0-9a-fA-F]{6}$/.test(h.trim())
+}
+function hexToRgb(hex: string) {
+  const h = hex.replace('#', '')
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
+  }
+}
+
 export default async function ReservaExitosaPage({ params, searchParams }: PageProps) {
   const { slug } = await params
   const { turno_id } = await searchParams
 
-  if (!turno_id) {
-    redirect(`/negocio/${slug}`)
-  }
+  if (!turno_id) redirect(`/negocio/${slug}`)
 
   const supabase = await createClient()
 
-  // Obtener datos del negocio
   const { data: negocio } = await supabase
     .from('negocios')
-    .select('id, nombre, slug')
+    .select('id, nombre, slug, logo_url, color_primario, color_secundario')
     .eq('slug', slug)
     .single()
 
-  if (!negocio) {
-    redirect('/')
-  }
+  if (!negocio) redirect('/')
 
-  // Obtener datos del turno
   const { data: turno } = await supabase
     .from('turnos')
     .select(`
-      id,
-      fecha,
-      hora_inicio,
-      hora_fin,
-      pago_monto,
+      id, fecha, hora_inicio, hora_fin, pago_monto,
       servicios(nombre, precio),
-      profesionales(nombre),
+      profesionales(nombre, foto_url, especialidad),
       clientes(nombre, email)
     `)
     .eq('id', turno_id)
     .eq('negocio_id', negocio.id)
     .single()
 
-  if (!turno) {
-    redirect(`/negocio/${slug}`)
-  }
+  if (!turno) redirect(`/negocio/${slug}`)
 
-  const servicio = Array.isArray(turno.servicios) ? turno.servicios[0] : turno.servicios
+  const servicio    = Array.isArray(turno.servicios)     ? turno.servicios[0]     : turno.servicios
   const profesional = Array.isArray(turno.profesionales) ? turno.profesionales[0] : turno.profesionales
-  const cliente = Array.isArray(turno.clientes) ? turno.clientes[0] : turno.clientes
+  const cliente     = Array.isArray(turno.clientes)      ? turno.clientes[0]      : turno.clientes
 
   const fechaFormateada = format(new Date(turno.fecha + 'T00:00:00'), "EEEE d 'de' MMMM", { locale: es })
-  const seña = turno.pago_monto || 0
-  const precioTotal = servicio?.precio || 0
-  const resto = precioTotal - seña
+  const seña        = turno.pago_monto || 0
+  const precioTotal = (servicio as any)?.precio || 0
+  const resto       = precioTotal - seña
+  const esPagoCompleto = resto === 0
+
+  const primary   = isValidHex((negocio as any).color_primario)   ? (negocio as any).color_primario!.trim()   : '#111827'
+  const secondary = isValidHex((negocio as any).color_secundario) ? (negocio as any).color_secundario!.trim() : '#374151'
+  const { r: pr, g: pg, b: pb } = hexToRgb(primary)
+
+  const proNombre   = (profesional as any)?.nombre      || ''
+  const proFoto     = (profesional as any)?.foto_url    || null
+  const proEsp      = (profesional as any)?.especialidad || null
+  const proInitials = proNombre.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full space-y-6 animate-in fade-in duration-500">
-        {/* Success Icon */}
-        <div className="flex justify-center">
-          <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center animate-in zoom-in duration-300 shadow-lg">
-            <CheckCircle2 className="w-16 h-16 text-green-600" />
+    <div
+      className="min-h-screen bg-[#f7f7f8]"
+      style={{ fontFamily: "'Plus Jakarta Sans','DM Sans',system-ui,sans-serif" }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        :root { --p:${primary};--s:${secondary};--p-r:${pr};--p-g:${pg};--p-b:${pb}; }
+        *{box-sizing:border-box}
+
+        .ex-nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-bottom:1px solid #eeeff2}
+
+        @keyframes ring-pop {
+          0%   { transform:scale(.5); opacity:0 }
+          65%  { transform:scale(1.1) }
+          100% { transform:scale(1);  opacity:1 }
+        }
+        @keyframes check-draw {
+          from { stroke-dashoffset:60 }
+          to   { stroke-dashoffset:0  }
+        }
+        @keyframes slide-up {
+          from { transform:translateY(20px); opacity:0 }
+          to   { transform:translateY(0);    opacity:1 }
+        }
+        @keyframes pulse-ring {
+          0%   { transform:scale(1);    opacity:.35 }
+          50%  { transform:scale(1.12); opacity:.12 }
+          100% { transform:scale(1);    opacity:.35 }
+        }
+
+        .success-ring  { animation:ring-pop .55s cubic-bezier(.34,1.56,.64,1) .05s both }
+        .pulse-ring    { animation:pulse-ring 2.2s ease-in-out 1s infinite }
+        .check-path    { stroke-dasharray:60; stroke-dashoffset:60; animation:check-draw .45s ease-out .55s forwards }
+        .slide-1       { animation:slide-up .4s ease-out .15s both }
+        .slide-2       { animation:slide-up .4s ease-out .3s  both }
+        .slide-3       { animation:slide-up .4s ease-out .45s both }
+        .slide-4       { animation:slide-up .4s ease-out .6s  both }
+
+        .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(var(--p-r),var(--p-g),var(--p-b),.1);color:var(--p);border:1px solid rgba(var(--p-r),var(--p-g),var(--p-b),.2)}
+
+        .btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--p);color:#fff;font-weight:700;font-size:.9rem;padding:0 1.5rem;height:48px;border-radius:12px;border:none;cursor:pointer;transition:filter .15s,transform .15s;text-decoration:none;white-space:nowrap}
+        .btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+        .btn-outline{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:var(--p);font-weight:600;font-size:.9rem;padding:0 1.25rem;height:48px;border-radius:12px;border:1.5px solid rgba(var(--p-r),var(--p-g),var(--p-b),.25);transition:background .15s,border-color .15s;text-decoration:none;white-space:nowrap}
+        .btn-outline:hover{background:rgba(var(--p-r),var(--p-g),var(--p-b),.05);border-color:var(--p)}
+
+        .detail-row{display:flex;align-items:center;gap:14px;padding:14px 16px;background:#f9fafb;border-radius:12px;border:1.5px solid #eeeff2}
+
+        @media(max-width:640px){.btn-primary,.btn-outline{height:44px;font-size:.85rem}}
+      `}</style>
+
+      {/* NAV */}
+      <nav className="ex-nav">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
+          {(negocio as any).logo_url && (
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+              <Image src={(negocio as any).logo_url} alt={negocio.nombre} width={32} height={32} className="object-cover w-full h-full" />
+            </div>
+          )}
+          <span className="text-sm font-bold text-gray-900 truncate">{negocio.nombre}</span>
+        </div>
+      </nav>
+
+      {/* COLOR STRIP */}
+      <div className="w-full h-1" style={{ background: `linear-gradient(90deg,${primary},${secondary})` }} />
+
+      {/* CONTENT */}
+      <div className="max-w-2xl mx-auto px-4 py-10 space-y-4">
+
+        {/* ── SUCCESS HERO ── */}
+        <div className="text-center space-y-5 slide-1">
+
+          {/* Animated check */}
+          <div className="flex justify-center">
+            <div className="relative">
+              {/* Pulsing bg ring */}
+              <div
+                className="pulse-ring absolute inset-0 rounded-full"
+                style={{ background: `rgba(${pr},${pg},${pb},0.15)` }}
+              />
+              {/* Main circle */}
+              <div
+                className="success-ring relative w-24 h-24 rounded-full flex items-center justify-center"
+                style={{
+                  background: `rgba(${pr},${pg},${pb},0.08)`,
+                  border: `2.5px solid rgba(${pr},${pg},${pb},0.35)`,
+                  boxShadow: `0 0 0 6px rgba(${pr},${pg},${pb},0.07), 0 8px 32px rgba(${pr},${pg},${pb},0.2)`,
+                }}
+              >
+                <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                  <path
+                    className="check-path"
+                    d="M11 22L18.5 29.5L33 15"
+                    stroke={primary}
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <span className="badge">✓ Pago confirmado</span>
+            <h1 className="text-4xl font-black text-gray-900 tracking-tight">¡Todo listo!</h1>
+            <p className="text-gray-500">
+              Tu turno está confirmado en{' '}
+              <span className="font-semibold text-gray-800">{negocio.nombre}</span>
+            </p>
           </div>
         </div>
 
-        {/* Main Card */}
-        <Card className="shadow-2xl border-0">
-          <CardContent className="p-8 space-y-6">
-            {/* Title */}
-            <div className="text-center space-y-2">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                ¡Pago Exitoso!
-              </h1>
-              <p className="text-lg text-gray-600">
-                Tu turno ha sido confirmado
-              </p>
+        {/* ── PAYMENT CARD ── */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden slide-2">
+          <div className="h-1" style={{ background: `linear-gradient(90deg,${primary},${secondary})` }} />
+          <div className="p-5 sm:p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Resumen del pago</span>
+              {esPagoCompleto ? (
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-700">
+                  100% abonado ✓
+                </span>
+              ) : (
+                <span
+                  className="text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{ background: `rgba(${pr},${pg},${pb},0.1)`, color: primary }}
+                >
+                  Seña abonada
+                </span>
+              )}
             </div>
 
-            {/* Payment Summary */}
-            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Total del servicio</span>
-                <span className="text-2xl font-bold text-green-600">
-                  ${precioTotal.toLocaleString('es-AR')}
-                </span>
+            {/* Seña */}
+            <div
+              className="flex items-center justify-between px-4 py-3 rounded-xl"
+              style={{ background: `rgba(${pr},${pg},${pb},0.06)`, border: `1.5px solid rgba(${pr},${pg},${pb},0.15)` }}
+            >
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  {esPagoCompleto ? 'Total abonado' : 'Seña abonada'}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">vía MercadoPago</p>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500">Seña abonada</span>
-                <span className="font-semibold text-gray-700">
-                  ${seña.toLocaleString('es-AR')}               
-                </span>
-              </div>
-              <div className="pt-3 border-t border-green-200">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">Resto a abonar en el local</span>
-                  <span className="text-xl font-bold text-gray-900">
+              <span className="text-2xl font-black" style={{ color: primary }}>
+                ${seña.toLocaleString('es-AR')}
+              </span>
+            </div>
+
+            {/* Resto — solo si no es pago completo */}
+            {!esPagoCompleto && (
+              <>
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50" style={{ border: '1.5px solid #eeeff2' }}>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">Resto al llegar</p>
+                    <p className="text-xs text-gray-400 mt-0.5">efectivo o tarjeta en el local</p>
+                  </div>
+                  <span className="text-2xl font-black text-gray-800">
                     ${resto.toLocaleString('es-AR')}
                   </span>
                 </div>
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs text-gray-400">Total del servicio</span>
+                  <span className="text-sm font-bold text-gray-500">${precioTotal.toLocaleString('es-AR')}</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── TURNO DETAILS ── */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 space-y-3 slide-3">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tu turno</p>
+
+          {/* Profesional + servicio */}
+          <div className="detail-row">
+            {proFoto ? (
+              <div
+                className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 border-2"
+                style={{ borderColor: `rgba(${pr},${pg},${pb},0.3)` }}
+              >
+                <Image src={proFoto} alt={proNombre} width={44} height={44} className="object-cover w-full h-full" />
               </div>
-            </div>
-
-            {/* Reservation Details */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900 text-lg">
-                Detalles de tu turno
-              </h3>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-gray-500">Fecha</p>
-                    <p className="font-semibold text-gray-900 capitalize">
-                      {fechaFormateada}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Clock className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-gray-500">Horario</p>
-                    <p className="font-semibold text-gray-900">
-                      {turno.hora_inicio.slice(0, 5)} - {turno.hora_fin.slice(0, 5)} hs
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <User className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-gray-500">Profesional</p>
-                    <p className="font-semibold text-gray-900">
-                      {profesional?.nombre || 'N/A'}
-                    </p>
-                  </div>
-                </div>
+            ) : (
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-black"
+                style={{ background: `rgba(${pr},${pg},${pb},0.1)`, color: primary }}
+              >
+                {proInitials || <User className="w-4 h-4" />}
               </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-gray-900">{proNombre || 'N/A'}</p>
+              {proEsp && <p className="text-xs text-gray-400">{proEsp}</p>}
+              {servicio && (
+                <p className="text-xs font-semibold mt-0.5" style={{ color: primary }}>
+                  {(servicio as any).nombre}
+                </p>
+              )}
             </div>
+          </div>
 
-            {/* Email Notice */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800 text-center">
-                📧 Enviamos los detalles a{' '}
-                <strong>{cliente?.email || 'tu email'}</strong>
+          {/* Fecha */}
+          <div className="detail-row">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `rgba(${pr},${pg},${pb},0.1)` }}
+            >
+              <Calendar className="w-5 h-5" style={{ color: primary }} />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-medium">Fecha</p>
+              <p className="font-bold text-gray-900 capitalize">{fechaFormateada}</p>
+            </div>
+          </div>
+
+          {/* Horario */}
+          <div className="detail-row">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `rgba(${pr},${pg},${pb},0.1)` }}
+            >
+              <Clock className="w-5 h-5" style={{ color: primary }} />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-medium">Horario</p>
+              <p className="font-bold text-gray-900">
+                {String(turno.hora_inicio).slice(0, 5)} – {String(turno.hora_fin).slice(0, 5)} hs
               </p>
             </div>
+          </div>
+        </div>
 
-            {/* Important Info */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
-              <p className="font-semibold text-amber-900 text-sm">
-                📋 Recordá:
-              </p>
-              <ul className="text-sm text-amber-800 space-y-1 ml-4 list-disc">
-                <li>Llevá efectivo o tarjeta para abonar ${resto.toLocaleString('es-AR')}</li>
-                <li>Llegá 5 minutos antes de tu turno</li>
-                <li>Recibirás un recordatorio 24hs antes</li>
-              </ul>
+        {/* ── NOTICES ── */}
+        <div className="space-y-3 slide-4">
+
+          {/* Email */}
+          <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <span className="text-xl flex-shrink-0 mt-0.5">📧</span>
+            <p className="text-sm text-gray-600">
+              Te enviamos la confirmación a{' '}
+              <strong className="text-gray-900">{(cliente as any)?.email || 'tu email'}</strong>
+            </p>
+          </div>
+
+          {/* Resta pagar */}
+          {!esPagoCompleto && (
+            <div
+              className="flex items-start gap-3 p-4 rounded-2xl border"
+              style={{
+                background: `rgba(${pr},${pg},${pb},0.04)`,
+                borderColor: `rgba(${pr},${pg},${pb},0.18)`,
+              }}
+            >
+              <span className="text-xl flex-shrink-0 mt-0.5">💳</span>
+              <div className="text-sm">
+                <p className="font-semibold" style={{ color: primary }}>Recordá llevar</p>
+                <p className="text-gray-600 mt-0.5">
+                  <strong className="text-gray-800">${resto.toLocaleString('es-AR')}</strong> para abonar al llegar · efectivo o tarjeta
+                </p>
+              </div>
             </div>
+          )}
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Button asChild className="flex-1" size="lg">
-                <Link href={`/negocio/${slug}`}>
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Volver al Inicio
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="flex-1" size="lg">
-                <Link href={`/negocio/${slug}/reservar`}>
-                  Hacer otra Reserva
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Tip */}
+          <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+            <span className="text-xl flex-shrink-0 mt-0.5">⏰</span>
+            <p className="text-sm text-amber-800">
+              Llegá <strong>5 minutos antes</strong> · Recibirás un recordatorio 24 hs antes de tu turno
+            </p>
+          </div>
+        </div>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-600">
-          ¡Gracias por elegir <strong>{negocio.nombre}</strong>! 🎉
+        {/* ── CTAs ── */}
+        <div className="flex flex-col sm:flex-row gap-3 slide-4">
+          <Link href={`/negocio/${slug}`} className="btn-primary flex-1 text-center">
+            <ArrowLeft className="w-4 h-4" /> Volver al inicio
+          </Link>
+          <Link href={`/negocio/${slug}/reservar`} className="btn-outline flex-1 text-center">
+            <RotateCcw className="w-4 h-4" /> Otra reserva
+          </Link>
+        </div>
+
+        {/* FOOTER */}
+        <p className="text-center text-xs text-gray-400 pb-6">
+          ¡Gracias por elegir <span className="font-semibold text-gray-600">{negocio.nombre}</span>! 🎉
         </p>
+
       </div>
     </div>
   )
