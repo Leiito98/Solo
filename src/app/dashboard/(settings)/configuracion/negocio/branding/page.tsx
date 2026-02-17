@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import BrandingClient from "./BrandingClient";
+import BrandingClient from "@/components/dashboard/negocio/BrandingClient";
 
 export const dynamic = "force-dynamic";
 

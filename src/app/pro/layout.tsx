@@ -1,10 +1,21 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Toaster } from "@/components/ui/toaster";
 
-export default async function ProLayout({ children }: { children: React.ReactNode }) {
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
+export default async function ProLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   // Si es owner, mandalo al dashboard normal
@@ -27,9 +38,7 @@ export default async function ProLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {children}
-      </div>
+      <div className="max-w-6xl mx-auto px-6 py-8">{children}</div>
       <Toaster />
     </div>
   );

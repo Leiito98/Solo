@@ -133,6 +133,10 @@ export function ProfesionalesTable({ profesionales }: { profesionales: Profesion
         title: 'Acceso creado',
         description: 'El profesional ya puede ingresar con su email y contraseña.',
       })
+      // ✅ refrescar onboarding instantáneo
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('getsolo:onboarding-refresh'))
+      }
 
       router.refresh()
       closeAccessDialog()

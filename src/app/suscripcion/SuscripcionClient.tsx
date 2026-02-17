@@ -33,7 +33,7 @@ const PLANES: Record<
   },
   pro: {
     nombre: 'Pro',
-    precio: 28000,
+    precio: 29990,
     subtitle: 'Para negocios con equipo',
     features: [
       'Profesionales ilimitados',

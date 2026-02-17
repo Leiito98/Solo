@@ -1,6 +1,29 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "getsolo.site";
+
+function pickHost(req: NextRequest) {
+  const hostHeader = req.headers.get("host") || "";
+  const forwardedHost = req.headers.get("x-forwarded-host") || "";
+  const hostToUse = forwardedHost.includes(".") ? forwardedHost : hostHeader;
+  return hostToUse.split(":")[0].toLowerCase(); // sin puerto
+}
+
+function isRootHost(host: string) {
+  if (!host) return true;
+  if (host === "localhost" || host.endsWith(".localhost")) return true;
+
+  // Si estás en preview/prod de Vercel, tratá como root (plataforma)
+  if (host.endsWith(".vercel.app")) return true;
+
+  // Root domain o www.root
+  if (host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}`) return true;
+
+  // Cualquier otra cosa: puede ser subdominio
+  return false;
+}
+
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
@@ -11,18 +34,44 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  const host = pickHost(req);
+  const onRoot = isRootHost(host);
+
   // ─────────────────────────────────────────────────────────
-  // 1) Detectar subdominio de negocio PRIMERO
-  //    Esto tiene que ir antes que cualquier otra regla,
-  //    porque "/" matchea ALWAYS_PUBLIC y corta el flujo.
+  // 1) Opción A: /negocio/:slug en ROOT => REDIRECT al subdominio
+  //    MUY IMPORTANTE: esto NO debe dispararse cuando el request
+  //    ya viene desde el subdominio (porque ahí reescribimos a /negocio/:slug).
   // ─────────────────────────────────────────────────────────
-  const hostHeader = req.headers.get("host") || "";
-  const forwardedHost = req.headers.get("x-forwarded-host");
-  const hostToUse =
-    forwardedHost && forwardedHost.includes(".") ? forwardedHost : hostHeader;
-  const host = hostToUse.split(":")[0]; // quitar puerto
+  if (onRoot && pathname.startsWith("/negocio/")) {
+    const parts = pathname.split("/").filter(Boolean); // ["negocio", "slug", ...rest]
+    const slug = parts[1];
+
+    if (slug) {
+      const rest = parts.slice(2).join("/");
+      const target = new URL(req.url);
+
+      // En prod: https://{slug}.getsolo.site
+      // En localhost: NO forzamos subdominio (evita loops raros en dev)
+      if (host === "localhost" || host.endsWith(".localhost")) {
+        // En dev, dejalo pasar (o si querés, podrías reescribir)
+        return NextResponse.next();
+      }
+
+      target.hostname = `${slug}.${ROOT_DOMAIN}`;
+      target.pathname = rest ? `/${rest}` : "/";
+      target.search = req.nextUrl.search;
+
+      // 308 = permanent redirect (SEO friendly)
+      return NextResponse.redirect(target, 308);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 2) Detectar subdominio de negocio PRIMERO
+  // ─────────────────────────────────────────────────────────
 
   // Slug por query param (ej: localhost:3000/?slug=ovejas-negras)
+  // Útil en DEV si no tenés hosts para subdominios
   const slugFromQuery = req.nextUrl.searchParams.get("slug");
   if (slugFromQuery && !pathname.startsWith("/negocio/")) {
     return NextResponse.rewrite(
@@ -30,25 +79,22 @@ export async function middleware(req: NextRequest) {
     );
   }
 
-  // Subdominio: soporta tanto xxx.getsolo.site (3 partes) como 
-  // subdominios con guiones (ovejas-negras.getsolo.site también es 3 partes)
-  const parts = host.split(".");
-  const ROOT_DOMAINS = ["getsolo.site", "localhost"]; // añadí tus dominios raíz acá
-
+  // Subdominio: soporta ovejas-negras.getsolo.site
+  // y también www.ovejas-negras.getsolo.site (por si acaso)
   let subdomain: string | null = null;
 
-  if (parts.length === 3) {
-    // ovejas-negras.getsolo.site → ["ovejas-negras", "getsolo", "site"]
-    subdomain = parts[0];
-  } else if (parts.length === 4) {
-    // por si usás www.ovejas-negras.getsolo.site (poco probable, pero cubierto)
-    subdomain = parts[1];
+  if (!onRoot) {
+    const parts = host.split(".");
+    if (parts.length >= 3 && host.endsWith(`.${ROOT_DOMAIN}`)) {
+      // ovejas-negras.getsolo.site => subdomain = "ovejas-negras"
+      subdomain = parts[0];
+      if (subdomain === "www") subdomain = null;
+    }
   }
 
-  // Si hay subdominio y no es "www", reescribir a /negocio/:slug
+  // Si hay subdominio, reescribir a /negocio/:slug para servir tenant
   if (
     subdomain &&
-    subdomain !== "www" &&
     !pathname.startsWith("/negocio/") &&
     !pathname.startsWith("/_next/") &&
     !pathname.startsWith("/api/")
@@ -59,23 +105,21 @@ export async function middleware(req: NextRequest) {
   }
 
   // ─────────────────────────────────────────────────────────
-  // 2) Rutas que siempre pasan sin auth (solo en dominio raíz)
+  // 3) Rutas que siempre pasan sin auth (solo en dominio raíz)
   // ─────────────────────────────────────────────────────────
   const ALWAYS_PUBLIC = ["/", "/login", "/register", "/callback", "/suscripcion"];
 
-  if (
-    ALWAYS_PUBLIC.some((p) => pathname === p || pathname.startsWith(p + "/"))
-  ) {
+  if (ALWAYS_PUBLIC.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next();
   }
 
-  // Páginas /negocio/* son públicas
+  // Páginas /negocio/* son públicas (tenant ya reescrito si venís por subdominio)
   if (pathname.startsWith("/negocio/")) {
     return NextResponse.next();
   }
 
   // ─────────────────────────────────────────────────────────
-  // 3) Protección de dashboard / pro con check de suscripción
+  // 4) Protección de dashboard / pro con check de suscripción
   // ─────────────────────────────────────────────────────────
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/pro")) {
     const res = NextResponse.next();

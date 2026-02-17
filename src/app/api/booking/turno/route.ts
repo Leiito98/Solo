@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { randomUUID } from 'crypto'
 import crypto from 'crypto'
+import { sendConfirmacionReserva, sendNuevaReservaOwner } from '@/lib/email/send-confirmation'
+import { sendConfirmacionClienteWA, sendNuevaReservaOwnerWA } from '@/lib/whatsapp/send-whatsapp'
 
 export const runtime = 'nodejs'
 
@@ -48,6 +50,10 @@ function minutesSinceMidnight(hhmmss: string) {
 function dayOfWeek0Sunday(fechaYYYYMMDD: string) {
   const d = new Date(`${fechaYYYYMMDD}T00:00:00`)
   return d.getDay()
+}
+
+function normalizeDni(dni: string) {
+  return String(dni || '').replace(/\D/g, '').trim()
 }
 
 // ── TZ helpers ───────────────────────────────────────────────
@@ -98,7 +104,7 @@ type Body = {
   profesional_id: string
   fecha: string // YYYY-MM-DD
   hora_inicio: string // HH:mm o HH:mm:ss
-  cliente: { nombre: string; email: string; telefono: string }
+  cliente: { dni: string; nombre: string; email: string; telefono: string }
   metodo_pago: 'online' | 'local'
 }
 
@@ -118,12 +124,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
     }
 
-    if (!cliente?.nombre || !cliente?.email || !cliente?.telefono) {
+    if (!cliente?.dni || !cliente?.nombre || !cliente?.email || !cliente?.telefono) {
       return NextResponse.json({ error: 'Datos del cliente incompletos' }, { status: 400 })
     }
 
     if (!metodo_pago || !['online', 'local'].includes(metodo_pago)) {
       return NextResponse.json({ error: 'Método de pago inválido' }, { status: 400 })
+    }
+
+    const dni = normalizeDni(cliente.dni)
+    if (!dni || dni.length < 7 || dni.length > 9) {
+      return NextResponse.json({ error: 'DNI inválido' }, { status: 400 })
     }
 
     const supabase = await createClient()
@@ -132,7 +143,9 @@ export async function POST(req: Request) {
     // 1) Negocio
     const { data: negocio, error: negocioErr } = await supabase
       .from('negocios')
-      .select('id, nombre, slug, mp_access_token, mp_sena_pct')
+      .select(
+        'id, nombre, slug, mp_access_token, mp_sena_pct, email, telefono, direccion, owner_id, color_primario, color_secundario, logo_url'
+      )
       .eq('id', negocio_id)
       .single()
 
@@ -165,10 +178,7 @@ export async function POST(req: Request) {
       const nowMin = minutesNowInTZ(APP_TZ) + MIN_BUFFER_MINUTES
       const startMin = minutesSinceMidnight(toHHMMSS(hora_inicio))
       if (startMin < nowMin) {
-        return NextResponse.json(
-          { error: 'No podés reservar en un horario pasado.' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'No podés reservar en un horario pasado.' }, { status: 400 })
       }
     }
 
@@ -216,14 +226,14 @@ export async function POST(req: Request) {
       )
     }
 
-    // 4) Cliente (buscar/crear por email dentro del negocio)
+    // 4) Cliente (buscar/crear por DNI dentro del negocio)
     let clienteId: string
 
     const { data: clienteExistente, error: clienteExistenteErr } = await admin
       .from('clientes')
       .select('id')
       .eq('negocio_id', negocio_id)
-      .eq('email', cliente.email)
+      .eq('dni', dni)
       .maybeSingle()
 
     if (clienteExistenteErr) {
@@ -233,9 +243,16 @@ export async function POST(req: Request) {
 
     if (clienteExistente?.id) {
       clienteId = clienteExistente.id
+
+      // Actualiza perfil "actual"
       const { error: updErr } = await admin
         .from('clientes')
-        .update({ nombre: cliente.nombre, telefono: cliente.telefono })
+        .update({
+          dni,
+          nombre: cliente.nombre,
+          email: cliente.email,
+          telefono: cliente.telefono,
+        })
         .eq('id', clienteId)
 
       if (updErr) console.error('Error updating client:', updErr)
@@ -244,6 +261,7 @@ export async function POST(req: Request) {
         .from('clientes')
         .insert({
           negocio_id,
+          dni,
           nombre: cliente.nombre,
           email: cliente.email,
           telefono: cliente.telefono,
@@ -297,21 +315,29 @@ export async function POST(req: Request) {
     const cancel_token = randomUUID()
 
     // 8) Crear turno
+    const insertTurno: any = {
+      negocio_id,
+      servicio_id,
+      profesional_id,
+      cliente_id: clienteId,
+      fecha,
+      hora_inicio,
+      hora_fin,
+      estado: estadoTurno,
+      pago_estado: estadoPago,
+      pago_monto: montoInicial,
+      cancel_token,
+
+      // ✅ RECOMENDADO: “snapshot” para que el nombre del turno no cambie jamás (solo si existen estas columnas)
+      // cliente_dni: dni,
+      // cliente_nombre: cliente.nombre,
+      // cliente_email: cliente.email,
+      // cliente_telefono: cliente.telefono,
+    }
+
     const { data: turno, error: turnoError } = await admin
       .from('turnos')
-      .insert({
-        negocio_id,
-        servicio_id,
-        profesional_id,
-        cliente_id: clienteId,
-        fecha,
-        hora_inicio,
-        hora_fin,
-        estado: estadoTurno,
-        pago_estado: estadoPago,
-        pago_monto: montoInicial,
-        cancel_token,
-      })
+      .insert(insertTurno)
       .select('id, fecha, hora_inicio, hora_fin, cancel_token')
       .single()
 
@@ -320,7 +346,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Error al crear turno' }, { status: 500 })
     }
 
-    // 9) Profesional (para respuesta)
+    // 9) Profesional (para respuesta y notificaciones)
     const { data: profesional } = await supabase
       .from('profesionales')
       .select('nombre')
@@ -334,12 +360,106 @@ export async function POST(req: Request) {
 
     const cancel_url = `${baseUrl}/negocio/${negocio.slug}/cancelar?token=${turno.cancel_token}`
 
-    // 10) Pago online => crear preferencia MP
+    // ── 10) Notificaciones (email + WhatsApp) ────────────────────────────────
+    // Se lanzan en paralelo sin bloquear la respuesta. Si fallan, solo se loguea.
+    const ownerEmail = (negocio as any).email as string | null
+    const ownerTel = (negocio as any).telefono as string | null
+    const negocioDir = (negocio as any).direccion as string | null
+    const profesionalNombre = profesional?.nombre || 'Tu profesional'
+    const horaLabel = String(turno.hora_inicio).substring(0, 5)
+
+    // Obtener nombre del owner desde auth.users via admin
+    const { data: ownerAuthData } = await admin.auth.admin.getUserById((negocio as any).owner_id as string)
+    const ownerNombre =
+      ownerAuthData?.user?.user_metadata?.nombre || ownerAuthData?.user?.email?.split('@')[0] || 'Propietario'
+
+    const notificaciones: Promise<unknown>[] = [
+      // Email al cliente
+      sendConfirmacionReserva({
+        clienteEmail: cliente.email,
+        clienteNombre: cliente.nombre,
+        negocioNombre: negocio.nombre,
+        servicioNombre: servicio.nombre,
+        profesionalNombre,
+        fecha: turno.fecha,
+        hora: horaLabel,
+        negocioDireccion: negocioDir,
+        negocioTelefono: ownerTel,
+        brandPrimary: negocio.color_primario,
+        brandSecondary: negocio.color_secundario,
+        brandLogoUrl: negocio.logo_url,
+        cancel_url,
+      }),
+
+      // WA al cliente (solo si tiene teléfono)
+      ...(cliente.telefono
+        ? [
+            sendConfirmacionClienteWA({
+              telefono: cliente.telefono,
+              clienteNombre: cliente.nombre,
+              negocioNombre: negocio.nombre,
+              servicioNombre: servicio.nombre,
+              profesionalNombre,
+              fecha: turno.fecha,
+              hora: horaLabel,
+              cancel_url,
+            }),
+          ]
+        : []),
+
+      // Email al owner (solo si tiene email configurado)
+      ...(ownerEmail
+        ? [
+            sendNuevaReservaOwner({
+              ownerEmail,
+              ownerNombre,
+              clienteNombre: cliente.nombre,
+              clienteEmail: cliente.email,
+              clienteTelefono: cliente.telefono,
+              servicioNombre: servicio.nombre,
+              profesionalNombre,
+              fecha: turno.fecha,
+              hora: horaLabel,
+              metodoPago: metodo_pago,
+              negocioNombre: negocio.nombre,
+              brandPrimary: negocio.color_primario,
+              brandSecondary: negocio.color_secundario,
+              brandLogoUrl: negocio.logo_url,
+            }),
+          ]
+        : []),
+
+      // WA al owner (solo si tiene teléfono configurado)
+      ...(ownerTel
+        ? [
+            sendNuevaReservaOwnerWA({
+              telefono: ownerTel,
+              ownerNombre,
+              clienteNombre: cliente.nombre,
+              clienteTelefono: cliente.telefono,
+              servicioNombre: servicio.nombre,
+              profesionalNombre,
+              fecha: turno.fecha,
+              hora: horaLabel,
+            }),
+          ]
+        : []),
+    ]
+
+    Promise.allSettled(notificaciones).then((results) => {
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          console.error(`[Notificaciones] Error en notificación ${i}:`, r.reason)
+        }
+      })
+    })
+    // ── fin notificaciones ───────────────────────────────────────────────────
+
+    // 11) Pago online => crear preferencia MP
     let payment_url: string | null = null
 
     if (metodo_pago === 'online') {
-      const accessToken =
-        (negocio.mp_access_token as string | null) || process.env.MERCADOPAGO_ACCESS_TOKEN || ''
+      const accessToken = (negocio.mp_access_token as string | null) || process.env.MERCADOPAGO_ACCESS_TOKEN || ''
 
       if (!accessToken) {
         return NextResponse.json(
@@ -385,6 +505,7 @@ export async function POST(req: Request) {
               negocio_id,
               cliente_id: clienteId,
               cancel_token: turno.cancel_token,
+              dni, // útil para debug/trace
             },
           },
         })
@@ -400,7 +521,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 11) Respuesta
+    // 12) Respuesta
     return NextResponse.json({
       success: true,
       turno: {

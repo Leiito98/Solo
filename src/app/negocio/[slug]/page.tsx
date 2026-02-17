@@ -1,5 +1,7 @@
 // app/negocio/[slug]/page.tsx
 import type { Metadata } from "next"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import Image from "next/image"
@@ -17,6 +19,7 @@ import {
 import { ReservaDialog } from "@/components/reserva/reserva-dialog"
 import { ReservaButton } from "@/components/reserva/reserva-button"
 import { TrackPublicPreview } from "@/components/public/track-public-preview"
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Negocio = {
@@ -34,9 +37,13 @@ type Negocio = {
   color_secundario?: string | null
   slogan?: string | null
 
-  // ✅ redes
+  // redes
   facebook?: string | null
   instagram?: string | null
+
+  // pagos/MP (para dialog)
+  mp_access_token?: string | null
+  mp_sena_pct?: number | null
 }
 
 type Servicio = {
@@ -65,6 +72,8 @@ type HorarioRow = {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "getsolo.site"
+
 const VERTICAL_DEFAULTS: Record<string, { label: string; emoji: string }> = {
   barberia: { label: "Barbería", emoji: "✂️" },
   peluqueria: { label: "Peluquería", emoji: "💇" },
@@ -87,6 +96,22 @@ const DAY_FULL: Record<number, string> = {
   4: "Jueves",
   5: "Viernes",
   6: "Sábado",
+}
+
+async function pickHost() {
+  const h = await headers()
+  return (h.get("x-forwarded-host") || h.get("host") || "").toLowerCase()
+}
+function cleanHost(host: string) {
+  return host.split(":")[0]
+}
+function isRootHost(host: string) {
+  const clean = cleanHost(host)
+  // en localhost no redirigimos para no complicar dev
+  if (!clean || clean === "localhost" || clean.endsWith(".localhost")) return false
+  // previews de vercel: tratamos como root
+  if (clean.endsWith(".vercel.app")) return true
+  return clean === ROOT_DOMAIN || clean === `www.${ROOT_DOMAIN}`
 }
 
 function hhmm(v: string | null) {
@@ -136,8 +161,8 @@ function normalizeInstagram(raw: string | null) {
   const s = raw.trim()
   if (!s) return null
   if (isValidUrl(s)) return s
-  // si viene sin protocolo pero con dominio
-  if (/instagram\.com/i.test(s)) return `https://${s.replace(/^\/+/, "").replace(/^https?:\/\//, "")}`
+  if (/instagram\.com/i.test(s))
+    return `https://${s.replace(/^\/+/, "").replace(/^https?:\/\//, "")}`
   const username = s.replace(/^@/, "").replace(/^\/+/, "")
   return username ? `https://instagram.com/${encodeURIComponent(username)}` : null
 }
@@ -146,9 +171,18 @@ function normalizeFacebook(raw: string | null) {
   const s = raw.trim()
   if (!s) return null
   if (isValidUrl(s)) return s
-  if (/facebook\.com/i.test(s)) return `https://${s.replace(/^\/+/, "").replace(/^https?:\/\//, "")}`
+  if (/facebook\.com/i.test(s))
+    return `https://${s.replace(/^\/+/, "").replace(/^https?:\/\//, "")}`
   const handle = s.replace(/^@/, "").replace(/^\/+/, "")
   return handle ? `https://facebook.com/${encodeURIComponent(handle)}` : null
+}
+
+function toTelDigits(raw: string) {
+  return raw.replace(/\D/g, "")
+}
+
+function buildCanonical(slug: string) {
+  return `https://${slug}.${ROOT_DOMAIN}`
 }
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
@@ -158,32 +192,51 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+  const safeSlug = String(slug || "").trim()
+
+  const canonical = buildCanonical(safeSlug)
 
   const supabase = await createClient()
-
   const { data: negocio } = await supabase
     .from("negocios")
-    .select("nombre, logo_url")
-    .eq("slug", slug)
+    .select("nombre, logo_url, banner_url, descripcion")
+    .eq("slug", safeSlug)
     .maybeSingle()
 
-  const nombre = negocio?.nombre?.trim()
-  const logo = negocio?.logo_url || undefined
+  const nombre = negocio?.nombre?.trim() || safeSlug
+  const desc = negocio?.descripcion?.trim() || `Reservá tu turno online en ${nombre}.`
+
+  const ogImage = negocio?.banner_url || negocio?.logo_url || "/og.png"
+
+  // Si por algún motivo esto se renderiza en root (no debería), evitamos index.
+  const host = await pickHost()
+  const onRoot = isRootHost(host)
 
   return {
-    title: nombre ? `${nombre} | Reservas Online` : "Solo - Tu negocio online",
-    description: nombre
-      ? `Reservas online de ${nombre}`
-      : "Plataforma para profesionales independientes",
-    ...(logo
-      ? {
-          icons: { icon: logo, shortcut: logo, apple: logo },
-        }
+    metadataBase: new URL(canonical),
+    title: `${nombre} | Reservas Online`,
+    description: desc,
+    alternates: { canonical },
+    robots: onRoot ? { index: false, follow: false } : { index: true, follow: true },
+    openGraph: {
+      type: "website",
+      url: canonical,
+      title: `${nombre} | Reservas Online`,
+      description: desc,
+      siteName: "Solo",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: nombre }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${nombre} | Reservas Online`,
+      description: desc,
+      images: [ogImage],
+    },
+    ...(negocio?.logo_url
+      ? { icons: { icon: negocio.logo_url, shortcut: negocio.logo_url, apple: negocio.logo_url } }
       : {}),
   }
 }
-
-
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -193,12 +246,20 @@ export default async function NegocioPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  const safeSlug = String(slug || "").trim()
+
+  // ✅ Opción A: si entran por root a /negocio/:slug => redirect al subdominio
+  const host = await pickHost()
+  if (isRootHost(host)) {
+    redirect(buildCanonical(safeSlug))
+  }
+
   const supabase = await createClient()
 
   const { data: negocio, error: nErr } = await supabase
     .from("negocios")
     .select("*")
-    .eq("slug", slug)
+    .eq("slug", safeSlug)
     .single()
 
   if (nErr || !negocio) {
@@ -208,12 +269,9 @@ export default async function NegocioPage({
           <p className="text-7xl">🔍</p>
           <h1 className="text-2xl font-bold text-gray-900">Negocio no encontrado</h1>
           <p className="text-gray-500 text-sm">
-            <strong>{slug}</strong> no existe o fue removido.
+            <strong>{safeSlug}</strong> no existe o fue removido.
           </p>
-          <Link
-            href="/"
-            className="inline-block text-sm text-blue-600 hover:underline mt-2"
-          >
+          <Link href="/" className="inline-block text-sm text-blue-600 hover:underline mt-2">
             Volver al inicio →
           </Link>
         </div>
@@ -221,23 +279,25 @@ export default async function NegocioPage({
     )
   }
 
+  const negocioTyped = negocio as Negocio
+
   const { data: servicios } = await supabase
     .from("servicios")
     .select("id, nombre, descripcion, duracion_min, precio, imagen_url")
-    .eq("negocio_id", (negocio as Negocio).id)
+    .eq("negocio_id", negocioTyped.id)
     .order("nombre")
 
   const { data: profesionales } = await supabase
     .from("profesionales")
     .select("id, nombre, especialidad, foto_url, bio")
-    .eq("negocio_id", (negocio as Negocio).id)
+    .eq("negocio_id", negocioTyped.id)
     .eq("activo", true)
     .order("nombre")
 
   const { data: horarioRows } = await supabase
     .from("negocio_horarios")
     .select("dia_semana, cerrado, hora_inicio, hora_fin")
-    .eq("negocio_id", (negocio as Negocio).id)
+    .eq("negocio_id", negocioTyped.id)
     .order("dia_semana", { ascending: true })
 
   const horarios: HorarioRow[] = Array.from({ length: 7 }, (_, d) => {
@@ -245,50 +305,44 @@ export default async function NegocioPage({
     return found || { dia_semana: d, cerrado: true, hora_inicio: null, hora_fin: null }
   })
 
-  const primary = isValidHex((negocio as Negocio).color_primario)
-    ? (negocio as Negocio).color_primario!.trim()
+  const primary = isValidHex(negocioTyped.color_primario)
+    ? negocioTyped.color_primario!.trim()
     : FALLBACK_PRIMARY
-  const secondary = isValidHex((negocio as Negocio).color_secundario)
-    ? (negocio as Negocio).color_secundario!.trim()
+
+  const secondary = isValidHex(negocioTyped.color_secundario)
+    ? negocioTyped.color_secundario!.trim()
     : FALLBACK_SECONDARY
+
   const { r: pr, g: pg, b: pb } = hexToRgb(primary)
-  const vcfg = VERTICAL_DEFAULTS[(negocio as Negocio).vertical] || VERTICAL_DEFAULTS.otros
+  const vcfg = VERTICAL_DEFAULTS[negocioTyped.vertical] || VERTICAL_DEFAULTS.otros
 
   const todayIdx = new Date().getDay()
   const todayInfo = displayHours(horarios[todayIdx])
 
-  const mapsQuery = (negocio as Negocio).direccion
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        (negocio as Negocio).direccion!
-      )}`
+  const mapsQuery = negocioTyped.direccion
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(negocioTyped.direccion)}`
     : null
 
-  const staticMapUrl = (negocio as Negocio).direccion
-    ? `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
-        (negocio as Negocio).direccion!
-      )}&zoom=15&size=600x300&scale=2&maptype=roadmap&markers=color:0x${primary.replace(
-        "#",
-        ""
-      )}%7C${encodeURIComponent((negocio as Negocio).direccion!)}&style=feature:poi|visibility:off&style=feature:transit|visibility:off&key=${
-        process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ""
-      }`
+  const googleMapsEmbedUrl = negocioTyped.direccion
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(negocioTyped.direccion)}&output=embed&z=15`
     : null
 
-  // ✅ redes: solo aparecen si están seteadas
-  const instagramUrl = normalizeInstagram(cleanStr((negocio as Negocio).instagram))
-  const facebookUrl = normalizeFacebook(cleanStr((negocio as Negocio).facebook))
+  // redes
+  const instagramUrl = normalizeInstagram(cleanStr(negocioTyped.instagram))
+  const facebookUrl = normalizeFacebook(cleanStr(negocioTyped.facebook))
 
-  // Serializable data for client components
+  // Data for client components
   const negocioDialog = {
-    id: (negocio as any).id,
-    nombre: (negocio as any).nombre,
-    slug: (negocio as any).slug,
-    color_primario: (negocio as any).color_primario,
-    color_secundario: (negocio as any).color_secundario,
-    logo_url: (negocio as any).logo_url,
-    tiene_mp: !!((negocio as any).mp_access_token),
-    mp_sena_pct: (negocio as any).mp_sena_pct ?? 50,
+    id: negocioTyped.id,
+    nombre: negocioTyped.nombre,
+    slug: negocioTyped.slug,
+    color_primario: negocioTyped.color_primario,
+    color_secundario: negocioTyped.color_secundario,
+    logo_url: negocioTyped.logo_url,
+    tiene_mp: !!negocioTyped.mp_access_token,
+    mp_sena_pct: negocioTyped.mp_sena_pct ?? 50,
   }
+
   const serviciosDialog = (servicios || []).map((s) => ({
     id: s.id,
     nombre: s.nombre,
@@ -296,6 +350,7 @@ export default async function NegocioPage({
     duracion_min: s.duracion_min,
     precio: s.precio,
   }))
+
   const profesionalesDialog = (profesionales || []).map((p) => ({
     id: p.id,
     nombre: p.nombre,
@@ -303,14 +358,41 @@ export default async function NegocioPage({
     foto_url: p.foto_url,
   }))
 
+  // ✅ JSON-LD (LocalBusiness)
+  const canonical = buildCanonical(safeSlug)
+  const jsonLd: any = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: negocioTyped.nombre,
+    url: canonical,
+    image: negocioTyped.banner_url || negocioTyped.logo_url || undefined,
+    telephone: negocioTyped.telefono || undefined,
+    email: negocioTyped.email || undefined,
+    address: negocioTyped.direccion
+      ? {
+          "@type": "PostalAddress",
+          streetAddress: negocioTyped.direccion,
+          addressCountry: "AR",
+        }
+      : undefined,
+    sameAs: [instagramUrl, facebookUrl].filter(Boolean),
+  }
+
   return (
     <div
       className="min-h-screen bg-[#f7f7f8] text-gray-900"
       style={{ fontFamily: "'Plus Jakarta Sans','DM Sans',system-ui,sans-serif" }}
     >
-      <TrackPublicPreview slug={slug} />
+      <TrackPublicPreview slug={safeSlug} />
+
+      {/* ✅ Structured data */}
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         :root { --p:${primary};--s:${secondary};--p-r:${pr};--p-g:${pg};--p-b:${pb}; }
         *{box-sizing:border-box}
         .btn-book{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--p);color:#fff;font-weight:700;font-size:.95rem;padding:0 1.5rem;height:48px;border-radius:12px;white-space:nowrap;border:none;cursor:pointer;transition:filter .15s,transform .15s}
@@ -335,27 +417,25 @@ export default async function NegocioPage({
         @media(max-width:640px){.btn-book{height:44px;font-size:.88rem}.sec-title{font-size:1.15rem}}
       `}</style>
 
-      {/* ── ReservaDialog: mounted ONCE at the top, listens for events ── */}
+      {/* ReservaDialog: mounted once */}
       <ReservaDialog negocio={negocioDialog} servicios={serviciosDialog} profesionales={profesionalesDialog} />
 
       {/* NAV */}
       <nav className="sticky-nav">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            {(negocio as Negocio).logo_url && (
+            {negocioTyped.logo_url && (
               <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
                 <Image
-                  src={(negocio as Negocio).logo_url!}
-                  alt={(negocio as Negocio).nombre}
+                  src={negocioTyped.logo_url}
+                  alt={negocioTyped.nombre}
                   width={32}
                   height={32}
                   className="object-cover w-full h-full"
                 />
               </div>
             )}
-            <span className="text-gray-900 truncate text-sm font-bold">
-              {(negocio as Negocio).nombre}
-            </span>
+            <span className="text-gray-900 truncate text-sm font-bold">{negocioTyped.nombre}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -375,10 +455,7 @@ export default async function NegocioPage({
                 Equipo
               </a>
             )}
-            <ReservaButton
-              className="btn-book"
-              style={{ height: "36px", padding: "0 1rem", fontSize: "0.85rem" }}
-            >
+            <ReservaButton className="btn-book" style={{ height: "36px", padding: "0 1rem", fontSize: "0.85rem" }}>
               <Calendar className="w-3.5 h-3.5" /> Reservar
             </ReservaButton>
           </div>
@@ -386,24 +463,18 @@ export default async function NegocioPage({
       </nav>
 
       {/* BANNER */}
-      <div
-        className="relative w-full overflow-hidden bg-gray-200"
-        style={{ aspectRatio: "16/5", minHeight: "180px", maxHeight: "380px" }}
-      >
-        {(negocio as Negocio).banner_url ? (
+      <div className="relative w-full overflow-hidden bg-gray-200" style={{ aspectRatio: "16/5", minHeight: "180px", maxHeight: "380px" }}>
+        {negocioTyped.banner_url ? (
           <Image
-            src={(negocio as Negocio).banner_url!}
-            alt={`${(negocio as Negocio).nombre} banner`}
+            src={negocioTyped.banner_url}
+            alt={`${negocioTyped.nombre} banner`}
             fill
             className="object-top"
             priority
             sizes="100vw"
           />
         ) : (
-          <div
-            className="absolute inset-0"
-            style={{ background: `linear-gradient(135deg,${primary} 0%,${secondary} 100%)` }}
-          >
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg,${primary} 0%,${secondary} 100%)` }}>
             <div className="absolute inset-0 flex items-center justify-center opacity-20">
               <span className="text-[10rem]">{vcfg.emoji}</span>
             </div>
@@ -418,11 +489,11 @@ export default async function NegocioPage({
           <div className="flex flex-col sm:flex-row gap-5">
             {/* Logo */}
             <div className="flex-shrink-0 -mt-10 sm:-mt-14 self-start">
-              {(negocio as Negocio).logo_url ? (
+              {negocioTyped.logo_url ? (
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-md">
                   <Image
-                    src={(negocio as Negocio).logo_url!}
-                    alt={(negocio as Negocio).nombre}
+                    src={negocioTyped.logo_url}
+                    alt={negocioTyped.nombre}
                     width={96}
                     height={96}
                     className="object-contain w-full h-full"
@@ -433,21 +504,20 @@ export default async function NegocioPage({
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center text-3xl font-black text-white shadow-md border-4 border-white"
                   style={{ background: `linear-gradient(135deg,${primary},${secondary})` }}
                 >
-                  {(negocio as Negocio).nombre[0].toUpperCase()}
+                  {negocioTyped.nombre[0].toUpperCase()}
                 </div>
               )}
             </div>
 
             <div className="flex-1 min-w-0 pt-1">
-              {/* ✅ Título + Badge + Redes */}
+              {/* Título + Badge + Redes */}
               <div className="flex flex-wrap items-center gap-2 mb-1.5">
                 <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">
-                  {(negocio as Negocio).nombre}
+                  {negocioTyped.nombre}
                 </h1>
 
                 <span className="badge">{vcfg.label}</span>
 
-                {/* ✅ Iconos solo si hay links */}
                 {(instagramUrl || facebookUrl) && (
                   <div className="flex items-center gap-1.5 ml-1">
                     {instagramUrl && (
@@ -478,38 +548,37 @@ export default async function NegocioPage({
                 )}
               </div>
 
-              <div className="flex items-center gap-1 mb-3">
+              {/* rating fake */}
+              <div className="flex items-center gap-1 mb-3" aria-label="Calificación">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <svg key={i} className="w-4 h-4 fill-yellow-400" viewBox="0 0 20 20">
+                  <svg key={i} className="w-4 h-4 fill-yellow-400" viewBox="0 0 20 20" aria-hidden="true">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 ))}
                 <span className="text-sm font-semibold text-gray-600 ml-1">5.0</span>
               </div>
 
-              {(negocio as Negocio).descripcion && (
-                <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-2xl">
-                  {(negocio as Negocio).descripcion}
-                </p>
+              {negocioTyped.descripcion && (
+                <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-2xl">{negocioTyped.descripcion}</p>
               )}
 
               <div className="flex flex-wrap gap-2">
-                {(negocio as Negocio).direccion && (
+                {negocioTyped.direccion && (
                   <a href={mapsQuery ?? "#"} target="_blank" rel="noopener noreferrer" className="info-pill">
                     <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: primary }} />
-                    <span className="truncate max-w-[200px]">{(negocio as Negocio).direccion}</span>
+                    <span className="truncate max-w-[200px]">{negocioTyped.direccion}</span>
                   </a>
                 )}
 
-                {(negocio as Negocio).telefono && (
+                {negocioTyped.telefono && (
                   <a
-                    href={`https://wa.me/${(negocio as Negocio).telefono!.replace(/\D/g, "")}`}
+                    href={`https://wa.me/${toTelDigits(negocioTyped.telefono)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="info-pill"
                   >
                     <Phone className="w-3.5 h-3.5 flex-shrink-0" style={{ color: primary }} />
-                    {(negocio as Negocio).telefono}
+                    {negocioTyped.telefono}
                   </a>
                 )}
 
@@ -528,13 +597,14 @@ export default async function NegocioPage({
                 <Calendar className="w-4 h-4" /> Reservar turno
               </ReservaButton>
 
-              {(negocio as Negocio).telefono && (
+              {negocioTyped.telefono && (
                 <a
-                  href={`https://wa.me/${(negocio as Negocio).telefono!.replace(/\D/g, "")}`}
+                  href={`https://wa.me/${toTelDigits(negocioTyped.telefono)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-ghost flex items-center gap-2"
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/whatsapp.svg" className="w-4 h-4" alt="WhatsApp" />
                   WhatsApp
                 </a>
@@ -547,13 +617,14 @@ export default async function NegocioPage({
             <ReservaButton className="btn-book flex-1">
               <Calendar className="w-4 h-4" /> Reservar turno
             </ReservaButton>
-            {(negocio as Negocio).telefono && (
+            {negocioTyped.telefono && (
               <a
-                href={`https://wa.me/${(negocio as Negocio).telefono!.replace(/\D/g, "")}`}
+                href={`https://wa.me/${toTelDigits(negocioTyped.telefono)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-ghost"
                 style={{ padding: "0 1rem" }}
+                aria-label="WhatsApp"
               >
                 <Phone className="w-4 h-4" />
               </a>
@@ -569,9 +640,7 @@ export default async function NegocioPage({
           <section id="equipo">
             <div className="flex items-center justify-between mb-5">
               <h2 className="sec-title">Nuestro equipo</h2>
-              <span className="text-xs text-gray-400 font-medium">
-                {profesionales!.length} profesionales
-              </span>
+              <span className="text-xs text-gray-400 font-medium">{profesionales!.length} profesionales</span>
             </div>
             <div className="flex gap-5 flex-wrap">
               {profesionales!.map((p) => (
@@ -587,9 +656,7 @@ export default async function NegocioPage({
                     {p.nombre.split(" ")[0]}
                   </span>
                   {p.especialidad && (
-                    <span className="text-[11px] text-gray-400 text-center max-w-[80px] leading-tight">
-                      {p.especialidad}
-                    </span>
+                    <span className="text-[11px] text-gray-400 text-center max-w-[80px] leading-tight">{p.especialidad}</span>
                   )}
                 </ReservaButton>
               ))}
@@ -623,9 +690,7 @@ export default async function NegocioPage({
                     <div className="p-5 lg:px-8 lg:py-6 flex w-full items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-bold text-gray-900 mb-1 leading-snug">{s.nombre}</h3>
-                        {s.descripcion && (
-                          <p className="text-gray-500 text-sm leading-relaxed mb-3 line-clamp-3">{s.descripcion}</p>
-                        )}
+                        {s.descripcion && <p className="text-gray-500 text-sm leading-relaxed mb-3 line-clamp-3">{s.descripcion}</p>}
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 text-gray-400" />
                           <span className="text-sm text-gray-500">{s.duracion_min} min</span>
@@ -638,11 +703,7 @@ export default async function NegocioPage({
                           <p className="text-xs text-gray-400 mt-0.5">ARS</p>
                         </div>
 
-                        <ReservaButton
-                          servicioId={s.id}
-                          className="btn-book"
-                          style={{ height: "40px", padding: "0 1.25rem", fontSize: "0.85rem" }}
-                        >
+                        <ReservaButton servicioId={s.id} className="btn-book" style={{ height: "40px", padding: "0 1.25rem", fontSize: "0.85rem" }}>
                           Agendar
                         </ReservaButton>
                       </div>
@@ -659,29 +720,30 @@ export default async function NegocioPage({
           <div className="h-px bg-gray-200 mb-8" />
           <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
             <div>
-              <h2 className="sec-title mb-4">Sobre {(negocio as Negocio).nombre}</h2>
+              <h2 className="sec-title mb-4">Sobre {negocioTyped.nombre}</h2>
               <p className="text-gray-500 text-sm leading-relaxed mb-5">
-                {(negocio as Negocio).descripcion ||
-                  `${(negocio as Negocio).nombre} es un negocio de ${vcfg.label.toLowerCase()} dedicado a brindar la mejor atención. Reservá tu turno online en segundos.`}
+                {negocioTyped.descripcion ||
+                  `${negocioTyped.nombre} es un negocio de ${vcfg.label.toLowerCase()} dedicado a brindar la mejor atención. Reservá tu turno online en segundos.`}
               </p>
 
               <div className="space-y-2.5">
-                {(negocio as Negocio).telefono && (
+                {negocioTyped.telefono && (
                   <>
-                    <a href={`tel:${(negocio as Negocio).telefono}`} className="flex items-center gap-3 text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                    <a href={`tel:${negocioTyped.telefono}`} className="flex items-center gap-3 text-sm text-gray-600 hover:text-gray-900 transition-colors">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `rgba(${pr},${pg},${pb},.1)` }}>
                         <Phone className="w-4 h-4" style={{ color: primary }} />
                       </div>
-                      {(negocio as Negocio).telefono}
+                      {negocioTyped.telefono}
                     </a>
 
                     <a
-                      href={`https://wa.me/${(negocio as Negocio).telefono!.replace(/\D/g, "")}`}
+                      href={`https://wa.me/${toTelDigits(negocioTyped.telefono)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 text-sm text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `rgba(${pr},${pg},${pb},.1)` }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="/whatsapp.svg" className="w-4 h-4" alt="WhatsApp" />
                       </div>
                       <span className="text-gray-600 hover:text-gray-900 font-medium">¡Contáctanos por WhatsApp!</span>
@@ -689,21 +751,21 @@ export default async function NegocioPage({
                   </>
                 )}
 
-                {(negocio as Negocio).email && (
-                  <a href={`mailto:${(negocio as Negocio).email}`} className="flex items-center gap-3 text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                {negocioTyped.email && (
+                  <a href={`mailto:${negocioTyped.email}`} className="flex items-center gap-3 text-sm text-gray-600 hover:text-gray-900 transition-colors">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `rgba(${pr},${pg},${pb},.1)` }}>
                       <Mail className="w-4 h-4" style={{ color: primary }} />
                     </div>
-                    {(negocio as Negocio).email}
+                    {negocioTyped.email}
                   </a>
                 )}
 
-                {(negocio as Negocio).direccion && (
+                {negocioTyped.direccion && (
                   <a href={mapsQuery ?? "#"} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-gray-600 hover:text-gray-900 transition-colors">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `rgba(${pr},${pg},${pb},.1)` }}>
                       <MapPin className="w-4 h-4" style={{ color: primary }} />
                     </div>
-                    {(negocio as Negocio).direccion}
+                    {negocioTyped.direccion}
                   </a>
                 )}
               </div>
@@ -720,34 +782,23 @@ export default async function NegocioPage({
               </div>
             </div>
 
-            {(negocio as Negocio).direccion && (
+            {negocioTyped.direccion && googleMapsEmbedUrl && (
               <div>
                 <h2 className="sec-title mb-4">Cómo llegar</h2>
-                <a
-                  href={mapsQuery ?? "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-shadow"
-                >
-                  {process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={staticMapUrl!} alt="Mapa" className="w-full h-52 object-cover" loading="lazy" />
-                  ) : (
-                    <iframe
-                      title="Mapa"
-                      width="100%"
-                      height="208"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent((negocio as Negocio).direccion!)}&output=embed&z=15`}
-                    />
-                  )}
-
+                <a href={mapsQuery ?? "#"} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+                  <iframe
+                    title="Mapa"
+                    width="100%"
+                    height={208}
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={googleMapsEmbedUrl}
+                  />
                   <div className="flex items-center gap-2 px-4 py-3 bg-white border-t border-gray-100">
                     <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: primary }} />
-                    <span className="text-sm text-gray-600 truncate">{(negocio as Negocio).direccion}</span>
+                    <span className="text-sm text-gray-600 truncate">{negocioTyped.direccion}</span>
                     <span className="ml-auto text-xs font-semibold flex-shrink-0" style={{ color: primary }}>
                       Ver en Maps →
                     </span>
@@ -797,10 +848,8 @@ export default async function NegocioPage({
               }}
             />
             <div className="relative z-10">
-              <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2">{(negocio as Negocio).nombre}</p>
-              <h2 className="text-2xl sm:text-4xl font-black text-white mb-3 leading-tight tracking-tight">
-                ¿Listo para reservar tu turno?
-              </h2>
+              <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-2">{negocioTyped.nombre}</p>
+              <h2 className="text-2xl sm:text-4xl font-black text-white mb-3 leading-tight tracking-tight">¿Listo para reservar tu turno?</h2>
               <p className="text-white/65 text-sm mb-7">Elegís servicio, profesional y horario en menos de 2 minutos.</p>
               <ReservaButton
                 className="inline-flex items-center gap-2 bg-white font-bold text-sm px-8 py-3.5 rounded-xl transition-all hover:scale-105 hover:shadow-xl border-none cursor-pointer"
@@ -821,38 +870,38 @@ export default async function NegocioPage({
           <div className="grid sm:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2.5 mb-3">
-                {(negocio as Negocio).logo_url ? (
+                {negocioTyped.logo_url ? (
                   <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-100">
-                    <Image src={(negocio as Negocio).logo_url!} alt={(negocio as Negocio).nombre} width={32} height={32} className="object-cover" />
+                    <Image src={negocioTyped.logo_url} alt={negocioTyped.nombre} width={32} height={32} className="object-cover" />
                   </div>
                 ) : (
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-black" style={{ background: primary }}>
-                    {(negocio as Negocio).nombre[0].toUpperCase()}
+                    {negocioTyped.nombre[0].toUpperCase()}
                   </div>
                 )}
-                <span className="font-bold text-gray-800 text-sm">{(negocio as Negocio).nombre}</span>
+                <span className="font-bold text-gray-800 text-sm">{negocioTyped.nombre}</span>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed max-w-[220px]">
-                {(negocio as Negocio).slogan?.slice(0, 80) || `Tu ${vcfg.label.toLowerCase()} de confianza.`}
+                {negocioTyped.slogan?.slice(0, 80) || `Tu ${vcfg.label.toLowerCase()} de confianza.`}
               </p>
             </div>
 
             <div>
               <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Contacto</h4>
               <div className="space-y-2">
-                {(negocio as Negocio).telefono && (
-                  <a href={`tel:${(negocio as Negocio).telefono}`} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-800 transition-colors">
-                    <Phone className="w-3.5 h-3.5" style={{ color: primary }} /> {(negocio as Negocio).telefono}
+                {negocioTyped.telefono && (
+                  <a href={`tel:${negocioTyped.telefono}`} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-800 transition-colors">
+                    <Phone className="w-3.5 h-3.5" style={{ color: primary }} /> {negocioTyped.telefono}
                   </a>
                 )}
-                {(negocio as Negocio).email && (
-                  <a href={`mailto:${(negocio as Negocio).email}`} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-800 transition-colors">
-                    <Mail className="w-3.5 h-3.5" style={{ color: primary }} /> {(negocio as Negocio).email}
+                {negocioTyped.email && (
+                  <a href={`mailto:${negocioTyped.email}`} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-800 transition-colors">
+                    <Mail className="w-3.5 h-3.5" style={{ color: primary }} /> {negocioTyped.email}
                   </a>
                 )}
-                {(negocio as Negocio).direccion && (
+                {negocioTyped.direccion && (
                   <p className="flex items-start gap-2 text-xs text-gray-500">
-                    <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: primary }} /> {(negocio as Negocio).direccion}
+                    <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: primary }} /> {negocioTyped.direccion}
                   </p>
                 )}
               </div>
@@ -878,11 +927,11 @@ export default async function NegocioPage({
 
           <div className="border-t border-gray-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-xs text-gray-400">
-              © {new Date().getFullYear()} {(negocio as Negocio).nombre}. Todos los derechos reservados.
+              © {new Date().getFullYear()} {negocioTyped.nombre}. Todos los derechos reservados.
             </p>
             <p className="text-xs text-gray-400 flex items-center gap-1">
               Powered by{" "}
-              <Link href="https://www.getsolo.site" className="font-bold hover:underline" style={{ color: primary }}>
+              <Link href="https://getsolo.site" className="font-bold hover:underline" style={{ color: primary }}>
                 Solo
               </Link>
             </p>

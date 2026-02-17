@@ -15,6 +15,10 @@ type Props = {
   onClose: () => void
 }
 
+function normalizeDni(v: string) {
+  return String(v || '').replace(/\D/g, '').trim()
+}
+
 export function CreateClienteDialog({ negocioId, onClose }: Props) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -27,15 +31,23 @@ export function CreateClienteDialog({ negocioId, onClose }: Props) {
     const formData = new FormData(e.currentTarget)
     const supabase = createClient()
 
+    const dni = normalizeDni(String(formData.get('dni') || ''))
     const nombre = String(formData.get('nombre') || '').trim()
     const email = String(formData.get('email') || '').trim()
     const telefono = String(formData.get('telefono') || '').trim()
     const notas = String(formData.get('notas') || '').trim()
 
+    if (!dni || dni.length < 7 || dni.length > 9) {
+      setLoading(false)
+      toast({ title: 'Error', description: 'DNI inválido (7 a 9 dígitos)', variant: 'destructive' })
+      return
+    }
+
     const { error } = await supabase
       .from('clientes')
       .insert({
         negocio_id: negocioId,
+        dni,
         nombre,
         email: email || null,
         telefono: telefono || null,
@@ -63,9 +75,16 @@ export function CreateClienteDialog({ negocioId, onClose }: Props) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="nombre">Nombre completo *</Label>
-            <Input id="nombre" name="nombre" placeholder="Juan Pérez" required />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="dni">DNI *</Label>
+              <Input id="dni" name="dni" placeholder="40123456" inputMode="numeric" required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="nombre">Nombre completo *</Label>
+              <Input id="nombre" name="nombre" placeholder="Juan Pérez" required />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

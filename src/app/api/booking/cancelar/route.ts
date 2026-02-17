@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     // Solo cancelable si está pendiente/confirmado
     if (!['pendiente', 'confirmado'].includes(turno.estado)) {
-      return NextResponse.json({ error: 'Este turno ya no se puede cancelar' }, { status: 409 })
+      return NextResponse.json({ error: 'Este turno ya fue cancelado' }, { status: 409 })
     }
 
     // Regla opcional: no cancelar si faltan menos de X horas

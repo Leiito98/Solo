@@ -212,7 +212,7 @@ export default function TerminosPage() {
               </div>
 
               <div className="info-box">
-                <p><strong>Plan Pro — $28.000/mes</strong></p>
+                <p><strong>Plan Pro — $29.990/mes</strong></p>
                 <p>Para negocios con equipo ilimitado. Incluye todo lo del plan Solo, más sistema de comisiones, control de gastos, analytics avanzados, exportación a Excel/PDF y soporte prioritario.</p>
               </div>
 

@@ -22,7 +22,7 @@ const PLANES = {
   },
   pro: {
     nombre: 'Pro',
-    precio: 28000,
+    precio: 29990,
     descripcion: 'Para negocios con equipo',
     caracteristicas: [
       'Profesionales ilimitados',

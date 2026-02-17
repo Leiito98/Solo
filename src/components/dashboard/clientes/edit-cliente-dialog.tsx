@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast'
 
 type Cliente = {
   id: string
+  dni: string | null
   nombre: string
   email: string | null
   telefono: string | null
@@ -21,6 +22,10 @@ type Cliente = {
 type Props = {
   cliente: Cliente
   onClose: () => void
+}
+
+function normalizeDni(v: string) {
+  return String(v || '').replace(/\D/g, '').trim()
 }
 
 export function EditClienteDialog({ cliente, onClose }: Props) {
@@ -35,14 +40,22 @@ export function EditClienteDialog({ cliente, onClose }: Props) {
     const formData = new FormData(e.currentTarget)
     const supabase = createClient()
 
+    const dni = normalizeDni(String(formData.get('dni') || ''))
     const nombre = String(formData.get('nombre') || '').trim()
     const email = String(formData.get('email') || '').trim()
     const telefono = String(formData.get('telefono') || '').trim()
     const notas = String(formData.get('notas') || '').trim()
 
+    if (!dni || dni.length < 7 || dni.length > 9) {
+      setLoading(false)
+      toast({ title: 'Error', description: 'DNI inválido (7 a 9 dígitos)', variant: 'destructive' })
+      return
+    }
+
     const { error } = await supabase
       .from('clientes')
       .update({
+        dni,
         nombre,
         email: email || null,
         telefono: telefono || null,
@@ -70,9 +83,23 @@ export function EditClienteDialog({ cliente, onClose }: Props) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="nombre">Nombre completo *</Label>
-            <Input id="nombre" name="nombre" defaultValue={cliente.nombre} required />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="dni">DNI *</Label>
+              <Input
+                id="dni"
+                name="dni"
+                defaultValue={cliente.dni || ''}
+                placeholder="40123456"
+                inputMode="numeric"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="nombre">Nombre completo *</Label>
+              <Input id="nombre" name="nombre" defaultValue={cliente.nombre} required />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -209,6 +209,11 @@ export default function NegocioForm({
       if (!res.ok) throw new Error(json?.error || 'No se pudo guardar')
 
       toast({ title: 'Guardado', description: 'Datos del negocio actualizados.' })
+
+      // ✅ refrescar onboarding instantáneo
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('getsolo:onboarding-refresh'))
+      }
       router.refresh()
     } catch (e: any) {
       toast({
@@ -358,6 +363,42 @@ export default function NegocioForm({
       {/* Separador */}
       <div className="border-t border-gray-200" />
 
+      {/* Horarios del Local */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Horarios del Local</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Configurá los horarios de atención de tu negocio
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setHorariosDialogOpen(true)}
+            className="gap-2"
+          >
+            <Edit className="w-4 h-4" />
+            Editar Horarios
+          </Button>
+        </div>
+
+        {/* Resumen de horarios */}
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-white rounded-lg border border-gray-200">
+              <Clock className="w-5 h-5 text-gray-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-900 mb-1">Horario actual</p>
+              <p className="text-sm text-gray-600">{horariosResumen}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Separador */}
+      <div className="border-t border-gray-200" />
+
       {/* Información de Contacto */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900">Información de Contacto</h3>
@@ -401,39 +442,6 @@ export default function NegocioForm({
 
       {/* Separador */}
       <div className="border-t border-gray-200" />
-
-      {/* Horarios del Local */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Horarios del Local</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Configurá los horarios de atención de tu negocio
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setHorariosDialogOpen(true)}
-            className="gap-2"
-          >
-            <Edit className="w-4 h-4" />
-            Editar Horarios
-          </Button>
-        </div>
-
-        {/* Resumen de horarios */}
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-white rounded-lg border border-gray-200">
-              <Clock className="w-5 h-5 text-gray-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900 mb-1">Horario actual</p>
-              <p className="text-sm text-gray-600">{horariosResumen}</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Actions */}
       <div className="pt-4 flex gap-3">

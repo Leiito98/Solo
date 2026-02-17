@@ -198,7 +198,7 @@ const faqCategories: FAQCategory[] = [
     questions: [
       {
         question: '¿Cuál es la diferencia entre los planes Solo y Pro?',
-        answer: 'Plan Solo ($20.000/mes): hasta 2 profesionales, agenda online, landing, pagos, recordatorios y soporte WhatsApp. Plan Pro ($28.000/mes): todo lo del plan Solo + profesionales ilimitados, sistema de comisiones, control de gastos, analytics avanzados, exportar a Excel/PDF y soporte prioritario.',
+        answer: 'Plan Solo ($20.000/mes): hasta 2 profesionales, agenda online, landing, pagos, recordatorios y soporte WhatsApp. Plan Pro ($29.990/mes): todo lo del plan Solo + profesionales ilimitados, sistema de comisiones, control de gastos, analytics avanzados, exportar a Excel/PDF y soporte prioritario.',
       },
       {
         question: '¿Puedo cambiar de plan después?',

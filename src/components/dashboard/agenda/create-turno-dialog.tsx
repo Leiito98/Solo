@@ -249,6 +249,11 @@ export function CreateTurnoDialog({ negocioId, profesionales, initialSlot, onClo
         title: 'Éxito',
         description: 'Turno creado correctamente',
       })
+
+      // ✅ refrescar onboarding instantáneo
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('getsolo:onboarding-refresh'))
+      }
       router.refresh()
       onClose()
     }

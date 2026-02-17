@@ -2,7 +2,7 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, IdCard } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { EditClienteDialog } from './edit-cliente-dialog'
 import { DeleteClienteDialog } from './delete-cliente-dialog'
@@ -10,10 +10,16 @@ import { useState } from 'react'
 
 type Cliente = {
   id: string
+  dni: string | null
   nombre: string
   email: string | null
   telefono: string | null
   notas: string | null
+}
+
+function formatDni(v: string | null) {
+  const dni = String(v || '').replace(/\D/g, '')
+  return dni || '-'
 }
 
 export function ClientesTable({ clientes }: { clientes: Cliente[] }) {
@@ -58,7 +64,16 @@ export function ClientesTable({ clientes }: { clientes: Cliente[] }) {
                           .slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{cliente.nombre}</span>
+
+                    <div className="min-w-0">
+                      <div className="font-medium leading-tight">{cliente.nombre}</div>
+
+                      {/* DNI debajo del nombre */}
+                      <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                        <IdCard className="w-3.5 h-3.5" />
+                        DNI: <span className="font-medium text-gray-600">{formatDni(cliente.dni)}</span>
+                      </div>
+                    </div>
                   </div>
                 </TableCell>
 

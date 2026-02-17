@@ -65,6 +65,11 @@ export function CreateServicioDialog({
         title: 'Servicio creado',
         description: 'El servicio se creó correctamente',
       })
+
+    // ✅ refrescar onboarding instantáneo
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('getsolo:onboarding-refresh'))
+    }
       
       // Reset form
       setNombre('')

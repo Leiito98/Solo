@@ -120,7 +120,18 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
 
         .detail-row{display:flex;align-items:center;gap:14px;padding:14px 16px;background:#f9fafb;border-radius:12px;border:1.5px solid #eeeff2}
 
-        @media(max-width:640px){.btn-primary,.btn-outline{height:44px;font-size:.85rem}}
+        .solo-footer{margin-top:8px;border-top:1px solid #eeeff2;padding:28px 0 24px}
+        .solo-footer-card{display:flex;align-items:center;justify-content:space-between;gap:24px;background:#fff;border-radius:20px;border:1px solid #e8e8ec;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:20px 24px;position:relative;overflow:hidden}
+        .solo-cta-btn{display:inline-flex;align-items:center;gap:7px;color:#fff;font-weight:700;font-size:.83rem;padding:0 18px;height:40px;border-radius:10px;text-decoration:none;transition:filter .15s,transform .15s;white-space:nowrap;background:var(--p)}
+        .solo-cta-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+        .solo-mockup{position:relative;width:210px;height:125px;flex-shrink:0}
+        .solo-screen{position:absolute;border-radius:8px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12);border:1px solid #e5e7eb}
+
+        @media(max-width:640px){
+          .btn-primary,.btn-outline{height:44px;font-size:.85rem}
+          .solo-footer-card{flex-direction:column;text-align:center;align-items:flex-start}
+          .solo-mockup{display:none}
+        }
       `}</style>
 
       {/* NAV */}
@@ -143,16 +154,12 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
 
         {/* ── SUCCESS HERO ── */}
         <div className="text-center space-y-5 slide-1">
-
-          {/* Animated check */}
           <div className="flex justify-center">
             <div className="relative">
-              {/* Pulsing bg ring */}
               <div
                 className="pulse-ring absolute inset-0 rounded-full"
                 style={{ background: `rgba(${pr},${pg},${pb},0.15)` }}
               />
-              {/* Main circle */}
               <div
                 className="success-ring relative w-24 h-24 rounded-full flex items-center justify-center"
                 style={{
@@ -205,7 +212,6 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
               )}
             </div>
 
-            {/* Seña */}
             <div
               className="flex items-center justify-between px-4 py-3 rounded-xl"
               style={{ background: `rgba(${pr},${pg},${pb},0.06)`, border: `1.5px solid rgba(${pr},${pg},${pb},0.15)` }}
@@ -221,7 +227,6 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
               </span>
             </div>
 
-            {/* Resto — solo si no es pago completo */}
             {!esPagoCompleto && (
               <>
                 <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50" style={{ border: '1.5px solid #eeeff2' }}>
@@ -246,7 +251,6 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 space-y-3 slide-3">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tu turno</p>
 
-          {/* Profesional + servicio */}
           <div className="detail-row">
             {proFoto ? (
               <div
@@ -274,7 +278,6 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
             </div>
           </div>
 
-          {/* Fecha */}
           <div className="detail-row">
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -288,7 +291,6 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
             </div>
           </div>
 
-          {/* Horario */}
           <div className="detail-row">
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -307,8 +309,6 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
 
         {/* ── NOTICES ── */}
         <div className="space-y-3 slide-4">
-
-          {/* Email */}
           <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <span className="text-xl flex-shrink-0 mt-0.5">📧</span>
             <p className="text-sm text-gray-600">
@@ -317,7 +317,6 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
             </p>
           </div>
 
-          {/* Resta pagar */}
           {!esPagoCompleto && (
             <div
               className="flex items-start gap-3 p-4 rounded-2xl border"
@@ -336,7 +335,6 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
             </div>
           )}
 
-          {/* Tip */}
           <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
             <span className="text-xl flex-shrink-0 mt-0.5">⏰</span>
             <p className="text-sm text-amber-800">
@@ -350,15 +348,119 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
           <Link href={`/negocio/${slug}`} className="btn-primary flex-1 text-center">
             <ArrowLeft className="w-4 h-4" /> Volver al inicio
           </Link>
-          <Link href={`/negocio/${slug}/reservar`} className="btn-outline flex-1 text-center">
+          <Link href={`/negocio/${slug}/`} className="btn-outline flex-1 text-center">
             <RotateCcw className="w-4 h-4" /> Otra reserva
           </Link>
         </div>
 
-        {/* FOOTER */}
-        <p className="text-center text-xs text-gray-400 pb-6">
-          ¡Gracias por elegir <span className="font-semibold text-gray-600">{negocio.nombre}</span>! 🎉
-        </p>
+        {/* ── FOOTER SOLO ── */}
+        <div className="solo-footer slide-4">
+          <div className="solo-footer-card">
+
+            {/* Fondo decorativo sutil */}
+            <div
+              style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none', opacity: .04,
+                background: `radial-gradient(ellipse at 75% 50%, ${primary} 0%, transparent 65%)`,
+              }}
+            />
+
+            {/* Columna izquierda: logo + copy + CTA */}
+            <div className="relative flex flex-col gap-3 flex-1 min-w-0">
+
+              {/* Logo real de Solo */}
+              <div className="flex items-center gap-2">
+                <a href="https://getsolo.site" target="_blank" rel="noopener noreferrer" className="inline-block w-fit">
+                  <Image
+                    src="/logo/solo.png"
+                    alt="Solo"
+                    width={80}
+                    height={28}
+                    className="object-contain"
+                    style={{ height: 24, width: 'auto' }}
+                  />
+                </a>
+                <a href="https://getsolo.site" className="text-xs font-bold text-gray-400 uppercase tracking-widest">Solo</a>
+              </div>
+              <div>
+                <p className="font-black text-gray-900 text-[15px] leading-snug">
+                  ¿Querés que tus clientes<br className="hidden sm:block" /> reserven así de fácil?
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Creá tu página de turnos online en minutos. Gratis.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <a
+                  href="https://getsolo.site"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="solo-cta-btn w-fit"
+                >
+                  Probá Solo gratis →
+                </a>
+                <p className="text-[11px] text-gray-400">Turnos · WhatsApp · Pagos online</p>
+              </div>
+            </div>
+
+            {/* Columna derecha: mockup CSS */}
+            <div className="solo-mockup">
+
+              {/* Pantalla principal — calendario */}
+              <div className="solo-screen" style={{ width: 138, height: 88, top: 0, right: 0, background: '#fff' }}>
+                <div style={{ height: 18, background: primary, display: 'flex', alignItems: 'center', padding: '0 8px', gap: 4 }}>
+                  <div style={{ width: 38, height: 5, borderRadius: 3, background: 'rgba(255,255,255,.65)' }} />
+                  <div style={{ flex: 1 }} />
+                  <div style={{ width: 12, height: 5, borderRadius: 3, background: 'rgba(255,255,255,.4)' }} />
+                </div>
+                <div style={{ padding: '6px 8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {[
+                    { color: `rgba(${pr},${pg},${pb},0.85)`, w: '78%', label: '09:00' },
+                    { color: '#34d399',                       w: '62%', label: '10:30' },
+                    { color: `rgba(${pr},${pg},${pb},0.45)`, w: '88%', label: '12:00' },
+                    { color: '#f59e0b',                       w: '52%', label: '15:00' },
+                  ].map((row, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 7, color: '#9ca3af', width: 24, flexShrink: 0 }}>{row.label}</span>
+                      <div style={{ height: 9, borderRadius: 3, background: row.color, width: row.w }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pantalla secundaria — card confirmación */}
+              <div className="solo-screen" style={{ width: 98, height: 70, bottom: 0, left: 0, background: '#fff', padding: '7px 8px' }}>
+                <p style={{ fontSize: 7, fontWeight: 800, color: '#111827', marginBottom: 5 }}>✅ Turno confirmado</p>
+                {[
+                  { label: 'Cliente', val: 'María G.' },
+                  { label: 'Hora',    val: '10:30 hs' },
+                ].map((r, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span style={{ fontSize: 6.5, color: '#9ca3af' }}>{r.label}</span>
+                    <span style={{ fontSize: 6.5, fontWeight: 700, color: '#374151' }}>{r.val}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop: 6, height: 13, borderRadius: 4, background: primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 6, color: '#fff', fontWeight: 700 }}>Ver turno</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Crédito mínimo */}
+          <p className="text-center text-[11px] text-gray-400 mt-3">
+            Reservas gestionadas por{' '}
+            <a
+              href="https://getsolo.site"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+            >
+              Solo
+            </a>
+          </p>
+        </div>
 
       </div>
     </div>

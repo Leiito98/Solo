@@ -157,6 +157,11 @@ export function HorariosDialog({ open, onOpenChange, onSaved }: HorariosDialogPr
         description: "Horario del local actualizado." 
       })
 
+      // ✅ refrescar onboarding instantáneo
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('getsolo:onboarding-refresh'))
+      }
+
       router.refresh()
       onSaved?.()
       onOpenChange(false)

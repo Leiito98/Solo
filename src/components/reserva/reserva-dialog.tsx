@@ -9,7 +9,7 @@ import Image from 'next/image'
 import {
   X, ChevronLeft, ChevronRight, Clock, Calendar, Check,
   Users, Loader2, ArrowRight, User, Mail, Phone,
-  CreditCard, Wallet, CheckCircle2, XCircle,
+  CreditCard, Wallet, CheckCircle2, XCircle, IdCard,
 } from 'lucide-react'
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -43,16 +43,22 @@ export interface ProfesionalData {
 }
 
 interface ClienteData {
+  dni: string
   nombre: string
   email: string
   telefono: string
 }
 
-type Step = 'servicio' | 'datetime' | 'profesional' | 'cliente' | 'confirmacion' | 'success'
-const STEP_ORDER: Step[] = ['servicio', 'datetime', 'profesional', 'cliente', 'confirmacion']
+type Step = 'servicio' | 'datetime' | 'profesional' | 'dni' | 'cliente' | 'confirmacion' | 'success'
+const STEP_ORDER: Step[] = ['servicio', 'datetime', 'profesional', 'dni', 'cliente', 'confirmacion']
 const STEP_LABELS: Record<Step, string> = {
-  servicio: 'Servicio', datetime: 'Fecha y hora', profesional: 'Profesional',
-  cliente: 'Tus datos', confirmacion: 'Confirmar', success: 'Listo',
+  servicio: 'Servicio',
+  datetime: 'Fecha y hora',
+  profesional: 'Profesional',
+  dni: 'DNI',
+  cliente: 'Tus datos',
+  confirmacion: 'Confirmar',
+  success: 'Listo',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -69,6 +75,9 @@ function formatPrice(p: number) {
 function hexRgb(hex: string) {
   const h = hex.replace('#', '')
   return `${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)}`
+}
+function normalizeDni(v: string) {
+  return String(v || '').replace(/\D/g, '').trim()
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -99,13 +108,17 @@ export function ReservaDialog({
   const [profesDisponibles, setProfesDisponibles] = useState<ProfesionalData[]>([])
   const [fecha, setFecha] = useState<Date | null>(null)
   const [hora, setHora] = useState<string | null>(null)
-  const [cliente, setCliente] = useState<ClienteData>({ nombre: '', email: '', telefono: '' })
+  const [cliente, setCliente] = useState<ClienteData>({ dni: '', nombre: '', email: '', telefono: '' })
   const [metodoPago, setMetodoPago] = useState<'online' | 'local'>(negocio.tiene_mp ? 'online' : 'local')
 
   // Loading
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [loadingProfes, setLoadingProfes] = useState(false)
   const [loadingConfirm, setLoadingConfirm] = useState(false)
+
+  // DNI lookup
+  const [loadingDni, setLoadingDni] = useState(false)
+  const [dniError, setDniError] = useState<string | null>(null)
 
   // Data
   const [slots, setSlots] = useState<string[]>([])
@@ -114,7 +127,7 @@ export function ReservaDialog({
   // UI
   const [timeTab, setTimeTab] = useState<'manana' | 'tarde'>('tarde')
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
-  const [formErrors, setFormErrors] = useState<Partial<ClienteData>>({})
+  const [formErrors, setFormErrors] = useState<Partial<Pick<ClienteData, 'nombre' | 'email' | 'telefono'>>>({})
   const [errorConfirm, setErrorConfirm] = useState<string | null>(null)
 
   // NUEVO: mensaje cuando el profesional no trabaja ese día
@@ -208,7 +221,7 @@ export function ReservaDialog({
     setProfesional(null)
     setFecha(null)
     setHora(null)
-    setCliente({ nombre: '', email: '', telefono: '' })
+    setCliente({ dni: '', nombre: '', email: '', telefono: '' })
     setMetodoPago(negocio.tiene_mp ? 'online' : 'local')
     setSlots([])
     setProfesDisponibles([])
@@ -217,7 +230,9 @@ export function ReservaDialog({
     setFormErrors({})
     setNoTrabajaMsg(null)
     setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
-  }, [])
+    setLoadingDni(false)
+    setDniError(null)
+  }, [negocio.tiene_mp])
 
   const handleClose = () => {
     setOpen(false)
@@ -226,6 +241,52 @@ export function ReservaDialog({
 
   const stepIndex = STEP_ORDER.indexOf(step)
   const goBack = () => { if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]) }
+
+  // ── DNI: buscar cliente por DNI ───────────────────────────────────────────
+  const handleContinuarDni = async () => {
+    const dni = normalizeDni(cliente.dni)
+    setDniError(null)
+
+    if (!dni || dni.length < 7 || dni.length > 9) {
+      setDniError('DNI inválido (7 a 9 dígitos)')
+      return
+    }
+
+    setLoadingDni(true)
+    try {
+      const res = await fetch(
+        `/api/booking/cliente-por-dni?negocio_id=${encodeURIComponent(negocio.id)}&dni=${encodeURIComponent(dni)}`
+      )
+
+      if (res.ok) {
+        const data = await res.json().catch(() => null)
+        if (data?.found && data?.cliente) {
+          setCliente({
+            dni,
+            nombre: String(data.cliente.nombre || ''),
+            email: String(data.cliente.email || ''),
+            telefono: String(data.cliente.telefono || ''),
+          })
+          setStep('confirmacion')
+          return
+        }
+      }
+
+      if (res.status === 404) {
+        // no existe -> completar datos
+        setCliente(c => ({ ...c, dni }))
+        setStep('cliente')
+        return
+      }
+
+      const data = await res.json().catch(() => ({}))
+      setDniError(data?.error || 'No se pudo verificar el DNI')
+    } catch {
+      setDniError('No se pudo verificar el DNI')
+    } finally {
+      setLoadingDni(false)
+    }
+  }
 
   // ── Confirm booking ───────────────────────────────────────────────────────
   const handleConfirmar = async () => {
@@ -242,7 +303,7 @@ export function ReservaDialog({
           profesional_id: profesional.id,
           fecha: format(fecha, 'yyyy-MM-dd'),
           hora_inicio: hora,
-          cliente,
+          cliente: { ...cliente, dni: normalizeDni(cliente.dni) },
           metodo_pago: metodoPago,
         }),
       })
@@ -267,7 +328,7 @@ export function ReservaDialog({
 
   // ── Validate ──────────────────────────────────────────────────────────────
   const validateCliente = () => {
-    const errors: Partial<ClienteData> = {}
+    const errors: Partial<Pick<ClienteData, 'nombre' | 'email' | 'telefono'>> = {}
     if (!cliente.nombre.trim() || cliente.nombre.trim().length < 2)
       errors.nombre = 'Nombre requerido (mín. 2 caracteres)'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cliente.email))
@@ -601,7 +662,7 @@ export function ReservaDialog({
 
                     // ✅ Si ya eligió un profesional, salteamos el paso "profesional"
                     if (profesional?.id) {
-                      setStep('cliente')
+                      setStep('dni')
                       return
                     }
 
@@ -659,12 +720,54 @@ export function ReservaDialog({
                       </div>
                       <div className="flex gap-2 pt-2">
                         <button className="rd-ghost" onClick={goBack}><ChevronLeft className="w-4 h-4" /> Volver</button>
-                        <button className="rd-btn" disabled={!profesional} onClick={() => setStep('cliente')}>
+                        <button className="rd-btn" disabled={!profesional} onClick={() => setStep('dni')}>
                           Continuar <ArrowRight className="w-4 h-4" />
                         </button>
                       </div>
                     </>
               }
+            </div>
+          )}
+
+          {/* ── DNI ── */}
+          {step === 'dni' && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-black text-gray-900">Ingresá tu DNI</h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Si ya estás registrado, completamos tus datos automáticamente.
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-600 block mb-1.5">
+                  DNI <span className="text-red-500">*</span>
+                </label>
+                <input
+                  className={`rd-inp ${dniError ? 'err' : ''}`}
+                  inputMode="numeric"
+                  placeholder="Ej: 40123456"
+                  value={cliente.dni}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^\d]/g, '')
+                    setCliente(c => ({ ...c, dni: val }))
+                    setDniError(null)
+                  }}
+                />
+                {dniError && <p className="text-xs text-red-500 mt-1">{dniError}</p>}
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button className="rd-ghost" onClick={goBack} disabled={loadingDni}>
+                  <ChevronLeft className="w-4 h-4" /> Volver
+                </button>
+                <button className="rd-btn" onClick={handleContinuarDni} disabled={loadingDni}>
+                  {loadingDni
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Verificando...</>
+                    : <>Continuar <ArrowRight className="w-4 h-4" /></>
+                  }
+                </button>
+              </div>
             </div>
           )}
 
@@ -675,6 +778,13 @@ export function ReservaDialog({
                 <h2 className="text-xl font-black text-gray-900">Tus datos</h2>
                 <p className="text-sm text-gray-500 mt-0.5">Para enviarte la confirmación</p>
               </div>
+
+              {/* DNI fijo (solo visual) */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm flex items-center gap-2">
+                <IdCard className="w-4 h-4" style={{ color: primary }} />
+                <span className="text-gray-700 font-semibold">DNI: {normalizeDni(cliente.dni)}</span>
+              </div>
+
               <div className="space-y-3">
                 {([
                   { f: 'nombre' as const, label: 'Nombre completo', type: 'text', ph: 'Juan Pérez' },
@@ -698,6 +808,7 @@ export function ReservaDialog({
                   </div>
                 ))}
               </div>
+
               <div className="flex gap-2 pt-2">
                 <button className="rd-ghost" onClick={goBack}><ChevronLeft className="w-4 h-4" /> Volver</button>
                 <button className="rd-btn" onClick={() => { if (validateCliente()) setStep('confirmacion') }}>
@@ -745,6 +856,7 @@ export function ReservaDialog({
                 <div className="h-px bg-gray-200" />
                 <div className="space-y-1.5 text-xs text-gray-500">
                   {[
+                    [<IdCard key="d" className="w-3.5 h-3.5" />, normalizeDni(cliente.dni)],
                     [<User key="u" className="w-3.5 h-3.5" />, cliente.nombre],
                     [<Mail key="m" className="w-3.5 h-3.5" />, cliente.email],
                     [<Phone key="p" className="w-3.5 h-3.5" />, cliente.telefono],

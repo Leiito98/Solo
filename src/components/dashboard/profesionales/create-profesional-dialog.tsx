@@ -78,6 +78,11 @@ export function CreateProfesionalDialog({ negocioId, onClose }: Props) {
         toast({ title: 'Error', description: error.message, variant: 'destructive' })
       } else {
         toast({ title: 'Éxito', description: 'Profesional creado correctamente' })
+
+      // ✅ refrescar onboarding instantáneo
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('getsolo:onboarding-refresh'))
+      }
         router.refresh()
         onClose()
       }

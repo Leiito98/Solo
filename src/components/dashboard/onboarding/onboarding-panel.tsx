@@ -22,6 +22,8 @@ import {
   ChevronUp,
   ChevronDown,
   Sparkles,
+  CreditCard,
+  MessageSquare,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import confetti from "canvas-confetti"
@@ -57,6 +59,16 @@ function fireConfetti() {
   frame()
 }
 
+function daysLeftFromISO(trialEndsAtISO: string | null) {
+  if (!trialEndsAtISO) return null
+  const end = new Date(trialEndsAtISO).getTime()
+  if (!Number.isFinite(end)) return null
+  const now = Date.now()
+  const diff = end - now
+  // ceil para que si queda 1.2 días muestre "2 días"
+  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+}
+
 export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
   const pathname = usePathname()
   const supabase = useMemo(() => createClient(), [])
@@ -68,6 +80,12 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
   // data
   const [tasks, setTasks] = useState<OnboardingTask[]>([])
   const [hasLoaded, setHasLoaded] = useState(false)
+
+  // negocio meta para banners/whatsapp
+  const [negocioSlug, setNegocioSlug] = useState<string | null>(null)
+  const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null)
+  const [suscripcionEstado, setSuscripcionEstado] = useState<string | null>(null)
+  const [plan, setPlan] = useState<string | null>(null)
 
   // done overlay
   const [showDone, setShowDone] = useState(false)
@@ -83,7 +101,11 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
 
   const LS_DISMISSED = `onboarding_panel_dismissed_${negocioId}`
   const LS_MINIMIZED = `onboarding_panel_minimized_${negocioId}`
-  const LS_DONE = `onboarding_panel_done_${negocioId}` // evita re-trigger del “Listo!”
+  const LS_DONE = `onboarding_panel_done_${negocioId}`
+
+  // 📌 WhatsApp (poné tu número con código país, sin + ni espacios)
+  // Ej: "5491123456789"
+  const WHATSAPP_NUMBER = "5491164613750"
 
   useEffect(() => {
     const dismissed = localStorage.getItem(LS_DISMISSED) === "true"
@@ -98,24 +120,28 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
     const minimized = localStorage.getItem(LS_MINIMIZED) === "true"
     setIsMinimized(minimized)
 
-    // si ya había finalizado (por si refresca)
     const done = localStorage.getItem(LS_DONE) === "true"
     doneHandledRef.current = done
 
     void checkOnboardingStatus(true)
 
-    // refresh cada 20s (10s puede sentirse “parpadeo” si hay latencia)
-    const interval = setInterval(() => void checkOnboardingStatus(false), 20000)
+    // ✅ Menos “parpadeo”: refresh más lento como backup
+    const interval = setInterval(() => void checkOnboardingStatus(false), 90000)
 
-    // al volver al tab (ej: visitaste la página pública)
+    // al volver al tab
     const onVis = () => {
       if (document.visibilityState === "visible") void checkOnboardingStatus(false)
     }
     document.addEventListener("visibilitychange", onVis)
 
+    // ✅ Refresh instantáneo por eventos (para que los flujos disparen update sin esperar)
+    const onEventRefresh = () => void checkOnboardingStatus(false)
+    window.addEventListener("getsolo:onboarding-refresh" as any, onEventRefresh)
+
     return () => {
       clearInterval(interval)
       document.removeEventListener("visibilitychange", onVis)
+      window.removeEventListener("getsolo:onboarding-refresh" as any, onEventRefresh)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [negocioId])
@@ -139,13 +165,16 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
         profesionalesConCuentaRes,
         clientesRes,
         turnosRes,
+        turnosPublicosRes,
         horariosRes,
         gastosRes,
         productosRes,
       ] = await Promise.all([
         supabase
           .from("negocios")
-          .select("direccion, telefono, email, logo_url, color_primario, slug, public_preview_seen_at")
+          .select(
+            "direccion, telefono, email, logo_url, color_primario, slug, public_preview_seen_at, mp_access_token, trial_ends_at, suscripcion_estado, plan"
+          )
           .eq("id", negocioId)
           .maybeSingle(),
 
@@ -162,6 +191,14 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
         supabase.from("clientes").select("id").eq("negocio_id", negocioId).limit(1),
         supabase.from("turnos").select("id").eq("negocio_id", negocioId).limit(1),
 
+        // ✅ “turno desde la página”: los turnos del booking público setean cancel_token
+        supabase
+          .from("turnos")
+          .select("id")
+          .eq("negocio_id", negocioId)
+          .not("cancel_token", "is", null)
+          .limit(1),
+
         supabase
           .from("negocio_horarios")
           .select("id")
@@ -175,6 +212,12 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
 
       const negocio = negocioRes.data
 
+      // guardar meta para banner y whatsapp
+      setNegocioSlug(negocio?.slug || null)
+      setTrialEndsAt((negocio as any)?.trial_ends_at || null)
+      setSuscripcionEstado((negocio as any)?.suscripcion_estado || null)
+      setPlan((negocio as any)?.plan || null)
+
       const hasContactInfo = !!(negocio?.direccion && negocio?.telefono && negocio?.email)
       const hasBranding = !!(negocio?.logo_url || negocio?.color_primario)
       const hasHorarios = (horariosRes.data?.length || 0) > 0
@@ -183,9 +226,17 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
       const hasProfesionalesConCuenta = (profesionalesConCuentaRes.data?.length || 0) > 0
       const hasClientes = (clientesRes.data?.length || 0) > 0
       const hasTurnos = (turnosRes.data?.length || 0) > 0
+      const hasTurnosPublicos = (turnosPublicosRes.data?.length || 0) > 0
       const hasGastos = (gastosRes.data?.length || 0) > 0
       const hasProductos = (productosRes.data?.length || 0) > 0
 
+      // ✅ MercadoPago conectado
+      const hasMercadoPago = !!(negocio as any)?.mp_access_token
+
+      const slug = negocio?.slug || null
+      const previewSeen = !!negocio?.public_preview_seen_at
+
+      // 1) ESSENTIAL: agregar MP y primer turno público
       const baseTasks: OnboardingTask[] = [
         {
           id: "negocio-info",
@@ -224,6 +275,28 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
           priority: "essential",
         },
 
+        // ✅ NUEVO ESENCIAL: MP
+        {
+          id: "mercadopago",
+          title: "Conectá MercadoPago",
+          description: "Para cobrar señas y pagos",
+          route: "/dashboard/configuracion/integraciones/mercadopago",
+          icon: CreditCard,
+          completed: hasMercadoPago,
+          priority: "essential",
+        },
+
+        // ✅ NUEVO ESENCIAL: wow moment real
+        {
+          id: "turno-publico",
+          title: "Recibí tu primer turno desde tu página",
+          description: "Probá reservas online reales",
+          route: "/dashboard/agenda",
+          icon: Calendar,
+          completed: hasTurnosPublicos,
+          priority: "essential",
+        },
+
         {
           id: "branding",
           title: "Personalizá tu marca",
@@ -244,7 +317,7 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
         },
         {
           id: "primer-turno",
-          title: "Creá tu primer turno",
+          title: "Creá tu primer turno (manual)",
           description: "Probá la agenda",
           route: "/dashboard/agenda",
           icon: Calendar,
@@ -284,14 +357,11 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
       const essentialOnly = baseTasks.filter((t) => t.priority === "essential")
       const allEssentialCompleted = essentialOnly.every((t) => t.completed)
 
-      const slug = negocio?.slug || null
-      const previewSeen = !!negocio?.public_preview_seen_at
-
+      // ✅ Página pública pasa a RECOMMENDED (y no se completa solo por visitarla si faltan esenciales)
       const paginaPublicaTask: OnboardingTask = {
         id: "pagina-publica",
         title: "Revisá tu página y compartila",
         description: slug ? `${slug}.getsolo.site` : "Configurá tu link público",
-        // en dev abrimos /negocio/[slug] (tu middleware maneja subdominio en prod)
         route: slug
           ? process.env.NODE_ENV === "development"
             ? `/negocio/${slug}`
@@ -299,16 +369,15 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
           : "/dashboard/configuracion/negocio",
         icon: Share2,
         completed: !!slug && allEssentialCompleted && previewSeen,
-        priority: "optional",
+        priority: "recommended",
       }
 
       const tasksData: OnboardingTask[] = [...baseTasks, paginaPublicaTask]
 
-      // ✅ Detectar “nuevo completado” para minimizar (solo en refresh posteriores)
+      // ✅ Detectar “nuevo completado” para minimizar
       const completedNow = new Set(tasksData.filter((t) => t.completed).map((t) => t.id))
       const prevCompleted = prevCompletedIdsRef.current
 
-      // en first load, seteo baseline para que NO minimice “de golpe”
       if (isFirstLoad && prevCompleted.size === 0) {
         prevCompletedIdsRef.current = completedNow
       }
@@ -322,19 +391,16 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
 
       const allDone = tasksData.every((t) => t.completed)
 
-      // Minimiza si se completó algo nuevo y todavía falta algo
       if (newlyCompleted && !allDone) minimize()
 
-      // ✅ Cuando está TODO listo: confetti + “Listo!” una sola vez y cerrar
+      // ✅ Done once
       if (allDone && !doneHandledRef.current) {
         doneHandledRef.current = true
         localStorage.setItem(LS_DONE, "true")
 
-        // mostramos overlay “Listo!”
         setShowDone(true)
         fireConfetti()
 
-        // cerramos automáticamente
         setTimeout(() => {
           dismissForever()
           setShowDone(false)
@@ -343,7 +409,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
         return
       }
 
-      // si ya estaba “done” en LS, no vuelvas a mostrar panel
       if (allDone && localStorage.getItem(LS_DONE) === "true") {
         dismissForever()
         return
@@ -366,12 +431,10 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
     localStorage.setItem(LS_MINIMIZED, "false")
   }
 
-  // X = minimizar (NO dismiss)
   function handleX() {
     minimize()
   }
 
-  // dismiss definitivo (solo si el usuario decide “no mostrar más” o al terminar todo)
   function dismissForever() {
     localStorage.setItem(LS_DISMISSED, "true")
     setIsOpen(false)
@@ -392,6 +455,38 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
   const allEssentialCompleted = essentialTasks.every((t) => t.completed)
   const allDone = tasks.every((t) => t.completed)
 
+  // ✅ Trial banner data
+  const isTrial = (suscripcionEstado || "").toLowerCase() === "trial"
+  const daysLeft = isTrial ? daysLeftFromISO(trialEndsAt) : null
+
+  const showTrialBanner = isTrial && daysLeft !== null
+  const trialVariant =
+    daysLeft === null
+      ? "neutral"
+      : daysLeft <= 0
+      ? "expired"
+      : daysLeft === 1
+      ? "strong"
+      : daysLeft <= 2
+      ? "soft"
+      : "neutral"
+
+  const trialLabel =
+    daysLeft === null
+      ? null
+      : daysLeft <= 0
+      ? "Tu prueba terminó"
+      : daysLeft === 1
+      ? "Te queda 1 día de prueba"
+      : `Te quedan ${daysLeft} días de prueba`
+
+  const payRoute = "/dashboard/configuracion/plan/pagos"
+
+  const waMsg = encodeURIComponent(
+    `Hola! Estoy configurando Solo. Mi negocio es ${negocioSlug || "(sin slug)"}.\nNecesito ayuda con: `
+  )
+  const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`
+
   // ✅ overlay “Listo!”
   if (showDone) {
     return (
@@ -407,7 +502,7 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
     )
   }
 
-  // ✅ Estado minimizado: chip flotante
+  // ✅ Minimized chip
   if (isMinimized) {
     return (
       <div className="fixed top-16 right-4 z-40">
@@ -457,8 +552,13 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
           <div>
             <h3 className="font-semibold text-gray-900">Primeros pasos</h3>
             <p className="text-xs text-gray-600">
-              {allEssentialCompleted ? (allDone ? "¡Todo listo! 🎉" : "¡Esenciales listos! 🎉") : `${essentialCompleted}/${essentialTasks.length} esenciales`}
+              {allEssentialCompleted
+                ? allDone
+                  ? "¡Todo listo! 🎉"
+                  : "¡Esenciales listos! 🎉"
+                : `${essentialCompleted}/${essentialTasks.length} esenciales`}
             </p>
+            {plan ? <p className="text-[11px] text-gray-500 mt-0.5">Plan: {plan}</p> : null}
           </div>
         </div>
 
@@ -469,6 +569,70 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
           <button onClick={handleX} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Cerrar">
             <X className="w-4 h-4 text-gray-400" />
           </button>
+        </div>
+      </div>
+
+      {/* Trial Banner + WhatsApp */}
+      <div className="px-4 pt-3 bg-white space-y-2">
+        {showTrialBanner && trialLabel && (
+          <div
+            className={[
+              "rounded-lg border px-3 py-2 flex items-center justify-between gap-2",
+              trialVariant === "expired"
+                ? "bg-red-50 border-red-200"
+                : trialVariant === "strong"
+                ? "bg-orange-50 border-orange-200"
+                : trialVariant === "soft"
+                ? "bg-yellow-50 border-yellow-200"
+                : "bg-gray-50 border-gray-200",
+            ].join(" ")}
+          >
+            <div className="min-w-0">
+              <p
+                className={[
+                  "text-xs font-semibold",
+                  trialVariant === "expired"
+                    ? "text-red-700"
+                    : trialVariant === "strong"
+                    ? "text-orange-700"
+                    : trialVariant === "soft"
+                    ? "text-yellow-700"
+                    : "text-gray-700",
+                ].join(" ")}
+              >
+                {trialLabel}
+              </p>
+              <p className="text-[11px] text-gray-600 truncate">
+                Activá tu plan para seguir usando todo sin cortes.
+              </p>
+            </div>
+
+            <Button asChild size="sm" className="h-8 text-xs">
+              <Link href={payRoute}>Activar plan</Link>
+            </Button>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm" className="h-8 text-xs w-full">
+            <a href={waLink} target="_blank" rel="noopener noreferrer">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Necesito ayuda
+            </a>
+          </Button>
+
+          {negocioSlug ? (
+            <Button asChild variant="outline" size="sm" className="h-8 text-xs w-full">
+              <a
+                href={process.env.NODE_ENV === "development" ? `/negocio/${negocioSlug}` : `https://${negocioSlug}.getsolo.site`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Ver página
+              </a>
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -509,7 +673,9 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
         {!allEssentialCompleted ? (
           <p className="text-xs text-center text-gray-600">💡 Completá los pasos esenciales para empezar a operar</p>
         ) : (
-          <p className="text-xs text-center text-green-700 font-medium">🎉 ¡Perfecto! Tu negocio está configurado. Ahora revisá tu página y compartila.</p>
+          <p className="text-xs text-center text-green-700 font-medium">
+            🎉 ¡Perfecto! Ahora conseguí tu primer turno desde la página y activá tu plan antes de que termine la prueba.
+          </p>
         )}
 
         <div className="flex justify-center">
@@ -564,8 +730,16 @@ function TaskCard({ task, pathname }: { task: OnboardingTask; pathname: string }
     >
       <div className="p-3">
         <div className="flex items-start gap-3">
-          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${task.completed ? "bg-green-100" : "bg-gray-100"}`}>
-            {task.completed ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Circle className="w-5 h-5 text-gray-400" />}
+          <div
+            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+              task.completed ? "bg-green-100" : "bg-gray-100"
+            }`}
+          >
+            {task.completed ? (
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            ) : (
+              <Circle className="w-5 h-5 text-gray-400" />
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -575,7 +749,12 @@ function TaskCard({ task, pathname }: { task: OnboardingTask; pathname: string }
             <p className="text-xs text-gray-600 mb-2">{task.description}</p>
 
             {!task.completed && (
-              <Button size="sm" variant={isActive ? "default" : "outline"} className="w-full text-xs h-7" asChild={!isExternal}>
+              <Button
+                size="sm"
+                variant={isActive ? "default" : "outline"}
+                className="w-full text-xs h-7"
+                asChild={!isExternal}
+              >
                 {isExternal ? (
                   <a href={task.route} target="_blank" rel="noopener noreferrer">
                     Ver página

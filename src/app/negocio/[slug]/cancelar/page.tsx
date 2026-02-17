@@ -15,24 +15,47 @@ export default async function CancelarTurnoPage({ params, searchParams }: PagePr
 
   const supabase = await createClient()
 
-  // Validar negocio por slug
   const { data: negocio } = await supabase
     .from('negocios')
-    .select('id, nombre, slug')
+    .select('id, nombre, slug, logo_url, color_primario, color_secundario')
     .eq('slug', slug)
     .single()
 
   if (!negocio) redirect('/')
 
-  // Buscar turno por token y negocio
   const { data: turno } = await supabase
     .from('turnos')
-    .select('id, estado, fecha, hora_inicio, hora_fin')
+    .select(`
+      id, estado, fecha, hora_inicio, hora_fin,
+      servicios ( nombre ),
+      profesionales ( nombre )
+    `)
     .eq('negocio_id', negocio.id)
     .eq('cancel_token', token)
     .single()
 
   if (!turno) redirect(`/negocio/${slug}`)
 
-  return <CancelarTurnoClient negocioNombre={negocio.nombre} token={token} turno={turno} />
+  const servicio    = Array.isArray(turno.servicios)     ? turno.servicios[0]     : turno.servicios
+  const profesional = Array.isArray(turno.profesionales) ? turno.profesionales[0] : turno.profesionales
+
+  return (
+    <CancelarTurnoClient
+      negocioNombre={negocio.nombre}
+      negocioSlug={negocio.slug}
+      logoUrl={(negocio as any).logo_url ?? null}
+      colorPrimario={(negocio as any).color_primario ?? null}
+      colorSecundario={(negocio as any).color_secundario ?? null}
+      token={token}
+      turno={{
+        id:          turno.id,
+        estado:      turno.estado,
+        fecha:       turno.fecha,
+        hora_inicio: turno.hora_inicio,
+        hora_fin:    turno.hora_fin,
+        servicio:    (servicio as any)?.nombre    ?? null,
+        profesional: (profesional as any)?.nombre ?? null,
+      }}
+    />
+  )
 }

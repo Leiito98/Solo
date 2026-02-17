@@ -74,7 +74,7 @@ export default async function PagosFacturacionPage() {
 
   const amount =
     Number(mp?.auto_recurring?.transaction_amount) ||
-    (negocio.plan === 'pro' ? 28000 : 20000)
+    (negocio.plan === 'pro' ? 29990 : 20000)
 
   return (
     <div className="space-y-6">
