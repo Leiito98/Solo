@@ -106,7 +106,7 @@ export async function GET(req: Request) {
   const errDesc = url.searchParams.get("error_description");
 
   const baseSite = process.env.NEXT_PUBLIC_SITE_URL || "https://getsolo.site";
-  const redirectBase = new URL("/dashboard/configuraciones/integraciones/mercadopago", baseSite);
+  const redirectBase = new URL("/dashboard/configuracion/integraciones/mercadopago", baseSite);
 
   try {
     if (err) {
