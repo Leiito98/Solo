@@ -134,6 +134,7 @@ export function ReservaFlow({ negocio, servicios, profesionales }: ReservaFlowPr
         {/* 4) Cliente */}
         {step === 4 && (
           <ClienteStep
+            negocioId={negocio.id}
             cliente={reservaData.cliente}
             onSubmit={(cliente) => handleNext({ cliente })}
             onBack={handleBack}
