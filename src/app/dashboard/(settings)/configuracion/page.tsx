@@ -135,7 +135,14 @@ export default async function ConfiguracionPage() {
           </div>
           <div className="flex justify-between py-2 border-b border-gray-100">
             <span className="text-sm text-gray-600">URL Pública</span>
-            <span className="text-sm font-medium text-blue-600">{negocio.slug}.getsolo.site</span>
+            <a
+              href={`https://${negocio.slug}.getsolo.site`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-blue-600 hover:underline"
+            >
+              {negocio.slug}.getsolo.site
+            </a>
           </div>
           <div className="flex justify-between py-2 border-b border-gray-100">
             <span className="text-sm text-gray-600">Email</span>
