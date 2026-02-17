@@ -23,6 +23,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/nutricion", priority: 0.8, changeFrequency: "weekly" },
     { path: "/psicologia", priority: 0.8, changeFrequency: "weekly" },
 
+    // ✅ Blog (solo lo indexable)
+    // { path: "/blog", priority: 0.6, changeFrequency: "weekly" }, // <-- solo si tenés /blog
+    { path: "/blog/cobrar-sena-online-barberia", priority: 0.7, changeFrequency: "monthly" },
+
     // Legal
     { path: "/politica-de-privacidad", priority: 0.3, changeFrequency: "yearly" },
     { path: "/terminos-y-condiciones", priority: 0.3, changeFrequency: "yearly" },

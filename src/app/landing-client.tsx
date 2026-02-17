@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,10 @@ import {
   X,
   Sparkles,
   HelpCircle,
+  BookOpen,
+  Clock,
+  Tag,
+  MessageSquare,
 } from 'lucide-react'
 
 export default function LandingClient() {
@@ -200,6 +204,72 @@ export default function LandingClient() {
     },
   ]
 
+  /**
+   * ✅ Blog cards:
+   * - mostramos 1 publicado + próximos (no clickeables) para evitar mandar a páginas vacías.
+   * - cuando publiques 2 por semana, vas “activando” más links.
+   */
+  const blogPosts = useMemo(
+    () => [
+      {
+        href: '/blog/cobrar-sena-online-barberia',
+        status: 'Publicado',
+        vertical: 'Barbería',
+        title: 'Cómo cobrar seña online en una barbería (y dejar de perder turnos)',
+        excerpt:
+          'Guía práctica para cobrar señas con MercadoPago y confirmar turnos automáticamente con Solo.',
+        readTime: '6–9 min',
+        icon: CreditCard,
+        published: true,
+      },
+      {
+        href: '/blog/evitar-cancelaciones-barberia',
+        status: 'Próximamente',
+        vertical: 'Barbería',
+        title: 'Cómo evitar cancelaciones en una barbería (sin pelearte por WhatsApp)',
+        excerpt:
+          'Recordatorios + seña + política clara para bajar no-shows y tener agenda real.',
+        readTime: '7–10 min',
+        icon: Bell,
+        published: false,
+      },
+      {
+        href: '/blog/agenda-por-barbero-comisiones',
+        status: 'Próximamente',
+        vertical: 'Barbería',
+        title: 'Agenda por barbero + comisiones: cómo ordenarlo sin planillas',
+        excerpt:
+          'Estructura simple para equipos: turnos por profesional y comisiones automáticas.',
+        readTime: '6–8 min',
+        icon: Users,
+        published: false,
+      },
+      {
+        href: '/blog/turnos-barberia-whatsapp',
+        status: 'Próximamente',
+        vertical: 'Barbería',
+        title: 'Turnos por WhatsApp: cómo pasar de chats eternos a reservas automáticas',
+        excerpt:
+          'El sistema ideal: link + agenda 24/7 + confirmación. Menos tiempo perdido.',
+        readTime: '5–7 min',
+        icon: MessageSquare,
+        published: false,
+      },
+      {
+        href: '/blog/politica-cancelacion-barberia',
+        status: 'Próximamente',
+        vertical: 'Barbería',
+        title: 'Política de cancelación para barberías (plantilla lista)',
+        excerpt:
+          'Plantilla simple y profesional para reducir cancelaciones y proteger tu tiempo.',
+        readTime: '4–6 min',
+        icon: Shield,
+        published: false,
+      },
+    ],
+    []
+  )
+
   return (
     <div
       className="min-h-screen bg-[#0a0a0a] text-white font-sans"
@@ -256,6 +326,9 @@ export default function LandingClient() {
             </a>
             <a href="#pricing" className="text-sm text-white/50 hover:text-white/90 transition-colors font-medium">
               Precios
+            </a>
+            <a href="#blog" className="text-sm text-white/50 hover:text-white/90 transition-colors font-medium">
+              Blog
             </a>
             <a href="#testimonials" className="text-sm text-white/50 hover:text-white/90 transition-colors font-medium">
               Opiniones
@@ -320,6 +393,9 @@ export default function LandingClient() {
             </a>
             <a href="#pricing" className="block text-white/60 hover:text-white text-sm py-1.5" onClick={() => setMobileMenuOpen(false)}>
               Precios
+            </a>
+            <a href="#blog" className="block text-white/60 hover:text-white text-sm py-1.5" onClick={() => setMobileMenuOpen(false)}>
+              Blog
             </a>
             <a href="#testimonials" className="block text-white/60 hover:text-white text-sm py-1.5" onClick={() => setMobileMenuOpen(false)}>
               Opiniones
@@ -568,6 +644,111 @@ export default function LandingClient() {
           <div className="mt-10 text-center">
             <Link href="/sistema-turnos-online" className="inline-flex items-center gap-2 text-sm font-semibold text-blue-300 hover:text-blue-200">
               Ver la guía completa del sistema de turnos <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── BLOG / RECURSOS ── */}
+      <section id="blog" className="py-24 px-5 relative z-10 border-t border-white/[0.06]">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-14">
+            <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/40 text-xs font-semibold uppercase tracking-widest">
+              <BookOpen className="w-4 h-4" /> Blog / Recursos
+            </div>
+            <h2 className="heading-font text-4xl sm:text-5xl font-900 text-white leading-tight">
+              Guías para vender más y perder menos turnos
+            </h2>
+            <p className="mt-4 text-white/40 text-lg max-w-2xl">
+              Elegimos Barbería como primer vertical y lo estamos atacando fuerte: señas, cancelaciones, agenda por barbero y WhatsApp.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-5">
+            {blogPosts.map((p) => {
+              const Icon = p.icon
+              const Card = (
+                <div className="gradient-border rounded-2xl p-7 card-hover">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-white/40">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08]">
+                        <Tag className="w-3.5 h-3.5 text-white/35" />
+                        {p.vertical}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-white/30">
+                        <Clock className="w-3.5 h-3.5" />
+                        {p.readTime}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+                        p.published
+                          ? 'text-green-300 bg-green-500/10 border-green-500/20'
+                          : 'text-white/35 bg-white/[0.04] border-white/[0.08]'
+                      }`}
+                    >
+                      {p.status}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-5 h-5 text-white/55" />
+                    </div>
+                    <div>
+                      <h3 className="heading-font text-xl font-900 text-white leading-snug">
+                        {p.title}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-white/45 leading-relaxed mb-5">
+                    {p.excerpt}
+                  </p>
+
+                  <div className="inline-flex items-center gap-2 text-sm font-semibold text-blue-300">
+                    {p.published ? (
+                      <>
+                        Leer guía <ArrowRight className="w-4 h-4" />
+                      </>
+                    ) : (
+                      <>
+                        Próximamente <ChevronRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+
+              // ✅ SEO: no linkear a páginas vacías (evita frustración + evita señal negativa)
+              return p.published ? (
+                <Link key={p.href} href={p.href} className="block">
+                  {Card}
+                </Link>
+              ) : (
+                <div key={p.href} aria-disabled className="opacity-80">
+                  {Card}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/barberia"
+              className="inline-flex items-center justify-center gap-2 border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:border-white/20 h-12 px-8 rounded-xl font-semibold transition-all"
+            >
+              Ver página Barberia
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+
+            <Link
+              href="/blog/cobrar-sena-online-barberia"
+              className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white text-base h-12 px-8 rounded-xl font-semibold shadow-xl shadow-blue-500/30 transition-all hover:scale-[1.03]"
+            >
+              Leer: cobrar seña online
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -905,6 +1086,7 @@ export default function LandingClient() {
                 <ul className="space-y-2 text-white/30">
                   <li><a href="#features" className="hover:text-white/70 transition-colors">Features</a></li>
                   <li><a href="#pricing" className="hover:text-white/70 transition-colors">Precios</a></li>
+                  <li><a href="#blog" className="hover:text-white/70 transition-colors">Blog</a></li>
                   <li><Link href="/register?plan=pro" className="hover:text-white/70 transition-colors">Empezar Gratis</Link></li>
                 </ul>
               </div>

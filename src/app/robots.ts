@@ -20,7 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           "/suscripcion",
           "/negocio/",
           "/(auth)/",
-          "/*?*",
+          // ✅ NO bloquear query params (utm, gclid, etc)
         ],
       },
     ],

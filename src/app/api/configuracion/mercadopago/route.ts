@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+export const runtime = 'nodejs'
 
 // Verifica el token llamando directamente al endpoint de MP (más confiable que el SDK)
 async function verificarTokenMP(token: string): Promise<{ valido: boolean; error?: string }> {
@@ -16,7 +19,7 @@ async function verificarTokenMP(token: string): Promise<{ valido: boolean; error
     }
 
     if (res.status === 403) {
-      return { valido: false, error: 'Estas pegando Public Key, Copia el Access Token.' }
+      return { valido: false, error: 'Estás pegando Public Key. Copiá el Access Token.' }
     }
 
     if (!res.ok) {
@@ -44,7 +47,7 @@ export async function GET() {
 
   const { data: negocio, error } = await supabase
     .from('negocios')
-    .select('id, mp_access_token')
+    .select('id, mp_connected_at, mp_sena_pct')
     .eq('owner_id', user.id)
     .single()
 
@@ -52,22 +55,21 @@ export async function GET() {
     return NextResponse.json({ error: 'Negocio no encontrado' }, { status: 404 })
   }
 
-  const token = negocio.mp_access_token as string | null
-
   return NextResponse.json({
-    configurado: !!token,
-    token_preview: token ? `****${token.slice(-4)}` : null,
-    token_tipo: token
-      ? token.startsWith('TEST-') ? 'test' : token.startsWith('APP_USR-') ? 'produccion' : 'desconocido'
-      : null,
+    ok: true,
+    configurado: !!(negocio as any).mp_connected_at,
+    mp_connected_at: (negocio as any).mp_connected_at ?? null,
+    mp_sena_pct: (negocio as any).mp_sena_pct ?? 50,
   })
 }
 
 // POST /api/configuracion/integraciones/mercadopago
+// 👉 Modo manual (Avanzado): guarda Access Token en tabla segura + marca mp_connected_at
 export async function POST(req: Request) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const admin = createAdminClient()
 
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
@@ -82,8 +84,7 @@ export async function POST(req: Request) {
 
   // Validación básica de formato
   const validPrefixes = ['TEST-', 'APP_USR-']
-  const hasValidPrefix = validPrefixes.some(p => token.startsWith(p))
-
+  const hasValidPrefix = validPrefixes.some((p) => token.startsWith(p))
   if (!hasValidPrefix) {
     return NextResponse.json(
       { error: 'Token inválido. Debe comenzar con TEST- (sandbox) o APP_USR- (producción)' },
@@ -97,37 +98,58 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: mpError }, { status: 400 })
   }
 
-  // Obtener el negocio del owner
+  // Obtener el negocio del owner (RLS-safe)
   const { data: negocio, error: negocioErr } = await supabase
     .from('negocios')
     .select('id')
     .eq('owner_id', user.id)
     .single()
 
-  if (negocioErr || !negocio) {
+  if (negocioErr || !negocio?.id) {
     return NextResponse.json({ error: 'Negocio no encontrado' }, { status: 404 })
   }
 
-  // Guardar el token
-  const { error: updateErr } = await supabase
+  const nowIso = new Date().toISOString()
+
+  // 1) Guardar token en tabla segura (service role)
+  const { error: upsertErr } = await admin
+    .from('negocio_mp_tokens')
+    .upsert(
+      {
+        negocio_id: negocio.id,
+        mp_access_token: token,
+        mp_refresh_token: null, // manual no trae refresh
+        mp_connected_at: nowIso,
+        updated_at: nowIso,
+      },
+      { onConflict: 'negocio_id' }
+    )
+
+  if (upsertErr) {
+    console.error('Error saving MP token (secure table):', upsertErr)
+    return NextResponse.json({ error: 'Error al guardar la configuración (tokens)' }, { status: 500 })
+  }
+
+  // 2) Marcar conexión y guardar seña pct (tabla pública, sin secretos)
+  const { error: updateNegocioErr } = await supabase
     .from('negocios')
-    .update({ mp_access_token: token, mp_sena_pct: senaPct })
+    .update({ mp_connected_at: nowIso, mp_sena_pct: senaPct })
     .eq('id', negocio.id)
     .eq('owner_id', user.id)
 
-  if (updateErr) {
-    console.error('Error saving MP token:', updateErr)
+  if (updateNegocioErr) {
+    console.error('Error updating negocios mp_connected_at:', updateNegocioErr)
     return NextResponse.json({ error: 'Error al guardar la configuración' }, { status: 500 })
   }
 
   return NextResponse.json({
     ok: true,
-    token_preview: `****${token.slice(-4)}`,
-    token_tipo: token.startsWith('TEST-') ? 'test' : 'produccion',
+    mp_connected_at: nowIso,
+    mp_sena_pct: senaPct,
   })
 }
 
-// PATCH /api/configuracion/mercadopago — actualizar solo mp_sena_pct sin tocar el token
+// PATCH /api/configuracion/integraciones/mercadopago — actualizar solo mp_sena_pct
 export async function PATCH(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -156,10 +178,12 @@ export async function PATCH(req: Request) {
 }
 
 // DELETE /api/configuracion/integraciones/mercadopago
+// 👉 Borra tokens + desconecta (mp_connected_at = null)
 export async function DELETE() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const admin = createAdminClient()
 
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
@@ -170,17 +194,30 @@ export async function DELETE() {
     .eq('owner_id', user.id)
     .single()
 
-  if (negocioErr || !negocio) {
+  if (negocioErr || !negocio?.id) {
     return NextResponse.json({ error: 'Negocio no encontrado' }, { status: 404 })
   }
 
+  // 1) borrar tokens seguros
+  const { error: delErr } = await admin
+    .from('negocio_mp_tokens')
+    .delete()
+    .eq('negocio_id', negocio.id)
+
+  if (delErr) {
+    console.error('Error deleting negocio_mp_tokens:', delErr)
+    return NextResponse.json({ error: 'Error al desvincular (tokens)' }, { status: 500 })
+  }
+
+  // 2) desconectar (sin secretos)
   const { error: updateErr } = await supabase
     .from('negocios')
-    .update({ mp_access_token: null })
+    .update({ mp_connected_at: null })
     .eq('id', negocio.id)
     .eq('owner_id', user.id)
 
   if (updateErr) {
+    console.error('Error setting mp_connected_at null:', updateErr)
     return NextResponse.json({ error: 'Error al desvincular' }, { status: 500 })
   }
 

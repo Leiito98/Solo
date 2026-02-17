@@ -173,7 +173,7 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
         supabase
           .from("negocios")
           .select(
-            "direccion, telefono, email, logo_url, color_primario, slug, public_preview_seen_at, mp_access_token, trial_ends_at, suscripcion_estado, plan"
+            "direccion, telefono, email, logo_url, color_primario, slug, public_preview_seen_at, mp_connected_at, trial_ends_at, suscripcion_estado, plan"
           )
           .eq("id", negocioId)
           .maybeSingle(),
@@ -231,7 +231,7 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
       const hasProductos = (productosRes.data?.length || 0) > 0
 
       // ✅ MercadoPago conectado
-      const hasMercadoPago = !!(negocio as any)?.mp_access_token
+      const hasMercadoPago = !!(negocio as any)?.mp_connected_at
 
       const slug = negocio?.slug || null
       const previewSeen = !!negocio?.public_preview_seen_at
