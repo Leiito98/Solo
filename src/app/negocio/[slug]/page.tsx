@@ -42,7 +42,6 @@ type Negocio = {
   instagram?: string | null
 
   // pagos/MP (para dialog)
-  mp_access_token?: string | null
   mp_sena_pct?: number | null
 }
 
@@ -281,6 +280,14 @@ export default async function NegocioPage({
 
   const negocioTyped = negocio as Negocio
 
+  const { data: mpTokenRow } = await supabase
+    .from("negocio_mp_tokens")
+    .select("mp_access_token")
+    .eq("negocio_id", negocioTyped.id)
+    .maybeSingle()
+
+  const mpAccessToken = mpTokenRow?.mp_access_token ?? null
+
   const { data: servicios } = await supabase
     .from("servicios")
     .select("id, nombre, descripcion, duracion_min, precio, imagen_url")
@@ -339,7 +346,7 @@ export default async function NegocioPage({
     color_primario: negocioTyped.color_primario,
     color_secundario: negocioTyped.color_secundario,
     logo_url: negocioTyped.logo_url,
-    tiene_mp: !!negocioTyped.mp_access_token,
+    tiene_mp: !!mpAccessToken,
     mp_sena_pct: negocioTyped.mp_sena_pct ?? 50,
   }
 
