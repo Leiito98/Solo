@@ -85,7 +85,7 @@ export function MercadoPagoConfig({ mp_connected_at, mp_sena_pct }: Props) {
         window.dispatchEvent(new Event('getsolo:onboarding-refresh'))
       }
       // limpiar query para que no se repita el toast
-      router.replace('/dashboard/configuraciones/integraciones/mercadopago')
+      router.replace('/dashboard/configuracion/integraciones/mercadopago')
       router.refresh()
     }
 
@@ -95,7 +95,7 @@ export function MercadoPagoConfig({ mp_connected_at, mp_sena_pct }: Props) {
         description: errDesc || decodeURIComponent(err),
         variant: 'destructive',
       })
-      router.replace('/dashboard/configuraciones/integraciones/mercadopago')
+      router.replace('/dashboard/configuracion/integraciones/mercadopago')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

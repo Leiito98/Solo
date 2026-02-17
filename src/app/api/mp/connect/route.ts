@@ -83,7 +83,7 @@ export async function GET() {
   } catch (e: any) {
     const msg = encodeURIComponent(e?.message || "mp_connect_error");
     return NextResponse.redirect(
-      new URL(`/dashboard/configuraciones/integraciones/mercadopago?error=${msg}`, process.env.NEXT_PUBLIC_SITE_URL || "https://getsolo.site")
+      new URL(`/dashboard/configuracion/integraciones/mercadopago?error=${msg}`, process.env.NEXT_PUBLIC_SITE_URL || "https://getsolo.site")
     );
   }
 }
