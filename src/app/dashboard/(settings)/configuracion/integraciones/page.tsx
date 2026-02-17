@@ -132,19 +132,25 @@ export default async function IntegracionesPage() {
 
   if (!user) redirect('/login')
 
-  // ✅ Traemos también instagram/facebook
-  const { data: negocio } = await supabase
+  /**
+   * ✅ IMPORTANTE (por tu arquitectura):
+   * - NO uses negocios.mp_access_token para “conectado” (esa columna es riesgosa y además puede no estar sincronizada).
+   * - Usá el flag mp_connected_at (en negocios) que se setea en mp/callback/route.ts
+   *   O si preferís: consultar negocio_mp_tokens con admin en un endpoint.
+   *
+   * Acá lo resolvemos 100% server-side con mp_connected_at.
+   */
+  const { data: negocio, error: negErr } = await supabase
     .from('negocios')
-    .select('id, mp_access_token, instagram, facebook')
+    .select('id, instagram, facebook, mp_connected_at')
     .eq('owner_id', user.id)
     .single()
 
-  if (!negocio) redirect('/register')
+  if (negErr || !negocio) redirect('/register')
 
-  const mpToken = (negocio.mp_access_token as string | null) ?? null
-  const mpConectado = !!mpToken
+  const mpConectado = !!negocio.mp_connected_at
 
-  // ✅ flags redes sociales
+  // Redes sociales por URL guardada en negocios
   const instagramUrl = normalizeInstagram(cleanStr(negocio.instagram))
   const facebookUrl = normalizeFacebook(cleanStr(negocio.facebook))
   const igConectado = !!instagramUrl
@@ -161,15 +167,10 @@ export default async function IntegracionesPage() {
       esencial: true,
       color: 'blue' as ColorKey,
       href: '/dashboard/configuracion/integraciones/mercadopago',
-      detalles: mpConectado
-        ? `Cuenta conectada · ${
-            tokenTipo(mpToken) === 'test' ? 'TEST' : tokenTipo(mpToken) === 'produccion' ? 'PROD' : 'TOKEN'
-          } · ${tokenPreview(mpToken)}`
-        : null,
+      detalles: mpConectado ? `Cuenta conectada · ${new Date(negocio.mp_connected_at)}` : null,
       disconnectApi: '/api/integraciones/mercadopago/disconnect',
     },
 
-    // Próximamente / otras
     {
       id: 'whatsapp',
       nombre: 'WhatsApp Business',
@@ -184,7 +185,6 @@ export default async function IntegracionesPage() {
       proximamente: true,
     },
 
-    // ✅ Instagram (ya no “próximamente” si querés manejarlo por URL)
     {
       id: 'instagram',
       nombre: 'Instagram',
@@ -194,16 +194,11 @@ export default async function IntegracionesPage() {
       conectado: igConectado,
       esencial: false,
       color: 'purple' as ColorKey,
-      // a dónde “configurar/vincular”: tu página donde el owner pega el link (o modal)
       href: '/dashboard/configuracion/integraciones/redes-sociales',
       detalles: igConectado ? `Vinculado · ${instagramUrl}` : null,
-      // si más adelante querés “desvincular” con un endpoint:
-      // disconnectApi: '/api/negocio/redes/instagram/disconnect',
-      // verUrl para abrir la red si está conectado
       viewUrl: instagramUrl,
     },
 
-    // ✅ Facebook
     {
       id: 'facebook',
       nombre: 'Facebook',
@@ -327,17 +322,6 @@ export default async function IntegracionesPage() {
                               Configurar
                             </Link>
                           </Button>
-
-                          <form action={integracion.disconnectApi} method="POST" className="flex-1">
-                            <Button
-                              type="submit"
-                              variant="ghost"
-                              size="sm"
-                              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              Desconectar
-                            </Button>
-                          </form>
                         </>
                       ) : (
                         <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90" asChild>
@@ -405,7 +389,6 @@ export default async function IntegracionesPage() {
                         <Badge className={`${colors.badge} text-xs mb-2`}>{integracion.categoria}</Badge>
                         <p className="text-xs text-gray-500 leading-relaxed">{integracion.descripcion}</p>
 
-                        {/* opcional: mostrar el link cuando está conectado */}
                         {integracion.detalles && (
                           <p className="text-[11px] text-gray-400 mt-2 break-all">{integracion.detalles}</p>
                         )}
@@ -425,7 +408,6 @@ export default async function IntegracionesPage() {
                           </Link>
                         </Button>
 
-                        {/* Ver (abre IG/FB) */}
                         {integracion.viewUrl ? (
                           <Button variant="outline" size="sm" className="flex-1" asChild>
                             <a href={integracion.viewUrl} target="_blank" rel="noopener noreferrer">

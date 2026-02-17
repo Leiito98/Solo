@@ -264,20 +264,10 @@ export function MercadoPagoConfig({ mp_connected_at, mp_sena_pct }: Props) {
                 {configurado ? 'Reconectar MercadoPago' : 'Conectar MercadoPago'}
               </a>
             </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={() => router.refresh()}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Actualizar estado
-            </Button>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Conexión rápida: no pedimos claves ni tokens. Solo autorizás tu cuenta y listo.
+            Conexión rápida: No pedimos claves, solo autorizás tu cuenta y listo.
           </p>
 
           {/* Desvincular */}
@@ -327,7 +317,7 @@ export function MercadoPagoConfig({ mp_connected_at, mp_sena_pct }: Props) {
               <span>💳</span> Porcentaje de seña
             </CardTitle>
             <CardDescription>
-              Cuánto paga el cliente al reservar. El resto lo abona en el local.
+              Cuánto paga el cliente al reservar, el resto lo abona en el local.
             </CardDescription>
           </CardHeader>
 

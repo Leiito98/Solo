@@ -39,8 +39,8 @@ export default async function ConfiguracionPage() {
           </div>
 
           <p className="text-sm text-gray-500 mb-6">
-            Conectá tu cuenta de MercadoPago para que tus clientes puedan pagar la seña online al reservar un turno.
-            Cada cobro va directamente a tu cuenta.
+            Conectá tu cuenta de MercadoPago para que tus clientes puedan pagar la seña online al reservar un turno,
+            cada cobro va directamente a tu cuenta.
           </p>
 
           <MercadoPagoConfig

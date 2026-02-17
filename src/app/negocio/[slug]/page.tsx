@@ -43,6 +43,7 @@ type Negocio = {
 
   // pagos/MP (para dialog)
   mp_sena_pct?: number | null
+  mp_connected_at?: string | null
 }
 
 type Servicio = {
@@ -346,7 +347,7 @@ export default async function NegocioPage({
     color_primario: negocioTyped.color_primario,
     color_secundario: negocioTyped.color_secundario,
     logo_url: negocioTyped.logo_url,
-    tiene_mp: !!mpAccessToken,
+    tiene_mp: !!negocioTyped.mp_connected_at,
     mp_sena_pct: negocioTyped.mp_sena_pct ?? 50,
   }
 

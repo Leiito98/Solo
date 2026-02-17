@@ -98,6 +98,13 @@ function signWebhook(turno_id: string, negocio_id: string) {
   return crypto.createHmac('sha256', secret).update(payload).digest('hex')
 }
 
+async function getBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  )
+}
+
 type Body = {
   negocio_id: string
   servicio_id: string
@@ -140,11 +147,11 @@ export async function POST(req: Request) {
     const supabase = await createClient()
     const admin = createAdminClient()
 
-    // 1) Negocio
+    // 1) Negocio (NO leer mp_access_token de negocios por seguridad)
     const { data: negocio, error: negocioErr } = await supabase
       .from('negocios')
       .select(
-        'id, nombre, slug, mp_access_token, mp_sena_pct, email, telefono, direccion, owner_id, color_primario, color_secundario, logo_url'
+        'id, nombre, slug, mp_sena_pct, email, telefono, direccion, owner_id, color_primario, color_secundario, logo_url, mp_connected_at'
       )
       .eq('id', negocio_id)
       .single()
@@ -185,7 +192,6 @@ export async function POST(req: Request) {
     // ✅ 3.2) VALIDAR que el profesional TRABAJE ese día y que el turno entre en su horario
     const dow = dayOfWeek0Sunday(fecha)
 
-    // valida que el profesional pertenezca al negocio
     const { data: pro, error: proErr } = await supabase
       .from('profesionales')
       .select('id, activo, negocio_id')
@@ -220,13 +226,10 @@ export async function POST(req: Request) {
     const tEnd = minutesSinceMidnight(toHHMMSS(hora_fin))
 
     if (!(hEnd > hStart) || tStart < hStart || tEnd > hEnd) {
-      return NextResponse.json(
-        { error: 'Ese horario está fuera del horario laboral del profesional.' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Ese horario está fuera del horario laboral del profesional.' }, { status: 400 })
     }
 
-    // 4) Cliente (buscar/crear por DNI dentro del negocio)
+    // 4) Cliente (buscar/crear por DNI dentro del negocio) — usando ADMIN
     let clienteId: string
 
     const { data: clienteExistente, error: clienteExistenteErr } = await admin
@@ -243,18 +246,10 @@ export async function POST(req: Request) {
 
     if (clienteExistente?.id) {
       clienteId = clienteExistente.id
-
-      // Actualiza perfil "actual"
       const { error: updErr } = await admin
         .from('clientes')
-        .update({
-          dni,
-          nombre: cliente.nombre,
-          email: cliente.email,
-          telefono: cliente.telefono,
-        })
+        .update({ dni, nombre: cliente.nombre, email: cliente.email, telefono: cliente.telefono })
         .eq('id', clienteId)
-
       if (updErr) console.error('Error updating client:', updErr)
     } else {
       const { data: nuevoCliente, error: clienteError } = await admin
@@ -280,7 +275,6 @@ export async function POST(req: Request) {
     }
 
     // 5) Conflictos (solapamiento)
-    // Regla: existe conflicto si (exist.hora_inicio < nuevo.hora_fin) AND (exist.hora_fin > nuevo.hora_inicio)
     const { data: turnosExistentes, error: conflictErr } = await supabase
       .from('turnos')
       .select('id')
@@ -311,33 +305,24 @@ export async function POST(req: Request) {
     const estadoPago = 'pendiente'
     const montoInicial = 0
 
-    // token seguro para cancelar
     const cancel_token = randomUUID()
 
-    // 8) Crear turno
-    const insertTurno: any = {
-      negocio_id,
-      servicio_id,
-      profesional_id,
-      cliente_id: clienteId,
-      fecha,
-      hora_inicio,
-      hora_fin,
-      estado: estadoTurno,
-      pago_estado: estadoPago,
-      pago_monto: montoInicial,
-      cancel_token,
-
-      // ✅ RECOMENDADO: “snapshot” para que el nombre del turno no cambie jamás (solo si existen estas columnas)
-      // cliente_dni: dni,
-      // cliente_nombre: cliente.nombre,
-      // cliente_email: cliente.email,
-      // cliente_telefono: cliente.telefono,
-    }
-
+    // 8) Crear turno (ADMIN)
     const { data: turno, error: turnoError } = await admin
       .from('turnos')
-      .insert(insertTurno)
+      .insert({
+        negocio_id,
+        servicio_id,
+        profesional_id,
+        cliente_id: clienteId,
+        fecha,
+        hora_inicio,
+        hora_fin,
+        estado: estadoTurno,
+        pago_estado: estadoPago,
+        pago_monto: montoInicial,
+        cancel_token,
+      })
       .select('id, fecha, hora_inicio, hora_fin, cancel_token')
       .single()
 
@@ -353,28 +338,21 @@ export async function POST(req: Request) {
       .eq('id', profesional_id)
       .single()
 
-    // baseUrl público
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-
+    const baseUrl = await getBaseUrl()
     const cancel_url = `${baseUrl}/negocio/${negocio.slug}/cancelar?token=${turno.cancel_token}`
 
     // ── 10) Notificaciones (email + WhatsApp) ────────────────────────────────
-    // Se lanzan en paralelo sin bloquear la respuesta. Si fallan, solo se loguea.
     const ownerEmail = (negocio as any).email as string | null
     const ownerTel = (negocio as any).telefono as string | null
     const negocioDir = (negocio as any).direccion as string | null
     const profesionalNombre = profesional?.nombre || 'Tu profesional'
     const horaLabel = String(turno.hora_inicio).substring(0, 5)
 
-    // Obtener nombre del owner desde auth.users via admin
     const { data: ownerAuthData } = await admin.auth.admin.getUserById((negocio as any).owner_id as string)
     const ownerNombre =
       ownerAuthData?.user?.user_metadata?.nombre || ownerAuthData?.user?.email?.split('@')[0] || 'Propietario'
 
     const notificaciones: Promise<unknown>[] = [
-      // Email al cliente
       sendConfirmacionReserva({
         clienteEmail: cliente.email,
         clienteNombre: cliente.nombre,
@@ -391,7 +369,6 @@ export async function POST(req: Request) {
         cancel_url,
       }),
 
-      // WA al cliente (solo si tiene teléfono)
       ...(cliente.telefono
         ? [
             sendConfirmacionClienteWA({
@@ -407,7 +384,6 @@ export async function POST(req: Request) {
           ]
         : []),
 
-      // Email al owner (solo si tiene email configurado)
       ...(ownerEmail
         ? [
             sendNuevaReservaOwner({
@@ -429,7 +405,6 @@ export async function POST(req: Request) {
           ]
         : []),
 
-      // WA al owner (solo si tiene teléfono configurado)
       ...(ownerTel
         ? [
             sendNuevaReservaOwnerWA({
@@ -448,19 +423,34 @@ export async function POST(req: Request) {
 
     Promise.allSettled(notificaciones).then((results) => {
       results.forEach((r, i) => {
-        if (r.status === 'rejected') {
-          console.error(`[Notificaciones] Error en notificación ${i}:`, r.reason)
-        }
+        if (r.status === 'rejected') console.error(`[Notificaciones] Error en notificación ${i}:`, r.reason)
       })
     })
-    // ── fin notificaciones ───────────────────────────────────────────────────
 
-    // 11) Pago online => crear preferencia MP
+    // 11) Pago online => crear preferencia MP (token SIEMPRE desde negocio_mp_tokens)
     let payment_url: string | null = null
 
     if (metodo_pago === 'online') {
-      const accessToken = (negocio.mp_access_token as string | null) || process.env.MERCADOPAGO_ACCESS_TOKEN || ''
+      // Si no está conectado, no permitir online
+      if (!negocio.mp_connected_at) {
+        return NextResponse.json(
+          { error: 'Este negocio aún no configuró MercadoPago. Contactá al negocio.' },
+          { status: 422 }
+        )
+      }
 
+      const { data: tokenRow, error: tokenErr } = await admin
+        .from('negocio_mp_tokens')
+        .select('mp_access_token')
+        .eq('negocio_id', negocio_id)
+        .maybeSingle()
+
+      if (tokenErr) {
+        console.error('Error leyendo token MP:', tokenErr)
+        return NextResponse.json({ error: 'Error verificando MercadoPago' }, { status: 500 })
+      }
+
+      const accessToken = tokenRow?.mp_access_token || ''
       if (!accessToken) {
         return NextResponse.json(
           { error: 'Este negocio aún no configuró MercadoPago. Contactá al negocio.' },
@@ -505,7 +495,7 @@ export async function POST(req: Request) {
               negocio_id,
               cliente_id: clienteId,
               cancel_token: turno.cancel_token,
-              dni, // útil para debug/trace
+              dni,
             },
           },
         })
