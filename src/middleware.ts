@@ -38,6 +38,35 @@ export async function middleware(req: NextRequest) {
   const onRoot = isRootHost(host);
 
   // ─────────────────────────────────────────────────────────
+  // 0.5) /callback (confirmación email / magic link)
+  //      Necesita crear el server client para intercambiar code
+  //      y setear cookies de sesión.
+  // ─────────────────────────────────────────────────────────
+  if (pathname.startsWith("/callback")) {
+    const res = NextResponse.next();
+
+    createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return req.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              req.cookies.set(name, value);
+              res.cookies.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
+
+    return res;
+  }
+
+  // ─────────────────────────────────────────────────────────
   // 1) Opción A: /negocio/:slug en ROOT => REDIRECT al subdominio
   //    MUY IMPORTANTE: esto NO debe dispararse cuando el request
   //    ya viene desde el subdominio (porque ahí reescribimos a /negocio/:slug).
@@ -107,7 +136,7 @@ export async function middleware(req: NextRequest) {
   // ─────────────────────────────────────────────────────────
   // 3) Rutas que siempre pasan sin auth (solo en dominio raíz)
   // ─────────────────────────────────────────────────────────
-  const ALWAYS_PUBLIC = ["/", "/login", "/register", "/callback", "/suscripcion"];
+  const ALWAYS_PUBLIC = ["/", "/login", "/register", "/suscripcion"];
 
   if (ALWAYS_PUBLIC.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next();
