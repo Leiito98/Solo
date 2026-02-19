@@ -1,56 +1,49 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 
 const ROOT_HOST = "getsolo.site";
 
-function getOriginFromReq(req: Request) {
-  const url = new URL(req.url);
-  return `${url.protocol}//${url.host}`;
-}
-
-function toRootOrigin(req: Request) {
-  const url = new URL(req.url);
-  return `${url.protocol}//${ROOT_HOST}`;
-}
-
 export async function GET(req: Request) {
   const url = new URL(req.url);
 
-  // ✅ 0) Canonical: si viene por www -> mandar a root UNA sola vez
+  // Canonical: www -> root
   if (url.host === `www.${ROOT_HOST}`) {
     const target = new URL(req.url);
-    target.host = ROOT_HOST; // mantiene path + query
+    target.host = ROOT_HOST;
     return NextResponse.redirect(target, 308);
   }
 
   const code = url.searchParams.get("code");
   const next = url.searchParams.get("next") || "/register?step=2";
 
-  // ✅ Usar origin real del request (ya canónico si no era www)
-  const origin = getOriginFromReq(req);
+  const origin = `${url.protocol}//${ROOT_HOST}`;
 
   if (!code) {
     return NextResponse.redirect(new URL("/register?error=missing_code", origin));
   }
 
-  const cookieStore = await cookies();
+  // ✅ Creamos la response DESDE YA, para poder setear cookies ahí
+  const safeNext = next.startsWith("/") ? next : "/register?step=2";
+  const redirectTo = new URL(safeNext, origin);
+
+  const res = NextResponse.redirect(redirectTo);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          // leer cookies entrantes del request
+          return (req as any).cookies?.getAll?.() ?? [];
         },
-        set(name, value, options) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          cookieStore.set({ name, value: "", ...options });
+        setAll(cookiesToSet) {
+          // ✅ escribir cookies en la response del redirect
+          cookiesToSet.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options);
+          });
         },
       },
     }
@@ -64,9 +57,5 @@ export async function GET(req: Request) {
     );
   }
 
-  // ✅ ya hay sesión en cookies -> redirigir al next
-  // Seguridad: evitar open-redirects
-  const safeNext = next.startsWith("/") ? next : "/register?step=2";
-
-  return NextResponse.redirect(new URL(safeNext, origin));
+  return res;
 }
