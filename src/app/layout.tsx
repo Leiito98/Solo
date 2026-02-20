@@ -13,7 +13,7 @@ const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "getsolo.site").toLo
 const RESERVED_SUBDOMAINS = new Set(["www", "app", "admin", "dashboard", "api"]);
 
 // ✅ GA4
-const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || ""; // ej: G-KGNRE71PMK
+const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID || ""; //
 
 function pickHost(h: Headers) {
   return (h.get("x-forwarded-host") || h.get("host") || "").toLowerCase();
