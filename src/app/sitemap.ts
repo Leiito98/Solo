@@ -17,13 +17,12 @@ function getRootSite() {
  * Ej: app/blog/cobrar-sena-online-barberia/page.tsx -> /blog/cobrar-sena-online-barberia
  */
 function getBlogRoutes(): string[] {
-  const appDir = path.join(process.cwd(), "app")
-  const blogDir = path.join(appDir, "blog")
+  const root = process.cwd()
+  const blogDir = path.join(root, "app", "blog")
 
   if (!fs.existsSync(blogDir)) return []
 
   const PAGE_FILES = new Set(["page.tsx", "page.ts", "page.jsx", "page.js"])
-
   const out: string[] = []
 
   function walk(dir: string) {
@@ -32,39 +31,31 @@ function getBlogRoutes(): string[] {
     for (const e of entries) {
       const full = path.join(dir, e.name)
 
-      // ignorar cosas que no deberían ser "posts"
       if (e.name.startsWith("_")) continue
       if (e.name === "components") continue
 
       if (e.isDirectory()) {
-        // ignorar drafts
-        if (fs.existsSync(path.join(full, ".draft"))) return
+        if (fs.existsSync(path.join(full, ".draft"))) continue
         walk(full)
         continue
       }
 
       if (e.isFile() && PAGE_FILES.has(e.name)) {
-        // full = .../app/blog/<slug>/page.tsx
-        // Queremos quedarnos con lo que está después de /app y sin /page.*
-        const relFromApp = path
-          .relative(appDir, full)
-          .replace(/\\/g, "/") // windows fix
+        const rel = path
+          .relative(path.join(root, "app"), full)
+          .replace(/\\/g, "/")
           .replace(/\/page\.(tsx|ts|jsx|js)$/, "")
 
-        // relFromApp empieza con "blog/..."
-        if (!relFromApp.startsWith("blog/")) continue
+        if (!rel.startsWith("blog/")) continue
+        if (rel === "blog") continue
 
-        // Excluir "blog" raíz (si tenés app/blog/page.tsx) del listado de posts
-        if (relFromApp === "blog") continue
-
-        out.push("/" + relFromApp)
+        out.push("/" + rel)
       }
     }
   }
 
   walk(blogDir)
 
-  // dedupe + orden estable
   return Array.from(new Set(out)).sort()
 }
 
