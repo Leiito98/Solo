@@ -2,7 +2,7 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Solo <onboarding@resend.dev>'
+const EMAIL_FROM = process.env.EMAIL_FROM || 'Solo <no-reply@getsolo.site>'
 const APP_URL = 'https://getsolo.site'.replace(/\/$/, '')
 const SOLO_LOGO_URL = `${APP_URL}/logo/solo.png`
 
