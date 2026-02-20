@@ -207,7 +207,7 @@ export default function CobrarSenaOnlineBarberiaPage() {
                 href="/barberia"
                 className="inline-flex items-center justify-center gap-2 border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:border-white/20 h-12 px-8 rounded-xl font-semibold transition-all"
               >
-                Volver a /barberia
+                Volver atrás
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
@@ -426,9 +426,6 @@ export default function CobrarSenaOnlineBarberiaPage() {
                     </p>
                   </Link>
                 </div>
-                <p className="mt-4 text-xs text-white/25">
-                  Tip SEO: estos links ayudan a que Google entienda tu cluster de barbería.
-                </p>
               </div>
             </article>
 

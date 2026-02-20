@@ -224,14 +224,14 @@ export default function LandingClient() {
       },
       {
         href: '/blog/evitar-cancelaciones-barberia',
-        status: 'Próximamente',
+        status: 'Publicado',
         vertical: 'Barbería',
         title: 'Cómo evitar cancelaciones en una barbería (sin pelearte por WhatsApp)',
         excerpt:
           'Recordatorios + seña + política clara para bajar no-shows y tener agenda real.',
         readTime: '7–10 min',
         icon: Bell,
-        published: false,
+        published: true,
       },
       {
         href: '/blog/agenda-por-barbero-comisiones',
