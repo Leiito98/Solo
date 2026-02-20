@@ -649,6 +649,79 @@ export default function LandingClient() {
         </div>
       </section>
 
+      {/* ── COMPARATIVA ── */}
+      <section className="px-5 py-24 relative z-10 border-t border-white/[0.06]">
+        <div className="max-w-5xl mx-auto">
+          
+          {/* Header */}
+          <div className="mb-14">
+            <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/40 text-xs font-semibold uppercase tracking-widest">
+              <BarChart3 className="w-4 h-4" /> Comparativa
+            </div>
+            <h2 className="heading-font text-4xl sm:text-5xl font-900 text-white leading-tight">
+              ¿Buscás algo más que una agenda online?
+            </h2>
+            <p className="mt-4 text-white/40 text-lg max-w-2xl">
+              Muchas plataformas se enfocan solo en tomar turnos. GetSolo está pensado
+              para la gestión real del negocio: cobros, equipo, comisiones y control diario.
+            </p>
+          </div>
+
+          {/* Tabla */}
+          <div className="gradient-border rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.03]">
+                    <th className="text-left px-6 py-4 font-semibold text-white/50 uppercase tracking-widest text-xs">Función</th>
+                    <th className="text-left px-6 py-4 font-semibold text-blue-300 uppercase tracking-widest text-xs">GetSolo</th>
+                    <th className="text-left px-6 py-4 font-semibold text-white/30 uppercase tracking-widest text-xs">Otras plataformas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { fn: "Agenda online",                    gs: "✅ Incluida",           other: "✅ Incluida" },
+                    { fn: "Cobros con MercadoPago",           gs: "✅ Señas y pagos",      other: "⚠️ Limitado" },
+                    { fn: "Cierre de caja diario",            gs: "✅ Sí",                 other: "❌ No" },
+                    { fn: "Portal para barberos / empleados", gs: "✅ Acceso individual",  other: "⚠️ Básico o inexistente" },
+                    { fn: "Comisiones por profesional",       gs: "✅ Automáticas",        other: "⚠️ Manual" },
+                    { fn: "Control de ingresos y egresos",    gs: "✅ Integrado",          other: "❌ No" },
+                    { fn: "Abonos y giftcards",               gs: "✅ Sí",                 other: "❌ No" },
+                    { fn: "Validación de efectivo",           gs: "✅ Cierre de caja",     other: "❌ No" },
+                  ].map((row, i) => (
+                    <tr
+                      key={i}
+                      className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
+                    >
+                      <td className="px-6 py-4 text-white/55 font-medium">{row.fn}</td>
+                      <td className="px-6 py-4 text-white/80">{row.gs}</td>
+                      <td className="px-6 py-4 text-white/35">{row.other}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <p className="mt-6 text-sm text-white/35 max-w-2xl">
+            A diferencia de otras plataformas, GetSolo está pensado para negocios que necesitan
+            controlar su caja, su equipo y sus ingresos — no solo tomar reservas.
+          </p>
+
+          <div className="mt-8">
+            <Link
+              href="/register?plan=pro"
+              className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white text-base h-12 px-8 rounded-xl font-semibold shadow-xl shadow-blue-500/30 transition-all hover:scale-[1.03]"
+            >
+              Probar GetSolo gratis
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+        </div>
+      </section>      
+
       {/* ── BLOG / RECURSOS ── */}
       <section id="blog" className="py-24 px-5 relative z-10 border-t border-white/[0.06]">
         <div className="max-w-5xl mx-auto">
@@ -1058,36 +1131,104 @@ export default function LandingClient() {
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-start justify-between gap-10 mb-10">
             <div className="space-y-3">
-              <Link href="/" className="flex items-center gap-2.5">
+              <Link href="/" className="flex items-center gap-2.5" aria-label="Ir al inicio">
                 <div className="relative w-8 h-8">
                   <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
                 </div>
                 <span className="heading-font text-lg font-800 text-white">GetSolo</span>
               </Link>
+
               <p className="text-sm text-white/30 max-w-xs leading-relaxed">
-                Sistema de turnos online para negocios de servicios: señas, comisiones y finanzas.
+                Sistema de turnos para barberías y negocios de servicios: cobros con MercadoPago, cierre de caja,
+                comisiones por profesional e ingresos/egresos.
               </p>
+
+              <div className="pt-2">
+                <Link
+                  href="/register?plan=pro"
+                  className="inline-flex items-center text-sm text-white/80 hover:text-white transition-colors underline underline-offset-4"
+                >
+                  Crear cuenta gratis
+                </Link>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-10 text-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-10 text-sm w-full md:w-auto">
               <div>
-                <div className="text-white/60 font-semibold mb-3">SEO</div>
+                <div className="text-white/60 font-semibold mb-3">Soluciones</div>
                 <ul className="space-y-2 text-white/30">
-                  <li><Link href="/sistema-turnos-online" className="hover:text-white/70 transition-colors">Sistema de turnos online</Link></li>
-                  <li><Link href="/barberia" className="hover:text-white/70 transition-colors">Turnos para barberías</Link></li>
-                  <li><Link href="/belleza" className="hover:text-white/70 transition-colors">Turnos para belleza</Link></li>
-                  <li><Link href="/nutricion" className="hover:text-white/70 transition-colors">Turnos para nutricionistas</Link></li>
-                  <li><Link href="/psicologia" className="hover:text-white/70 transition-colors">Turnos para psicólogos</Link></li>
+                  <li>
+                    <Link href="/alternativa-agendapro" className="hover:text-white/70 transition-colors">
+                    Alternativa a AgendaPro
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/sistema-turnos-online" className="hover:text-white/70 transition-colors">
+                      Sistema de turnos online
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/barberia" className="hover:text-white/70 transition-colors">
+                      Turnos para barberías
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/belleza" className="hover:text-white/70 transition-colors">
+                      Turnos para belleza
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/nutricion" className="hover:text-white/70 transition-colors">
+                      Turnos para nutricionistas
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/psicologia" className="hover:text-white/70 transition-colors">
+                      Turnos para psicólogos
+                    </Link>
+                  </li>
                 </ul>
               </div>
 
               <div>
                 <div className="text-white/60 font-semibold mb-3">Producto</div>
                 <ul className="space-y-2 text-white/30">
-                  <li><a href="#features" className="hover:text-white/70 transition-colors">Features</a></li>
-                  <li><a href="#pricing" className="hover:text-white/70 transition-colors">Precios</a></li>
-                  <li><a href="#blog" className="hover:text-white/70 transition-colors">Blog</a></li>
-                  <li><Link href="/register?plan=pro" className="hover:text-white/70 transition-colors">Empezar Gratis</Link></li>
+                  <li>
+                    <a href="#features" className="hover:text-white/70 transition-colors">
+                      Funcionalidades
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#pricing" className="hover:text-white/70 transition-colors">
+                      Precios
+                    </a>
+                  </li>
+
+                  {/* Si tenés sección #blog en la landing, dejá esto. Si no, usá el Link a /blog */}
+                  <li>
+                    <a href="#blog" className="hover:text-white/70 transition-colors">
+                      Blog
+                    </a>
+                  </li>
+                  {/* Alternativa si NO existe #blog:
+                  <li>
+                    <Link href="/blog" className="hover:text-white/70 transition-colors">
+                      Blog
+                    </Link>
+                  </li>
+                  */}
+
+                  <li>
+                    <Link href="/centro-de-ayuda" className="hover:text-white/70 transition-colors">
+                      Centro de ayuda
+                    </Link>
+                  </li>
+
+                  <li>
+                    <Link href="/register?plan=pro" className="hover:text-white/70 transition-colors">
+                      Empezar gratis
+                    </Link>
+                  </li>
                 </ul>
               </div>
 
@@ -1098,24 +1239,35 @@ export default function LandingClient() {
                     <a
                       href="https://api.whatsapp.com/send/?phone=5491164613750&text=Necesito%20ayuda%20con%20GetSolo&type=phone_number&app_absent=0"
                       className="hover:text-white/70 transition-colors"
+                      rel="nofollow noopener noreferrer"
+                      target="_blank"
                     >
                       WhatsApp
                     </a>
                   </li>
+
                   <li>
                     <a href="mailto:support@getsolo.site" className="hover:text-white/70 transition-colors">
                       Email
                     </a>
                   </li>
+
                   <li>
-                    <a href="/terminos-y-condiciones" className="hover:text-white/70 transition-colors">
-                      Términos
-                    </a>
+                    <Link href="/centro-de-ayuda" className="hover:text-white/70 transition-colors">
+                      Centro de ayuda
+                    </Link>
                   </li>
+
                   <li>
-                    <a href="/politica-de-privacidad" className="hover:text-white/70 transition-colors">
+                    <Link href="/terminos-y-condiciones" className="hover:text-white/70 transition-colors">
+                      Términos
+                    </Link>
+                  </li>
+
+                  <li>
+                    <Link href="/politica-de-privacidad" className="hover:text-white/70 transition-colors">
                       Privacidad
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </div>
@@ -1124,7 +1276,7 @@ export default function LandingClient() {
 
           <div className="border-t border-white/[0.05] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/20">
             <span>© {new Date().getFullYear()} GetSolo. Todos los derechos reservados.</span>
-            <span>🇦🇷 Hecho en Argentina</span>
+            <span>Hecho en Argentina</span>
           </div>
         </div>
       </footer>

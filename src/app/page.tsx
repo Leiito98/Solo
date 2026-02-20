@@ -5,29 +5,31 @@ import LandingClient from "./landing-client"
 const SITE = "https://getsolo.site"
 const CANONICAL = `${SITE}/`
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE),
-  title: "GetSolo | Agenda online, señas con MercadoPago y gestión para profesionales",
+export const metadata = {
+  title: "GetSolo – Turnos, cierre de caja y comisiones para barberías",
   description:
-    "Sistema todo-en-uno para negocios de servicios: turnos online 24/7, señas con MercadoPago, comisiones, finanzas y tu web de reservas. Probá 14 días gratis sin tarjeta.",
-  alternates: { canonical: CANONICAL },
+    "GetSolo es un sistema para barberías y profesionales: agenda online, cobros con MercadoPago, cierre de caja diario, comisiones por barbero, ingresos/egresos, abonos y giftcards. Probá 14 días gratis.",
+  keywords: [
+    "sistema para barberías",
+    "agenda online barbería",
+    "cierre de caja barbería",
+    "comisiones barberos",
+    "cobros mercadopago barbería",
+    "software para barberos",
+    "ingresos y egresos barbería",
+    "alternativa a agendapro"
+  ],
   openGraph: {
-    type: "website",
-    url: CANONICAL,
-    title: "GetSolo | Turnos online + señas con MercadoPago",
+    title: "GetSolo – Gestión completa para barberías",
     description:
-      "Agenda online 24/7, recordatorios, comisiones y finanzas. Tu web de reservas en minutos. 14 días gratis sin tarjeta.",
-    siteName: "GetSolo",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "GetSolo" }],
+      "Agenda online + cobros + cierre de caja + comisiones + ingresos/egresos + portal de barberos. Probá 14 días gratis.",
   },
   twitter: {
-    card: "summary_large_image",
-    title: "GetSolo | Turnos online + señas con MercadoPago",
+    title: "GetSolo – Turnos y caja para barberías",
     description:
-      "Agenda online 24/7, recordatorios, comisiones y finanzas. 14 días gratis sin tarjeta.",
-    images: ["/og.png"],
+      "Agenda online, cobros con MP, cierre de caja diario, comisiones por profesional, abonos y giftcards.",
   },
-}
+};
 
 function jsonLd() {
   const software = {

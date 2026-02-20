@@ -137,8 +137,12 @@ const faqCategories: FAQCategory[] = [
         answer: 'Sí, totalmente. Cada profesional puede tener su propio porcentaje de comisión. Por ejemplo, un profesional senior puede tener 45% y uno junior 30%. El sistema calcula todo automáticamente.',
       },
       {
-        question: '¿Los profesionales pueden ver sus propias comisiones?',
-        answer: 'Actualmente no. GetSolo el dueño del negocio tiene acceso completo al Dashboard. Los profesionales no tienen login propio. Estamos trabajando en una funcionalidad de acceso limitado para el equipo en futuras versiones.',
+        question: '¿Los profesionales pueden tener acceso y gestionar sus turnos?',
+        answer: 'Sí. GetSolo permite dar acceso al equipo con permisos limitados. Cada profesional puede ver su agenda, gestionar sus turnos y registrar el estado del turno. Para evitar errores o abusos, el dueño puede validar cobros mediante cierre de caja y tener trazabilidad de quién registró cada acción.',
+      },
+      {
+        question: '¿Cómo evito que un empleado marque pagos en efectivo que no existieron?',
+        answer: 'GetSolo está pensado para evitar ese problema: los cobros pueden registrarse por método (MercadoPago, efectivo, giftcard, abono) y el dueño puede confirmar el efectivo al final del día con un cierre de caja. Así las comisiones y liquidaciones quedan respaldadas por movimientos validados.',
       },
     ],
   },

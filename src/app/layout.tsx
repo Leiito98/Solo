@@ -59,7 +59,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description:
         "Sistema de turnos online para profesionales en Argentina. Cobrá señas, reducí ausencias y gestioná tu negocio en un solo lugar.",
       alternates: {
-        canonical: `https://${ROOT_DOMAIN}`,
+        canonical: `https://${ROOT_DOMAIN}/`,
       },
       openGraph: {
         type: "website",

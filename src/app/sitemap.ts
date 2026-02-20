@@ -23,8 +23,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/nutricion", priority: 0.8, changeFrequency: "weekly" },
     { path: "/psicologia", priority: 0.8, changeFrequency: "weekly" },
 
-    // ✅ Blog (solo lo indexable)
-    // { path: "/blog", priority: 0.6, changeFrequency: "weekly" }, // habilitalo solo si existe /blog
+    // Centro de ayuda (nuevo)
+    { path: "/centro-de-ayuda", priority: 0.4, changeFrequency: "monthly" },
+
+    //Comparativas
+    { path: "/alternativa-agendapro", priority: 0.6, changeFrequency: "monthly" },
+
+    // Blog (solo lo indexable)
+    // { path: "/blog", priority: 0.6, changeFrequency: "weekly" },
     { path: "/blog/cobrar-sena-online-barberia", priority: 0.7, changeFrequency: "monthly" },
     { path: "/blog/evitar-cancelaciones-barberia", priority: 0.7, changeFrequency: "monthly" },
 

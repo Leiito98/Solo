@@ -54,7 +54,7 @@ export const metadata: Metadata = {
 function jsonLd() {
   const faqs = [
     {
-      q: "¿Solo sirve para barberías, psicólogos y nutricionistas?",
+      q: "¿GetSolo sirve para barberías, psicólogos y nutricionistas?",
       a: "Sí. GetSolo está pensado para profesionales y negocios de servicios: barberías, estética, psicología, nutrición, fitness y más.",
     },
     {
