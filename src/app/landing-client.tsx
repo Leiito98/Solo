@@ -33,6 +33,23 @@ import {
   MessageSquare,
 } from 'lucide-react'
 
+// ── Iconos de redes sociales (SVG inline para no depender de librería externa)
+function IconInstagram({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+    </svg>
+  )
+}
+
+function IconFacebook({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  )
+}
+
 export default function LandingClient() {
   const supabase = createClient()
 
@@ -40,7 +57,6 @@ export default function LandingClient() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
-  // ✅ auth state para mostrar "Ir al dashboard" y ocultar login/register
   const [isAuthed, setIsAuthed] = useState<boolean>(false)
   const [authChecked, setAuthChecked] = useState(false)
 
@@ -132,7 +148,6 @@ export default function LandingClient() {
     },
   ]
 
-  // ✅ 4 verticales SEO (internal linking)
   const verticalesSEO = [
     {
       href: '/barberia',
@@ -160,7 +175,6 @@ export default function LandingClient() {
     },
   ]
 
-  // ✅ Testimonios “seguros”: anónimos + en beta (sin inventar identidades)
   const testimonials = [
     {
       name: 'Dueño de barbería (CABA)',
@@ -204,11 +218,6 @@ export default function LandingClient() {
     },
   ]
 
-  /**
-   * ✅ Blog cards:
-   * - mostramos 1 publicado + próximos (no clickeables) para evitar mandar a páginas vacías.
-   * - cuando publiques 2 por semana, vas “activando” más links.
-   */
   const blogPosts = useMemo(
     () => [
       {
@@ -288,6 +297,8 @@ export default function LandingClient() {
         .float-slow { animation: floatSlow 6s ease-in-out infinite; }
         @keyframes floatSlow { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
         .blob { filter: blur(80px); border-radius: 50%; position: absolute; pointer-events: none; }
+        .social-icon { transition: all 0.2s ease; }
+        .social-icon:hover { color: rgba(255,255,255,0.9); transform: translateY(-2px); }
       `}</style>
 
       {/* Background blobs */}
@@ -338,7 +349,6 @@ export default function LandingClient() {
             </a>
           </div>
 
-          {/* ✅ Desktop actions */}
           <div className="hidden md:flex items-center gap-3">
             {authChecked && isAuthed ? (
               <Button
@@ -378,7 +388,6 @@ export default function LandingClient() {
           </button>
         </div>
 
-        {/* ✅ Mobile menu */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-[#0f0f0f] border-b border-white/[0.06] px-5 py-4 space-y-3">
             <Link
@@ -652,8 +661,6 @@ export default function LandingClient() {
       {/* ── COMPARATIVA ── */}
       <section className="px-5 py-24 relative z-10 border-t border-white/[0.06]">
         <div className="max-w-5xl mx-auto">
-          
-          {/* Header */}
           <div className="mb-14">
             <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/40 text-xs font-semibold uppercase tracking-widest">
               <BarChart3 className="w-4 h-4" /> Comparativa
@@ -667,7 +674,6 @@ export default function LandingClient() {
             </p>
           </div>
 
-          {/* Tabla */}
           <div className="gradient-border rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -703,10 +709,12 @@ export default function LandingClient() {
             </div>
           </div>
 
-          {/* Footer */}
           <p className="mt-6 text-sm text-white/35 max-w-2xl">
             A diferencia de otras plataformas, GetSolo está pensado para negocios que necesitan
-            controlar su caja, su equipo y sus ingresos — no solo tomar reservas.
+            controlar su caja, su equipo y sus ingresos — no solo tomar reservas.{' '}
+            <Link href="/alternativa-agendapro" className="text-blue-400 hover:text-blue-300 transition-colors">
+              Ver comparativa completa →
+            </Link>
           </p>
 
           <div className="mt-8">
@@ -718,9 +726,8 @@ export default function LandingClient() {
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-
         </div>
-      </section>      
+      </section>
 
       {/* ── BLOG / RECURSOS ── */}
       <section id="blog" className="py-24 px-5 relative z-10 border-t border-white/[0.06]">
@@ -794,7 +801,6 @@ export default function LandingClient() {
                 </div>
               )
 
-              // ✅ SEO: no linkear a páginas vacías (evita frustración + evita señal negativa)
               return p.published ? (
                 <Link key={p.href} href={p.href} className="block">
                   {Card}
@@ -812,7 +818,7 @@ export default function LandingClient() {
               href="/barberia"
               className="inline-flex items-center justify-center gap-2 border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:border-white/20 h-12 px-8 rounded-xl font-semibold transition-all"
             >
-              Ver página Barberia
+              Ver página Barbería
               <ChevronRight className="w-4 h-4" />
             </Link>
 
@@ -1130,7 +1136,9 @@ export default function LandingClient() {
       <footer className="border-t border-white/[0.06] py-12 px-5 relative z-10">
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-start justify-between gap-10 mb-10">
-            <div className="space-y-3">
+
+            {/* Brand + descripción + redes */}
+            <div className="space-y-3 max-w-xs">
               <Link href="/" className="flex items-center gap-2.5" aria-label="Ir al inicio">
                 <div className="relative w-8 h-8">
                   <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
@@ -1138,12 +1146,34 @@ export default function LandingClient() {
                 <span className="heading-font text-lg font-800 text-white">GetSolo</span>
               </Link>
 
-              <p className="text-sm text-white/30 max-w-xs leading-relaxed">
+              <p className="text-sm text-white/30 leading-relaxed">
                 Sistema de turnos para barberías y negocios de servicios: cobros con MercadoPago, cierre de caja,
                 comisiones por profesional e ingresos/egresos.
               </p>
 
-              <div className="pt-2">
+              {/* ── REDES SOCIALES ── */}
+              <div className="flex items-center gap-3 pt-1">
+                <a
+                  href="https://www.instagram.com/getsolo_software/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GetSolo en Instagram"
+                  className="social-icon w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-white/40 hover:border-white/20 hover:bg-white/[0.08]"
+                >
+                  <IconInstagram className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://www.facebook.com/getsolo.site"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GetSolo en Facebook"
+                  className="social-icon w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-white/40 hover:border-white/20 hover:bg-white/[0.08]"
+                >
+                  <IconFacebook className="w-4 h-4" />
+                </a>
+              </div>
+
+              <div className="pt-1">
                 <Link
                   href="/register?plan=pro"
                   className="inline-flex items-center text-sm text-white/80 hover:text-white transition-colors underline underline-offset-4"
@@ -1159,7 +1189,7 @@ export default function LandingClient() {
                 <ul className="space-y-2 text-white/30">
                   <li>
                     <Link href="/alternativa-agendapro" className="hover:text-white/70 transition-colors">
-                    Alternativa a AgendaPro
+                      Alternativa a AgendaPro
                     </Link>
                   </li>
                   <li>
@@ -1203,27 +1233,16 @@ export default function LandingClient() {
                       Precios
                     </a>
                   </li>
-
-                  {/* Si tenés sección #blog en la landing, dejá esto. Si no, usá el Link a /blog */}
                   <li>
                     <a href="#blog" className="hover:text-white/70 transition-colors">
                       Blog
                     </a>
                   </li>
-                  {/* Alternativa si NO existe #blog:
-                  <li>
-                    <Link href="/blog" className="hover:text-white/70 transition-colors">
-                      Blog
-                    </Link>
-                  </li>
-                  */}
-
                   <li>
                     <Link href="/centro-de-ayuda" className="hover:text-white/70 transition-colors">
                       Centro de ayuda
                     </Link>
                   </li>
-
                   <li>
                     <Link href="/register?plan=pro" className="hover:text-white/70 transition-colors">
                       Empezar gratis
@@ -1245,25 +1264,21 @@ export default function LandingClient() {
                       WhatsApp
                     </a>
                   </li>
-
                   <li>
                     <a href="mailto:support@getsolo.site" className="hover:text-white/70 transition-colors">
                       Email
                     </a>
                   </li>
-
                   <li>
                     <Link href="/centro-de-ayuda" className="hover:text-white/70 transition-colors">
                       Centro de ayuda
                     </Link>
                   </li>
-
                   <li>
                     <Link href="/terminos-y-condiciones" className="hover:text-white/70 transition-colors">
                       Términos
                     </Link>
                   </li>
-
                   <li>
                     <Link href="/politica-de-privacidad" className="hover:text-white/70 transition-colors">
                       Privacidad
@@ -1276,7 +1291,30 @@ export default function LandingClient() {
 
           <div className="border-t border-white/[0.05] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/20">
             <span>© {new Date().getFullYear()} GetSolo. Todos los derechos reservados.</span>
-            <span>Hecho en Argentina</span>
+            <div className="flex items-center gap-4">
+              <span>Hecho en Argentina 🇦🇷</span>
+              {/* Redes también en el bottom bar (versión compacta) */}
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://www.instagram.com/getsolo_software/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="text-white/20 hover:text-white/60 transition-colors"
+                >
+                  <IconInstagram className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href="https://www.facebook.com/getsolo.site"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="text-white/20 hover:text-white/60 transition-colors"
+                >
+                  <IconFacebook className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
