@@ -1,8 +1,9 @@
+// app/dashboard/layout.tsx
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { DashboardNav } from "@/components/dashboard/nav"
 import { Toaster } from "@/components/ui/toaster"
-import { OnboardingPanel } from '@/components/dashboard/onboarding/onboarding-panel'
+import { OnboardingPanel } from "@/components/dashboard/onboarding/onboarding-panel"
 
 export default async function DashboardLayout({
   children,
@@ -16,7 +17,6 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/login")
 
-  // 1) Intentar como OWNER
   const { data: negocioOwner } = await supabase
     .from("negocios")
     .select("*")
@@ -24,7 +24,6 @@ export default async function DashboardLayout({
     .maybeSingle()
 
   if (negocioOwner) {
-    // Extraer nombre del usuario (prioridad: nombrecliente -> metadata -> "Usuario")
     const firstName =
       (String(negocioOwner.nombrecliente || "")
         .trim()
@@ -34,25 +33,34 @@ export default async function DashboardLayout({
       "Usuario"
 
     return (
-      <div className="flex h-screen bg-gray-50">
-        <DashboardNav negocio={negocioOwner} user={user} />
+      <div className="min-h-screen bg-gray-50">
+        <div className="md:flex md:h-screen md:overflow-hidden">
+          {/* Sidebar (desktop fijo) */}
+          <div className="hidden md:block md:sticky md:top-0 md:h-screen md:shrink-0">
+            <DashboardNav negocio={negocioOwner} user={user} />
+          </div>
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-8 py-8">{children}</div>
-        </main>
+          {/* Main (desktop scrollea) */}
+          <main className="flex-1 min-w-0 md:h-screen md:overflow-y-auto">
+            {/* Mobile topbar + drawer */}
+            <div className="md:hidden">
+              <DashboardNav negocio={negocioOwner} user={user} />
+            </div>
 
-        {/* ✨ Panel de Onboarding estilo AgendaPro */}
-        <OnboardingPanel
-          negocioId={negocioOwner.id}
-          userFirstName={firstName}
-        />
+            <div className="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-8">
+              {children}
+            </div>
+          </main>
+
+          {/* ✅ Onboarding SIEMPRE (el componente define mobile/desktop) */}
+          <OnboardingPanel negocioId={negocioOwner.id} userFirstName={firstName} />
+        </div>
 
         <Toaster />
       </div>
     )
   }
 
-  // 2) Si no es owner, ver si es PROFESIONAL
   const { data: prof } = await supabase
     .from("profesionales")
     .select("id")
@@ -61,6 +69,5 @@ export default async function DashboardLayout({
 
   if (prof) redirect("/pro/dashboard")
 
-  // 3) Nadie conocido
   redirect("/register")
 }

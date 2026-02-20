@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Table,
   TableBody,
@@ -10,7 +10,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Pencil, Trash2, Package, ImageIcon } from 'lucide-react'
 import { EditServicioDialog } from './edit-servicio-dialog'
@@ -31,9 +30,9 @@ interface ServiciosTableProps {
   servicios: Servicio[]
 }
 
-export function ServiciosTable({ servicios: initialServicios }: ServiciosTableProps) {
-  // Estado local para update optimista de imagen_url
-  const [servicios, setServicios] = useState<Servicio[]>(initialServicios)
+export function ServiciosTable({ servicios }: ServiciosTableProps) {
+  // ✅ Overrides optimistas SOLO para imagen_url (no congelamos el listado)
+  const [imagenOverrides, setImagenOverrides] = useState<Record<string, string | null>>({})
 
   const [editingServicio, setEditingServicio] = useState<Servicio | null>(null)
   const [deletingServicio, setDeletingServicio] = useState<Servicio | null>(null)
@@ -41,12 +40,21 @@ export function ServiciosTable({ servicios: initialServicios }: ServiciosTablePr
   const [imagenServicio, setImagenServicio] = useState<Servicio | null>(null)
 
   function handleImagenUpdated(id: string, imagen_url: string | null) {
-    setServicios((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, imagen_url } : s))
-    )
+    setImagenOverrides((prev) => ({ ...prev, [id]: imagen_url }))
   }
 
-  if (servicios.length === 0) {
+  // ✅ servicios + override de imagen (si existe)
+  const serviciosView = useMemo(() => {
+    if (!servicios?.length) return []
+    return servicios.map((s) => ({
+      ...s,
+      imagen_url: Object.prototype.hasOwnProperty.call(imagenOverrides, s.id)
+        ? imagenOverrides[s.id]!
+        : s.imagen_url,
+    }))
+  }, [servicios, imagenOverrides])
+
+  if (serviciosView.length === 0) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
@@ -77,7 +85,7 @@ export function ServiciosTable({ servicios: initialServicios }: ServiciosTablePr
             </TableHeader>
 
             <TableBody>
-              {servicios.map((servicio) => (
+              {serviciosView.map((servicio) => (
                 <TableRow key={servicio.id}>
                   <TableCell className="font-medium">{servicio.nombre}</TableCell>
 
@@ -91,7 +99,7 @@ export function ServiciosTable({ servicios: initialServicios }: ServiciosTablePr
                     ${Number(servicio.precio).toLocaleString('es-AR')}
                   </TableCell>
 
-                  <TableCell className="text-right ">
+                  <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-6">
                       {servicio.imagen_url ? (
                         <img
@@ -104,6 +112,7 @@ export function ServiciosTable({ servicios: initialServicios }: ServiciosTablePr
                           <ImageIcon className="h-4 w-4 text-gray-400" />
                         </div>
                       )}
+
                       <Button
                         variant="ghost"
                         size="sm"
@@ -116,15 +125,15 @@ export function ServiciosTable({ servicios: initialServicios }: ServiciosTablePr
                   </TableCell>
 
                   <TableCell className="text-right">
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        className="gap-8"
-                        onClick={() => setProductosServicioId(servicio.id)}
-                      >
-                        <Package className="w-4 h-4" />
-                        Productos
-                      </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-8"
+                      onClick={() => setProductosServicioId(servicio.id)}
+                    >
+                      <Package className="w-4 h-4" />
+                      Productos
+                    </Button>
                   </TableCell>
 
                   <TableCell className="text-right">

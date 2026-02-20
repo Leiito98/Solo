@@ -1,4 +1,3 @@
-//components/dashboard/servicios/create-servicio-dialog
 'use client'
 
 import { useState } from 'react'
@@ -24,61 +23,74 @@ interface CreateServicioDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function CreateServicioDialog({
-  negocioId,
-  open,
-  onOpenChange,
-}: CreateServicioDialogProps) {
+export function CreateServicioDialog({ negocioId, open, onOpenChange }: CreateServicioDialogProps) {
   const [loading, setLoading] = useState(false)
   const [nombre, setNombre] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [duracion, setDuracion] = useState('30')
   const [precio, setPrecio] = useState('')
-  
+
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
 
-    const { error } = await supabase
-      .from('servicios')
-      .insert({
-        negocio_id: negocioId,
-        nombre,
-        descripcion: descripcion || null,
-        duracion_min: parseInt(duracion),
-        precio: parseFloat(precio),
-      })
+    const supabase = createClient() // ✅ igual que en profesionales (dentro del submit)
 
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      })
-      setLoading(false)
-    } else {
-      toast({
-        title: 'Servicio creado',
-        description: 'El servicio se creó correctamente',
-      })
+    try {
+      const dur = Number(duracion)
+      const pre = Number(precio)
 
-    // ✅ refrescar onboarding instantáneo
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('getsolo:onboarding-refresh'))
-    }
-      
+      if (!nombre.trim()) {
+        toast({ title: 'Falta nombre', description: 'Ingresá el nombre del servicio', variant: 'destructive' })
+        return
+      }
+      if (!Number.isFinite(dur) || dur <= 0) {
+        toast({ title: 'Duración inválida', description: 'Ingresá una duración válida', variant: 'destructive' })
+        return
+      }
+      if (!Number.isFinite(pre) || pre < 0) {
+        toast({ title: 'Precio inválido', description: 'Ingresá un precio válido', variant: 'destructive' })
+        return
+      }
+
+      const { error } = await supabase
+        .from('servicios')
+        .insert({
+          negocio_id: negocioId,
+          nombre: nombre.trim(),
+          descripcion: descripcion.trim() ? descripcion.trim() : null,
+          duracion_min: dur,
+          precio: pre,
+        })
+
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' })
+        return
+      }
+
+      toast({ title: 'Servicio creado', description: 'El servicio se creó correctamente' })
+
+      // ✅ refrescar onboarding instantáneo
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('getsolo:onboarding-refresh'))
+      }
+
+      // ✅ IMPORTANTE: refresh primero
+      router.refresh()
+
       // Reset form
       setNombre('')
       setDescripcion('')
       setDuracion('30')
       setPrecio('')
-      
+
+      // Cerrar modal al final
       onOpenChange(false)
-      router.refresh()
+    } finally {
       setLoading(false)
     }
   }

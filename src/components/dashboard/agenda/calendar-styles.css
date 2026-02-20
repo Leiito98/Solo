@@ -1,57 +1,360 @@
-/* Estilos personalizados para react-big-calendar */
-.rbc-calendar {
+/* =========================
+   FullCalendar base
+   ========================= */
+
+   .calendar-shell-fc {
+    height: calc(100vh - 320px);
+    min-height: 560px;
+    position: relative;
+    overflow: visible;
+  }
+  
+  .fc {
     font-family: inherit;
   }
   
-  .rbc-header {
-    padding: 10px 0;
-    font-weight: 600;
-    font-size: 14px;
-    border-bottom: 2px solid #e5e7eb;
+  /* Bordes/redondeo del grid */
+  .fc .fc-scrollgrid {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
   }
   
-  .rbc-time-slot {
-    min-height: 40px;
+  /* Header días */
+  .fc .fc-col-header-cell {
+    background: #fff;
+    border-color: #e5e7eb;
   }
   
-  .rbc-event {
-    padding: 2px 5px;
+  .fc .fc-col-header-cell-cushion {
+    display: block;
+    padding: 10px 8px;
+    font-weight: 700;
+    font-size: 13px;
+    color: #111827;
+    text-transform: capitalize;
+  }
+  
+  /* Hoy */
+  .fc .fc-day-today {
+    background: #eff6ff;
+  }
+  
+  /* =========================
+     Slots / líneas
+     ========================= */
+  
+  .fc .fc-timegrid-slot {
+    border-color: #eef2f7;
+    height: 34px;
+  }
+  
+  .fc {
+    --fc-timegrid-slot-min-height: 34px;
+  }
+  
+  /* Columna horas */
+  .fc .fc-timegrid-axis,
+  .fc .fc-timegrid-axis-frame,
+  .fc .fc-timegrid-axis-cushion {
+    background: #fff;
+  }
+  
+  .fc .fc-timegrid-slot-label {
+    background: #fff;
+    border-color: #eef2f7;
+  }
+  
+  .fc .fc-timegrid-slot-label-frame {
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+  }
+  
+  .fc .fc-timegrid-slot-label-cushion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 10px;
     font-size: 12px;
-    border-radius: 4px;
-    cursor: pointer;
+    font-weight: 600;
+    color: #374151;
+    line-height: 1.15;
   }
   
-  .rbc-event:hover {
-    opacity: 0.8;
+  /* Línea “now” */
+  .fc .fc-timegrid-now-indicator-line {
+    border-color: #ef4444;
   }
   
-  .rbc-today {
-    background-color: #eff6ff;
+  /* =========================
+     Eventos (turnos)
+     ========================= */
+  
+  .fc .fc-timegrid-event-harness {
+    margin-left: 6px;
+    margin-right: 6px;
   }
   
-  .rbc-toolbar {
-    margin-bottom: 15px;
+  .fc .fc-timegrid-event {
+    border-radius: 12px;
+    border: 0;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+    overflow: hidden;
   }
   
-  .rbc-toolbar button {
-    padding: 5px 15px;
-    border: 1px solid #d1d5db;
-    background: white;
-    border-radius: 4px;
-    cursor: pointer;
+  /* ✅ 1 línea: hora + título */
+  .fc .fc-timegrid-event .fc-event-main-frame {
+    height: 100%;
+    box-sizing: border-box;
+    padding: 5px 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
   }
   
-  .rbc-toolbar button:hover {
+  .fc .fc-timegrid-event .fc-event-main {
+    overflow: hidden;
+  }
+  
+  .fc .fc-timegrid-event .fc-event-title,
+  .fc .fc-timegrid-event .fc-event-time {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  
+  .fc .fc-timegrid-event .fc-event-time {
+    flex: 0 0 auto;
+    opacity: 0.95;
+  }
+  
+  .fc .fc-timegrid-event .fc-event-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .fc .fc-timegrid-event .fc-event-time::after {
+    content: "";
+  }
+  
+  /* =========================
+     Non-business (gris)
+     ========================= */
+  
+  .fc .fc-non-business {
     background: #f3f4f6;
+    opacity: 1;
   }
   
-  .rbc-toolbar button.rbc-active {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
+  /* =========================
+     Reloj overlay (top-left)
+     ========================= */
+  
+  .fc-slot-range-button {
+    position: absolute;
+    top: 30px;
+    left: 23px;
+    z-index: 20;
   }
   
-  .rbc-current-time-indicator {
-    background-color: #ef4444;
-    height: 2px;
+  /* =========================
+     Skeleton (cuando mounted=false)
+     ========================= */
+  
+  .fc-skeleton {
+    height: 100%;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%);
+    background-size: 400% 100%;
+    animation: fc-skeleton 1.2s ease-in-out infinite;
   }
+  
+  @keyframes fc-skeleton {
+    0% { background-position: 100% 0; }
+    100% { background-position: 0 0; }
+  }
+  
+  /* =========================
+     Tu UI (toolbar / leyenda)
+     ========================= */
+  
+  .calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .calendar-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .calendar-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .calendar-prof-select {
+    width: 220px;
+  }
+  
+  .calendar-view-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .calendar-btn {
+    height: 36px;
+  }
+  
+  .calendar-legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: white;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    flex-wrap: wrap;
+  }
+  
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  
+  /* =========================
+     Mobile improvements (Semana usable)
+     ========================= */
+  
+  @media (max-width: 768px) {
+    .calendar-shell-fc {
+      height: 72vh;
+      min-height: 520px;
+    }
+
+    .fc-slot-range-button {
+      top: 12px;        /* más arriba */
+      left: 6px;       /* más a la izquierda */
+      transform: scale(0.9); /* un poco más chico */
+    }
+  
+    .calendar-prof-select {
+      width: 100%;
+      max-width: 320px;
+    }
+  
+    .calendar-btn {
+      height: 34px;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+  
+    /* Semana scrolleable */
+    .calendar-shell-fc .fc .fc-scroller-harness,
+    .calendar-shell-fc .fc .fc-scroller {
+      overflow-x: auto !important;
+    }
+  
+    /* Min ancho por día (sin dayMinWidth) */
+    .calendar-shell-fc .fc .fc-timegrid-col {
+      min-width: 120px;
+    }
+  
+    /* Header 2 líneas */
+    .fc-mobile-dayhead {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 6px 2px;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+  
+    .fc-mobile-dayhead-w {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+  
+    .fc-mobile-dayhead-d {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+  
+    /* Columna horas compacta */
+    .fc .fc-timegrid-axis {
+      width: 48px !important;
+    }
+  
+    .fc .fc-timegrid-slot-label-cushion {
+      padding: 0 6px;
+      font-size: 11px;
+    }
+  
+    .fc {
+      --fc-timegrid-slot-min-height: 32px;
+    }
+  
+    .fc .fc-timegrid-slot {
+      height: 32px;
+    }
+  
+    .fc .fc-timegrid-event-harness {
+      margin-left: 4px;
+      margin-right: 4px;
+    }
+  
+    .fc .fc-timegrid-event .fc-event-main-frame {
+      padding: 4px 8px;
+      gap: 6px;
+    }
+  
+    .fc .fc-timegrid-event .fc-event-time,
+    .fc .fc-timegrid-event .fc-event-title {
+      font-size: 11px;
+      line-height: 1.15;
+    }
+  
+    .fc-slot-range-button {
+      top: 10px;
+      left: 10px;
+    }
+  }
+  @media (max-width: 768px) {
+  .fc-slot-range-button {
+    top: 25px;        /* más arriba */
+    left: 14px;       /* más a la izquierda */
+    transform: scale(1); /* un poco más chico */
+  }
+}

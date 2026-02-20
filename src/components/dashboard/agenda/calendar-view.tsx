@@ -1,34 +1,28 @@
 'use client'
 
-import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar'
-import { format, parse, startOfWeek, getDay } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Settings, Plus } from 'lucide-react'
+import { Settings, Plus, Clock } from 'lucide-react'
 import { CreateTurnoDialog } from './create-turno-dialog'
 import { HorariosConfigDialog } from './horarios-config-dialog'
 import { TurnoDetailDialog } from './turno-detail-dialog'
-import 'react-big-calendar/lib/css/react-big-calendar.css'
+
+import FullCalendar from '@fullcalendar/react'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import interactionPlugin from '@fullcalendar/interaction'
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
 import './calendar-styles.css'
 
-const locales = {
-  'es': es,
-}
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: () => startOfWeek(new Date(), { locale: es }),
-  getDay,
-  locales,
-})
-
-type Profesional = {
-  id: string
-  nombre: string
-}
+type Profesional = { id: string; nombre: string }
 
 type Turno = {
   id: string
@@ -42,227 +36,415 @@ type Turno = {
   clientes: { nombre: string } | null
 }
 
-type CalendarEvent = {
-  id: string
-  title: string
-  start: Date
-  end: Date
-  resource: {
-    turnoId: string
-    estado: string
-    cliente: string
-    servicio: string
+type NegocioHorario = {
+  dia_semana: number
+  cerrado: boolean
+  hora_inicio: string | null
+  hora_fin: string | null
+}
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const run = () => setIsMobile(mq.matches)
+    run()
+    mq.addEventListener?.('change', run)
+    return () => mq.removeEventListener?.('change', run)
+  }, [])
+  return isMobile
+}
+
+function pad2(n: number) {
+  return String(n).padStart(2, '0')
+}
+function minutesToHHmm(mins: number) {
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return `${pad2(h)}:${pad2(m)}`
+}
+function parseTimeToMinutes(t: string) {
+  const [h, m] = t.split(':')
+  return Number(h) * 60 + Number(m)
+}
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n))
+}
+function normalizeTimeToHHmmss(t: string) {
+  if (!t) return '00:00:00'
+  return t.length === 5 ? `${t}:00` : t
+}
+function toISO(fecha: string, hhmmss: string) {
+  return `${fecha}T${normalizeTimeToHHmmss(hhmmss)}`
+}
+function estadoColor(estado: string) {
+  switch (estado) {
+    case 'confirmado':
+      return '#10b981'
+    case 'completado':
+      return '#6b7280'
+    case 'cancelado':
+      return '#ef4444'
+    case 'pendiente':
+      return '#f59e0b'
+    default:
+      return '#3b82f6'
   }
 }
 
-export function CalendarView({ 
-  negocioId, 
-  profesionales, 
-  turnosIniciales 
-}: { 
+const SLOT_OPTIONS = [5, 10, 15, 20, 30, 40, 45, 60] as const
+
+export function CalendarView({
+  negocioId,
+  profesionales,
+  turnosIniciales,
+}: {
   negocioId: string
   profesionales: Profesional[]
   turnosIniciales: Turno[]
 }) {
-  const [selectedProfesional, setSelectedProfesional] = useState<string>('todos')
+  const supabase = useMemo(() => createClient(), [])
+  const isMobile = useIsMobile()
 
-  const [view, setView] = useState<View>('week')
-  const [date, setDate] = useState(new Date())
+  const calendarRef = useRef<FullCalendar | null>(null)
+
+  const [mounted, setMounted] = useState(false)
+
+  const [selectedProfesional, setSelectedProfesional] = useState<string>('todos')
+  const [slotMinutes, setSlotMinutes] = useState<(typeof SLOT_OPTIONS)[number]>(30)
+
   const [showCreateTurno, setShowCreateTurno] = useState(false)
   const [showHorariosConfig, setShowHorariosConfig] = useState(false)
   const [selectedTurno, setSelectedTurno] = useState<string | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null)
 
-  // Convertir turnos a eventos del calendario
-  const events: CalendarEvent[] = useMemo(() => {
-    let turnosFiltrados = turnosIniciales
+  const [horarios, setHorarios] = useState<NegocioHorario[]>([])
+  const [horariosLoaded, setHorariosLoaded] = useState(false)
 
-    if (selectedProfesional !== 'todos') {
-      turnosFiltrados = turnosIniciales.filter(
-        t => t.profesional_id === selectedProfesional
-      )
-    }
+  const [activeView, setActiveView] = useState<'timeGridWeek' | 'timeGridDay'>(
+    isMobile ? 'timeGridDay' : 'timeGridWeek'
+  )
 
-    return turnosFiltrados.map(turno => {
-      const fecha = new Date(turno.fecha + 'T00:00:00')
-      const [horaI, minI] = turno.hora_inicio.split(':')
-      const [horaF, minF] = turno.hora_fin.split(':')
-      
-      const start = new Date(fecha)
-      start.setHours(parseInt(horaI), parseInt(minI))
-      
-      const end = new Date(fecha)
-      end.setHours(parseInt(horaF), parseInt(minF))
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-      return {
-        id: turno.id,
-        title: `${turno.clientes?.nombre || 'Sin cliente'} - ${turno.servicios?.nombre || 'Sin servicio'}`,
-        start,
-        end,
-        resource: {
-          turnoId: turno.id,
-          estado: turno.estado,
-          cliente: turno.clientes?.nombre || 'Sin cliente',
-          servicio: turno.servicios?.nombre || 'Sin servicio',
-        }
+  useEffect(() => {
+    setActiveView(isMobile ? 'timeGridDay' : 'timeGridWeek')
+  }, [isMobile])
+
+  useEffect(() => {
+    const api = calendarRef.current?.getApi()
+    if (!api) return
+    api.changeView(activeView)
+  }, [activeView])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadHorarios() {
+      setHorariosLoaded(false)
+      const { data, error } = await supabase
+        .from('negocio_horarios')
+        .select('dia_semana,cerrado,hora_inicio,hora_fin')
+        .eq('negocio_id', negocioId)
+
+      if (!cancelled) {
+        if (!error && data) setHorarios(data as any)
+        setHorariosLoaded(true)
       }
-    })
+    }
+    loadHorarios()
+    return () => {
+      cancelled = true
+    }
+  }, [supabase, negocioId])
+
+  const turnosFiltrados = useMemo(() => {
+    if (selectedProfesional === 'todos') return turnosIniciales
+    return turnosIniciales.filter((t) => t.profesional_id === selectedProfesional)
   }, [turnosIniciales, selectedProfesional])
 
-  // Estilos por estado
-  const eventStyleGetter = (event: CalendarEvent) => {
-    let backgroundColor = '#3b82f6' // azul por defecto
-    
-    switch (event.resource.estado) {
-      case 'confirmado':
-        backgroundColor = '#10b981' // verde
-        break
-      case 'completado':
-        backgroundColor = '#6b7280' // gris
-        break
-      case 'cancelado':
-        backgroundColor = '#ef4444' // rojo
-        break
-      case 'pendiente':
-        backgroundColor = '#f59e0b' // naranja
-        break
+  const fcEvents = useMemo(() => {
+    return turnosFiltrados.map((t) => {
+      const cliente = t.clientes?.nombre || 'Sin cliente'
+      const servicio = t.servicios?.nombre || 'Sin servicio'
+
+      return {
+        id: t.id,
+        title: `${cliente} • ${servicio}`,
+        start: toISO(t.fecha, t.hora_inicio),
+        end: toISO(t.fecha, t.hora_fin),
+        backgroundColor: estadoColor(t.estado),
+        borderColor: 'transparent',
+        textColor: '#fff',
+        extendedProps: { turnoId: t.id },
+      }
+    })
+  }, [turnosFiltrados])
+
+  const { slotMinTime, slotMaxTime } = useMemo(() => {
+    if (!horariosLoaded || horarios.length === 0) {
+      return { slotMinTime: '09:00:00', slotMaxTime: '21:00:00' }
     }
+
+    const relevant = horarios.filter((h) => !h.cerrado && h.hora_inicio && h.hora_fin)
+    if (relevant.length === 0) {
+      return { slotMinTime: '09:00:00', slotMaxTime: '21:00:00' }
+    }
+
+    let minM = Infinity
+    let maxM = -Infinity
+    for (const h of relevant) {
+      minM = Math.min(minM, parseTimeToMinutes(h.hora_inicio!))
+      maxM = Math.max(maxM, parseTimeToMinutes(h.hora_fin!))
+    }
+
+    minM = clamp(minM, 0, 23 * 60 + 59)
+    maxM = clamp(maxM + 30, 1, 24 * 60)
+    if (maxM >= 24 * 60) maxM = 23 * 60 + 59
 
     return {
-      style: {
-        backgroundColor,
-        borderRadius: '4px',
-        opacity: 0.9,
-        color: 'white',
-        border: 'none',
-        display: 'block',
-      }
+      slotMinTime: `${minutesToHHmm(minM)}:00`,
+      slotMaxTime: `${minutesToHHmm(maxM)}:00`,
     }
+  }, [horariosLoaded, horarios])
+
+  const nonBusinessBgEvents = useMemo(() => {
+    if (!horariosLoaded || horarios.length === 0) return []
+
+    const map = new Map<number, NegocioHorario>()
+    for (const h of horarios) map.set(h.dia_semana, h)
+
+    const out: any[] = []
+    for (let dow = 0; dow <= 6; dow++) {
+      const h = map.get(dow)
+
+      if (!h || h.cerrado || !h.hora_inicio || !h.hora_fin) {
+        out.push({
+          id: `nb-${dow}-all`,
+          daysOfWeek: [dow],
+          startTime: slotMinTime,
+          endTime: slotMaxTime,
+          display: 'background',
+          backgroundColor: '#f3f4f6',
+        })
+        continue
+      }
+
+      const openStart = normalizeTimeToHHmmss(h.hora_inicio)
+      const openEnd = normalizeTimeToHHmmss(h.hora_fin)
+
+      out.push({
+        id: `nb-${dow}-before`,
+        daysOfWeek: [dow],
+        startTime: slotMinTime,
+        endTime: openStart,
+        display: 'background',
+        backgroundColor: '#f3f4f6',
+      })
+
+      out.push({
+        id: `nb-${dow}-after`,
+        daysOfWeek: [dow],
+        startTime: openEnd,
+        endTime: slotMaxTime,
+        display: 'background',
+        backgroundColor: '#f3f4f6',
+      })
+    }
+    return out
+  }, [horariosLoaded, horarios, slotMinTime, slotMaxTime])
+
+  function goToday() {
+    calendarRef.current?.getApi().today()
+  }
+  function goPrev() {
+    calendarRef.current?.getApi().prev()
+  }
+  function goNext() {
+    calendarRef.current?.getApi().next()
   }
 
-  const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
-    setSelectedSlot({ start, end })
-    setShowCreateTurno(true)
-  }
+  const slotDuration = `00:${pad2(slotMinutes)}:00`
 
-  const handleSelectEvent = (event: CalendarEvent) => {
-    setSelectedTurno(event.resource.turnoId)
-  }
+  // ✅ formateadores estables (solo se usan cuando mounted=true)
+  const fmtWeekday = useMemo(
+    () => new Intl.DateTimeFormat('es-AR', { weekday: 'short' }),
+    []
+  )
+  const fmtDayMonth = useMemo(
+    () => new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit' }),
+    []
+  )
 
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-lg border">
-        <div className="flex items-center gap-4">
-          <Select value={selectedProfesional} onValueChange={setSelectedProfesional}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Seleccionar profesional" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos los profesionales</SelectItem>
-              {profesionales.map(prof => (
-                <SelectItem key={prof.id} value={prof.id}>
-                  {prof.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="bg-white p-4 rounded-lg border">
+        <div className="calendar-toolbar">
+          <div className="calendar-toolbar-left">
+            <Select value={selectedProfesional} onValueChange={setSelectedProfesional}>
+              <SelectTrigger className="calendar-prof-select">
+                <SelectValue placeholder="Seleccionar profesional" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los profesionales</SelectItem>
+                {profesionales.map((prof) => (
+                  <SelectItem key={prof.id} value={prof.id}>
+                    {prof.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <div className="flex gap-2">
+            <div className="calendar-view-buttons">
+              <Button variant="outline" size="sm" onClick={goToday}>
+                Hoy
+              </Button>
+              <Button variant="outline" size="sm" onClick={goPrev}>
+                Anterior
+              </Button>
+              <Button variant="outline" size="sm" onClick={goNext}>
+                Siguiente
+              </Button>
+
+              <div className="ml-2 flex gap-2">
+                <Button
+                  variant={activeView === 'timeGridWeek' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveView('timeGridWeek')}
+                >
+                  Semana
+                </Button>
+                <Button
+                  variant={activeView === 'timeGridDay' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveView('timeGridDay')}
+                >
+                  Día
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="calendar-toolbar-right">
             <Button
-              variant={view === 'day' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setView('day')}
+              variant="outline"
+              onClick={() => setShowHorariosConfig(true)}
+              className="calendar-btn"
             >
-              Día
+              <Settings className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Configurar Horarios Profesionales</span>
+              <span className="sm:hidden">Horarios</span>
             </Button>
+
             <Button
-              variant={view === 'week' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setView('week')}
+              onClick={() => {
+                setSelectedSlot(null)
+                setShowCreateTurno(true)
+              }}
+              className="calendar-btn"
             >
-              Semana
-            </Button>
-            <Button
-              variant={view === 'month' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setView('month')}
-            >
-              Mes
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Turno
             </Button>
           </div>
         </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowHorariosConfig(true)}
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Configurar Horarios Profesionales
-          </Button>
-          <Button onClick={() => setShowCreateTurno(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Turno
-          </Button>
-        </div>
       </div>
 
-      {/* Leyenda de colores */}
-      <div className="flex items-center gap-4 bg-white p-3 rounded-lg border text-sm">
+      {/* Leyenda */}
+      <div className="calendar-legend">
         <span className="font-medium">Estados:</span>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-[#f59e0b]" />
-          <span>Pendiente</span>
+        <div className="legend-item">
+          <span className="legend-dot bg-[#f59e0b]" />
+          Pendiente
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-[#10b981]" />
-          <span>Confirmado</span>
+        <div className="legend-item">
+          <span className="legend-dot bg-[#10b981]" />
+          Confirmado
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-[#6b7280]" />
-          <span>Completado</span>
+        <div className="legend-item">
+          <span className="legend-dot bg-[#6b7280]" />
+          Completado
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-[#ef4444]" />
-          <span>Cancelado</span>
+        <div className="legend-item">
+          <span className="legend-dot bg-[#ef4444]" />
+          Cancelado
         </div>
       </div>
 
-      {/* Calendario */}
-      <div className="bg-white p-4 rounded-lg border" style={{ height: 'calc(100vh - 350px)' }}>
-        <Calendar
-          culture="es"
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          view={view}
-          onView={setView}
-          date={date}
-          onNavigate={setDate}
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          selectable
-          eventPropGetter={eventStyleGetter}
-          step={15}
-          timeslots={4}
-          min={new Date(0, 0, 0, 8, 0, 0)} // 8 AM
-          max={new Date(0, 0, 0, 22, 0, 0)} // 10 PM
-          messages={{
-            next: 'Siguiente',
-            previous: 'Anterior',
-            today: 'Hoy',
-            month: 'Mes',
-            week: 'Semana',
-            day: 'Día',
-            agenda: 'Agenda',
-            date: 'Fecha',
-            time: 'Hora',
-            event: 'Turno',
-            noEventsInRange: 'No hay turnos en este rango',
-          }}
-        />
+      {/* ✅ Calendario */}
+      <div className="bg-white rounded-lg border p-3 sm:p-4 calendar-shell-fc">
+        {/* ✅ Reloj overlay */}
+        <div className="fc-slot-range-button">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9">
+                <Clock className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="bottom">
+              {SLOT_OPTIONS.map((m) => (
+                <DropdownMenuItem key={m} onClick={() => setSlotMinutes(m)}>
+                  {m} minutos
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* ✅ Evita hydration mismatch */}
+        {mounted ? (
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[timeGridPlugin, interactionPlugin]}
+            initialView={activeView}
+            headerToolbar={false}
+            height="100%"
+            expandRows={true}
+            stickyHeaderDates={true}
+            nowIndicator={true}
+            locale="es"
+            firstDay={1}
+            allDaySlot={false}
+            slotMinTime={slotMinTime}
+            slotMaxTime={slotMaxTime}
+            slotDuration={slotDuration}
+            slotLabelInterval={slotDuration}
+            slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+            selectable={true}
+            selectMirror={true}
+            events={[...fcEvents, ...nonBusinessBgEvents]}
+            eventMinHeight={isMobile ? 22 : undefined}
+            dayHeaderContent={(arg) => {
+              const d = arg.date
+              const weekday = fmtWeekday.format(d).replace('.', '')
+              const dayMonth = fmtDayMonth.format(d)
+              return (
+                <div className="fc-mobile-dayhead">
+                  <div className="fc-mobile-dayhead-w">{weekday}</div>
+                  <div className="fc-mobile-dayhead-d">{dayMonth}</div>
+                </div>
+              )
+            }}
+            eventClick={(info) => {
+              const turnoId = info.event.extendedProps?.turnoId as string | undefined
+              if (turnoId) setSelectedTurno(turnoId)
+            }}
+            dateClick={(info) => {
+              const start = info.date
+              const end = new Date(start.getTime() + slotMinutes * 60 * 1000)
+              setSelectedSlot({ start, end })
+              setShowCreateTurno(true)
+            }}
+            select={(info) => {
+              setSelectedSlot({ start: info.start, end: info.end })
+              setShowCreateTurno(true)
+            }}
+          />
+        ) : (
+          <div className="fc-skeleton" />
+        )}
       </div>
 
       {/* Diálogos */}
@@ -285,12 +467,7 @@ export function CalendarView({
         />
       )}
 
-      {selectedTurno && (
-        <TurnoDetailDialog
-          turnoId={selectedTurno}
-          onClose={() => setSelectedTurno(null)}
-        />
-      )}
+      {selectedTurno && <TurnoDetailDialog turnoId={selectedTurno} onClose={() => setSelectedTurno(null)} />}
     </div>
   )
 }

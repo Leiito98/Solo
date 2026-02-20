@@ -1,9 +1,9 @@
+// app/dashboard/configuracion/layout.tsx (o donde lo tengas)
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { SettingsSidebar } from "@/components/dashboard/configuracion/settings-sidebar"
 import { Toaster } from "@/components/ui/toaster"
 import { OnboardingPanel } from "@/components/dashboard/onboarding/onboarding-panel"
-import Image from "next/image"
 
 export default async function ConfiguracionLayout({
   children,
@@ -25,61 +25,51 @@ export default async function ConfiguracionLayout({
 
   if (!negocio) redirect("/register")
 
-  // Extraer nombre del usuario para el onboarding
-  const firstName = 
-    (negocio.nombrecliente || '')
+  const firstName =
+    (String(negocio.nombrecliente || "")
       .trim()
-      .replace(/\s+/g, ' ')
-      .split(' ')[0] || 
-    (user?.user_metadata?.first_name || '')
-      .trim() ||
-    'Usuario'
+      .replace(/\s+/g, " ")
+      .split(" ")[0] || "") ||
+    (String(user?.user_metadata?.first_name || "").trim() || "") ||
+    "Usuario"
+
+  const negocioForSidebar = {
+    nombre: negocio.nombre,
+    slug: negocio.slug,
+    logo_url: negocio.logo_url,
+  }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar Settings */}
-      <aside className="w-[280px] border-r bg-white">
-        {/* ✅ HEADER ARRIBA: Solo + Configuración + Nombre */}
-        <div className="h-16 px-6 flex items-center gap-3 border-b border-gray-200">
-          <div className="relative w-9 h-9 flex-shrink-0">
-            <Image
-              src="/logo/solo.png"
-              alt="Solo"
-              fill
-              className="object-contain"
-              priority
+    <div className="min-h-screen bg-gray-50">
+      <div className="md:flex md:h-screen md:overflow-hidden">
+        {/* Sidebar (desktop fijo) */}
+        <div className="hidden md:block md:sticky md:top-0 md:h-screen md:shrink-0">
+          <SettingsSidebar
+            negocio={negocioForSidebar}
+            userEmail={user.email}
+            hideSoloHeader={false}
+          />
+        </div>
+
+        {/* Main (desktop scrollea) */}
+        <main className="flex-1 min-w-0 md:h-screen md:overflow-y-auto">
+          {/* Mobile topbar + drawer */}
+          <div className="md:hidden">
+            <SettingsSidebar
+              negocio={negocioForSidebar}
+              userEmail={user.email}
+              hideSoloHeader={false}
             />
           </div>
 
-          <div className="min-w-0">
-            <p className="text-xs text-gray-500 leading-none">Configuración</p>
-            <p className="text-sm font-semibold text-gray-900 truncate">
-              {negocio.nombre}
-            </p>
+          <div className="max-w-5xl mx-auto px-4 py-6 md:px-8 md:py-8">
+            {children}
           </div>
-        </div>
+        </main>
 
-        {/* ✅ Sidebar: sin header "Solo" interno */}
-        <SettingsSidebar
-          negocio={{
-            nombre: negocio.nombre,
-            slug: negocio.slug,
-            logo_url: negocio.logo_url,
-          }}
-          hideSoloHeader
-        />
-      </aside>
-
-      {/* Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-8 py-8">{children}</div>
-      </main>
-
-      {/* ✨ Panel de Onboarding - También aparece en configuración */}
-      <OnboardingPanel
-        negocioId={negocio.id}
-        userFirstName={firstName}
-      />
+        {/* ✅ Onboarding SIEMPRE (el componente define mobile/desktop) */}
+        <OnboardingPanel negocioId={negocio.id} userFirstName={firstName} />
+      </div>
 
       <Toaster />
     </div>

@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import {
   Settings,
   CreditCard,
   Store,
-  Clock,
   Bell,
   Shield,
   ArrowLeft,
@@ -17,7 +17,19 @@ import {
   ChevronUp,
   User,
   Zap,
+  Menu,
+  X,
+  ExternalLink,
+  LogOut,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type NavChild = { name: string; href: string };
 
@@ -56,7 +68,6 @@ const SETTINGS_NAV: NavItem[] = [
       { name: "MercadoPago", href: "/dashboard/configuracion/integraciones/mercadopago" },
       { name: "Redes Sociales", href: "/dashboard/configuracion/integraciones/redes-sociales" },
       { name: "WhatsApp", href: "/dashboard/configuracion/integraciones/whatsapp" },
-
     ],
   },
   {
@@ -95,21 +106,36 @@ function isGroupRoute(pathname: string, groupHref: string) {
   return pathname === groupHref || pathname.startsWith(groupHref + "/");
 }
 
-function isActive(pathname: string, href: string, exact = false) {
-  if (exact) return pathname === href;
+function isItemActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-export function SettingsSidebar({
+function isChildActive(pathname: string, href: string) {
+  return pathname === href;
+}
+
+function SidebarContent({
   negocio,
-  hideSoloHeader = false,
+  userEmail,
+  pathname,
+  openGroups,
+  toggleGroup,
+  onNavigate,
+  onLogout,
+  variant = "desktop",
+  showBrandHeader = true,
 }: {
   negocio: { nombre: string; slug: string; logo_url: string | null };
-  hideSoloHeader?: boolean;
+  userEmail?: string | null;
+  pathname: string;
+  openGroups: Record<string, boolean>;
+  toggleGroup: (href: string) => void;
+  onNavigate?: () => void;
+  onLogout: () => Promise<void>;
+  variant?: "desktop" | "mobile";
+  showBrandHeader?: boolean;
 }) {
-  const pathname = usePathname();
-
   const initials =
     (negocio?.nombre || "N")
       .split(" ")
@@ -118,81 +144,65 @@ export function SettingsSidebar({
       .toUpperCase()
       .slice(0, 2) || "N";
 
-  const groups = useMemo(() => SETTINGS_NAV.filter((i) => "children" in i), []);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    setOpenGroups((prev) => {
-      const next: Record<string, boolean> = { ...prev };
-
-      for (const g of groups) {
-        const shouldOpen = isGroupRoute(pathname, g.href);
-        if (shouldOpen) next[g.href] = true;
-        else if (next[g.href] === undefined) next[g.href] = false;
-      }
-
-      return next;
-    });
-  }, [pathname, groups]);
-
-  function toggleGroup(href: string) {
-    setOpenGroups((prev) => ({ ...prev, [href]: !prev[href] }));
-  }
+  const asideWidth = variant === "mobile" ? "w-full" : "w-64";
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      {/* ✅ Header Solo (opcional) */}
-      {!hideSoloHeader && (
+    <aside className={`${asideWidth} h-full bg-white border-gray-200 flex flex-col min-h-0 overflow-hidden`}>
+      {/* Header marca */}
+      {showBrandHeader && (
         <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200">
           <div className="flex items-center gap-2.5">
             <div className="relative w-8 h-8">
-              <Image
-                src="/logo/solo.png"
-                alt="Solo"
-                fill
-                className="object-contain"
-                priority
-              />
+              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" priority />
             </div>
             <span
               className="font-bold text-gray-900 text-lg tracking-tight"
               style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
             >
-              Solo
+              Configuración
             </span>
           </div>
         </div>
       )}
 
-      {/* Negocio */}
+      {/* Dropdown negocio + Ver mi página */}
       <div className="px-4 py-4 border-b border-gray-200">
-        <div className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
-          <Avatar className="w-9 h-9">
-            {/* ✅ NO lo envuelvo en && para que Radix maneje fallback si falla */}
-            <AvatarImage
-              src={negocio?.logo_url || ""}
-              alt={negocio?.nombre || "Negocio"}
-              className="object-cover"
-              referrerPolicy="no-referrer"
-            />
-            <AvatarFallback className="bg-primary-100 text-primary-700 text-sm font-medium">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <Avatar className="w-9 h-9">
+                {negocio.logo_url && <AvatarImage src={negocio.logo_url} className="object-cover" />}
+                <AvatarFallback className="bg-primary-100 text-primary-700 text-sm font-medium">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
 
-          <div className="flex-1 text-left min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              {negocio?.nombre}
-            </p>
-            <p className="text-xs text-gray-500 truncate">
-              {negocio?.slug}.getsolo.site
-            </p>
-          </div>
-        </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{negocio?.nombre}</p>
+                <p className="text-xs text-gray-500 truncate">{negocio?.slug}.getsolo.site</p>
+              </div>
 
-        <p className="mt-3 text-xs text-gray-500">
-          Ajustá integraciones, branding y reglas del negocio.
-        </p>
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            </button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel>Mi Negocio</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem asChild>
+              <a
+                href={`https://${negocio?.slug}.getsolo.site`}
+                target="_blank"
+                className="flex items-center gap-2 cursor-pointer"
+                rel="noreferrer"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Ver mi página
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Navigation */}
@@ -201,12 +211,9 @@ export function SettingsSidebar({
           {SETTINGS_NAV.map((item) => {
             const Icon = item.icon;
 
+            // GROUP
             if ("children" in item) {
-              const groupActive = isGroupRoute(pathname, item.href);
-              const hasActiveChild =
-                item.children?.some((c) => isActive(pathname, c.href, true)) || false;
-
-              const shouldHighlight = groupActive || hasActiveChild;
+              const active = isGroupRoute(pathname, item.href);
               const isOpen = !!openGroups[item.href];
 
               return (
@@ -218,47 +225,38 @@ export function SettingsSidebar({
                     className={`
                       group w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                       transition-all duration-150
-                      ${shouldHighlight ? "bg-primary text-white shadow-sm" : "text-gray-700 hover:bg-gray-100"}
+                      ${active ? "bg-primary text-white shadow-sm" : "text-gray-700 hover:bg-gray-100"}
                     `}
                   >
                     <span className="flex items-center gap-3">
                       <Icon
                         className={`w-5 h-5 ${
-                          shouldHighlight
-                            ? "text-white"
-                            : "text-gray-500 group-hover:text-gray-700"
+                          active ? "text-white" : "text-gray-500 group-hover:text-gray-700"
                         }`}
                       />
                       <span>{item.name}</span>
                     </span>
 
                     {isOpen ? (
-                      <ChevronUp
-                        className={`w-4 h-4 ${
-                          shouldHighlight ? "text-white/90" : "text-gray-400"
-                        }`}
-                      />
+                      <ChevronUp className={`w-4 h-4 ${active ? "text-white/90" : "text-gray-400"}`} />
                     ) : (
-                      <ChevronDown
-                        className={`w-4 h-4 ${
-                          shouldHighlight ? "text-white/90" : "text-gray-400"
-                        }`}
-                      />
+                      <ChevronDown className={`w-4 h-4 ${active ? "text-white/90" : "text-gray-400"}`} />
                     )}
                   </button>
 
                   {isOpen ? (
                     <div
                       className={`ml-2 pl-3 border-l ${
-                        shouldHighlight ? "border-primary/30" : "border-gray-200"
+                        active ? "border-primary/30" : "border-gray-200"
                       } space-y-1`}
                     >
                       {item.children?.map((c) => {
-                        const childActive = isActive(pathname, c.href, true);
+                        const childActive = isChildActive(pathname, c.href);
                         return (
                           <Link
                             key={c.href}
                             href={c.href}
+                            onClick={onNavigate}
                             className={`
                               block px-3 py-2 rounded-lg text-sm transition-colors
                               ${
@@ -278,13 +276,13 @@ export function SettingsSidebar({
               );
             }
 
-            const exact = item.href === "/dashboard/configuracion";
-            const active = isActive(pathname, item.href, exact);
-
+            // ITEM simple
+            const active = isItemActive(pathname, item.href);
             return (
               <div key={item.href} className="space-y-1">
                 <Link
                   href={item.href}
+                  onClick={onNavigate}
                   className={`
                     group flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                     transition-all duration-150
@@ -306,6 +304,199 @@ export function SettingsSidebar({
         </div>
       </nav>
 
+      {/* Cuenta + Logout */}
+      <div className="mt-auto p-4 border-t border-gray-200">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <Avatar className="w-9 h-9">
+                {negocio.logo_url && <AvatarImage src={negocio.logo_url} className="object-cover" />}
+                <AvatarFallback className="bg-primary-100 text-primary-700 text-sm font-medium">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{userEmail || "Mi cuenta"}</p>
+              </div>
+
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            </button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onLogout} className="text-red-600 cursor-pointer">
+              <LogOut className="w-4 h-4 mr-2" />
+              Cerrar Sesión
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </aside>
+  );
+}
+
+export function SettingsSidebar({
+  negocio,
+  hideSoloHeader = false, // lo dejamos por compatibilidad, pero en mobile no lo usamos
+  userEmail, // opcional: pasalo desde layout si querés
+}: {
+  negocio: { nombre: string; slug: string; logo_url: string | null };
+  hideSoloHeader?: boolean;
+  userEmail?: string | null;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  const groups = useMemo(() => SETTINGS_NAV.filter((i) => "children" in i), []);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  useEffect(() => {
+    setOpenGroups((prev) => {
+      const next: Record<string, boolean> = { ...prev };
+      for (const g of groups) {
+        const shouldOpen = isGroupRoute(pathname, g.href);
+        if (shouldOpen) next[g.href] = true;
+        else if (next[g.href] === undefined) next[g.href] = false;
+      }
+      return next;
+    });
+
+    setMobileOpen(false);
+  }, [pathname, groups]);
+
+  function toggleGroup(href: string) {
+    setOpenGroups((prev) => ({ ...prev, [href]: !prev[href] }));
+  }
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setMobileOpen(false);
+    }
+    if (mobileOpen) window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
+
+  return (
+    <>
+      {/* TOPBAR MOBILE */}
+      <div className="md:hidden sticky top-0 z-40 bg-white border-b border-gray-200">
+        <div className="h-14 px-4 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="inline-flex items-center justify-center rounded-lg p-2 hover:bg-gray-100"
+            aria-label="Abrir menú de configuración"
+          >
+            <Menu className="w-5 h-5 text-gray-700" />
+          </button>
+
+          <div className="flex items-center gap-2.5">
+            <div className="relative w-7 h-7">
+              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" priority />
+            </div>
+            <span
+              className="font-bold text-gray-900 text-base tracking-tight"
+              style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
+            >
+              Configuración
+            </span>
+          </div>
+
+          <div className="w-10" />
+        </div>
+      </div>
+
+      {/* SIDEBAR DESKTOP */}
+      <div className="hidden md:block h-full">
+        <SidebarContent
+          negocio={negocio}
+          userEmail={userEmail}
+          pathname={pathname}
+          openGroups={openGroups}
+          toggleGroup={toggleGroup}
+          onLogout={handleLogout}
+          variant="desktop"
+          showBrandHeader={!hideSoloHeader}
+        />
+      </div>
+
+      {/* DRAWER MOBILE */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+
+          <div
+            className="
+              absolute left-0 top-0 h-full
+              w-[88vw] max-w-[360px]
+              bg-white shadow-2xl border-r border-gray-200
+              flex flex-col
+            "
+            style={{ paddingTop: "env(safe-area-inset-top)" }}
+          >
+            <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200">
+              <div className="flex items-center gap-2.5">
+                <div className="relative w-7 h-7">
+                  <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" priority />
+                </div>
+                <span
+                  className="font-bold text-gray-900 text-base tracking-tight"
+                  style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
+                >
+                  Configuración
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="inline-flex items-center justify-center rounded-lg p-2 hover:bg-gray-100"
+                aria-label="Cerrar menú"
+              >
+                <X className="w-5 h-5 text-gray-700" />
+              </button>
+            </div>
+
+            <div className="flex-1 min-h-0">
+              <SidebarContent
+                negocio={negocio}
+                userEmail={userEmail}
+                pathname={pathname}
+                openGroups={openGroups}
+                toggleGroup={toggleGroup}
+                onNavigate={() => setMobileOpen(false)}
+                onLogout={handleLogout}
+                variant="mobile"
+                showBrandHeader={false}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

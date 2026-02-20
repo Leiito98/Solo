@@ -65,7 +65,6 @@ function daysLeftFromISO(trialEndsAtISO: string | null) {
   if (!Number.isFinite(end)) return null
   const now = Date.now()
   const diff = end - now
-  // ceil para que si queda 1.2 días muestre "2 días"
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
 
@@ -103,8 +102,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
   const LS_MINIMIZED = `onboarding_panel_minimized_${negocioId}`
   const LS_DONE = `onboarding_panel_done_${negocioId}`
 
-  // 📌 WhatsApp (poné tu número con código país, sin + ni espacios)
-  // Ej: "5491123456789"
   const WHATSAPP_NUMBER = "5491164613750"
 
   useEffect(() => {
@@ -125,16 +122,13 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
 
     void checkOnboardingStatus(true)
 
-    // ✅ Menos “parpadeo”: refresh más lento como backup
     const interval = setInterval(() => void checkOnboardingStatus(false), 90000)
 
-    // al volver al tab
     const onVis = () => {
       if (document.visibilityState === "visible") void checkOnboardingStatus(false)
     }
     document.addEventListener("visibilitychange", onVis)
 
-    // ✅ Refresh instantáneo por eventos (para que los flujos disparen update sin esperar)
     const onEventRefresh = () => void checkOnboardingStatus(false)
     window.addEventListener("getsolo:onboarding-refresh" as any, onEventRefresh)
 
@@ -191,7 +185,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
         supabase.from("clientes").select("id").eq("negocio_id", negocioId).limit(1),
         supabase.from("turnos").select("id").eq("negocio_id", negocioId).limit(1),
 
-        // ✅ “turno desde la página”: los turnos del booking público setean cancel_token
         supabase
           .from("turnos")
           .select("id")
@@ -212,7 +205,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
 
       const negocio = negocioRes.data
 
-      // guardar meta para banner y whatsapp
       setNegocioSlug(negocio?.slug || null)
       setTrialEndsAt((negocio as any)?.trial_ends_at || null)
       setSuscripcionEstado((negocio as any)?.suscripcion_estado || null)
@@ -230,13 +222,11 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
       const hasGastos = (gastosRes.data?.length || 0) > 0
       const hasProductos = (productosRes.data?.length || 0) > 0
 
-      // ✅ MercadoPago conectado
       const hasMercadoPago = !!(negocio as any)?.mp_connected_at
 
       const slug = negocio?.slug || null
       const previewSeen = !!negocio?.public_preview_seen_at
 
-      // 1) ESSENTIAL: agregar MP y primer turno público
       const baseTasks: OnboardingTask[] = [
         {
           id: "negocio-info",
@@ -274,8 +264,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
           completed: hasProfesionales,
           priority: "essential",
         },
-
-        // ✅ NUEVO ESENCIAL: MP
         {
           id: "mercadopago",
           title: "Conectá MercadoPago",
@@ -285,8 +273,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
           completed: hasMercadoPago,
           priority: "essential",
         },
-
-        // ✅ NUEVO ESENCIAL: wow moment real
         {
           id: "turno-publico",
           title: "Recibí tu primer turno desde tu página",
@@ -296,7 +282,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
           completed: hasTurnosPublicos,
           priority: "essential",
         },
-
         {
           id: "branding",
           title: "Personalizá tu marca",
@@ -333,7 +318,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
           completed: hasClientes,
           priority: "recommended",
         },
-
         {
           id: "gastos",
           title: "Registrá tus gastos",
@@ -357,7 +341,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
       const essentialOnly = baseTasks.filter((t) => t.priority === "essential")
       const allEssentialCompleted = essentialOnly.every((t) => t.completed)
 
-      // ✅ Página pública pasa a RECOMMENDED (y no se completa solo por visitarla si faltan esenciales)
       const paginaPublicaTask: OnboardingTask = {
         id: "pagina-publica",
         title: "Revisá tu página y compartila",
@@ -374,7 +357,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
 
       const tasksData: OnboardingTask[] = [...baseTasks, paginaPublicaTask]
 
-      // ✅ Detectar “nuevo completado” para minimizar
       const completedNow = new Set(tasksData.filter((t) => t.completed).map((t) => t.id))
       const prevCompleted = prevCompletedIdsRef.current
 
@@ -393,7 +375,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
 
       if (newlyCompleted && !allDone) minimize()
 
-      // ✅ Done once
       if (allDone && !doneHandledRef.current) {
         doneHandledRef.current = true
         localStorage.setItem(LS_DONE, "true")
@@ -455,7 +436,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
   const allEssentialCompleted = essentialTasks.every((t) => t.completed)
   const allDone = tasks.every((t) => t.completed)
 
-  // ✅ Trial banner data
   const isTrial = (suscripcionEstado || "").toLowerCase() === "trial"
   const daysLeft = isTrial ? daysLeftFromISO(trialEndsAt) : null
 
@@ -487,7 +467,6 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
   )
   const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`
 
-  // ✅ overlay “Listo!”
   if (showDone) {
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -502,10 +481,10 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
     )
   }
 
-  // ✅ Minimized chip
+  // ✅ Minimized chip (mobile bottom-right, desktop top-right)
   if (isMinimized) {
     return (
-      <div className="fixed top-16 right-4 z-40">
+      <div className="fixed bottom-4 right-4 md:bottom-auto md:top-16 md:right-4 z-40">
         <button
           onClick={expand}
           className="flex items-center gap-2 rounded-full bg-white border border-gray-200 shadow-lg px-3 py-2 hover:shadow-xl transition"
@@ -521,8 +500,18 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
     )
   }
 
+  // ✅ Panel (mobile bottom sheet, desktop widget)
   return (
-    <div className="fixed top-16 right-4 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-40 max-h-[calc(100vh-5rem)] overflow-hidden flex flex-col">
+    <div
+      className="
+        fixed z-40 overflow-hidden flex flex-col bg-white border border-gray-200 shadow-2xl
+        left-4 right-4 bottom-4 top-auto w-auto rounded-2xl
+        max-h-[calc(100vh-7rem)]
+        md:left-auto md:right-4 md:top-16 md:bottom-auto md:w-96 md:rounded-lg
+        md:max-h-[calc(100vh-5rem)]
+      "
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
         <div className="flex items-center gap-3">
@@ -607,7 +596,7 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
               </p>
             </div>
 
-            <Button asChild size="sm" className="h-8 text-xs">
+            <Button asChild size="sm" className="h-8 text-xs shrink-0">
               <Link href={payRoute}>Activar plan</Link>
             </Button>
           </div>
@@ -624,7 +613,11 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
           {negocioSlug ? (
             <Button asChild variant="outline" size="sm" className="h-8 text-xs w-full">
               <a
-                href={process.env.NODE_ENV === "development" ? `/negocio/${negocioSlug}` : `https://${negocioSlug}.getsolo.site`}
+                href={
+                  process.env.NODE_ENV === "development"
+                    ? `/negocio/${negocioSlug}`
+                    : `https://${negocioSlug}.getsolo.site`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -642,7 +635,7 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
       </div>
 
       {/* Tasks */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {essentialTasks.length > 0 && (
           <Section title="Pasos Esenciales" dotClass="bg-red-500">
             {essentialTasks.map((task) => (
@@ -743,7 +736,11 @@ function TaskCard({ task, pathname }: { task: OnboardingTask; pathname: string }
           </div>
 
           <div className="flex-1 min-w-0">
-            <h4 className={`text-sm font-semibold mb-0.5 ${task.completed ? "text-green-900 line-through" : "text-gray-900"}`}>
+            <h4
+              className={`text-sm font-semibold mb-0.5 ${
+                task.completed ? "text-green-900 line-through" : "text-gray-900"
+              }`}
+            >
               {task.title}
             </h4>
             <p className="text-xs text-gray-600 mb-2">{task.description}</p>
@@ -753,15 +750,14 @@ function TaskCard({ task, pathname }: { task: OnboardingTask; pathname: string }
                 size="sm"
                 variant={isActive ? "default" : "outline"}
                 className="w-full text-xs h-7"
-                asChild={!isExternal}
               >
                 {isExternal ? (
-                  <a href={task.route} target="_blank" rel="noopener noreferrer">
+                  <a href={task.route} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center">
                     Ver página
                     <ChevronRight className="w-3 h-3 ml-1" />
                   </a>
                 ) : (
-                  <span>
+                  <span className="w-full flex items-center justify-center">
                     {isActive ? "Completar ahora" : "Iniciar"}
                     <ChevronRight className="w-3 h-3 ml-1" />
                   </span>
