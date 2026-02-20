@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -162,6 +163,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
 
         {children}
+        <Analytics />
       </body>
     </html>
   );
