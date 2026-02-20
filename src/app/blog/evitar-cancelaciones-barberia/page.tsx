@@ -24,7 +24,7 @@ const CANONICAL = `${SITE}${SLUG}`
 export const metadata: Metadata = {
   title: "Cómo evitar cancelaciones en una barbería (con seña online + reglas claras)",
   description:
-    "Reducí cancelaciones y no-shows en tu barbería con política simple, recordatorios y seña online. Ejemplos listos para copiar y cómo aplicarlo con Solo. Probá 14 días gratis.",
+    "Reducí cancelaciones y no-shows en tu barbería con política simple, recordatorios y seña online. Ejemplos listos para copiar y cómo aplicarlo con GetSolo. Probá 14 días gratis.",
   alternates: { canonical: CANONICAL },
   openGraph: {
     type: "article",
@@ -32,14 +32,14 @@ export const metadata: Metadata = {
     title: "Cómo evitar cancelaciones en una barbería (sin volverte loco por WhatsApp)",
     description:
       "Política simple + recordatorios + seña online: el combo para bajar no-shows y tener agenda real.",
-    siteName: "Solo",
-    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "Solo" }],
+    siteName: "GetSolo",
+    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "GetSolo" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Cómo evitar cancelaciones en una barbería (sin volverte loco por WhatsApp)",
     description:
-      "Bajá cancelaciones con reglas claras, recordatorios y seña online. Plantillas y ejemplo con Solo.",
+      "Bajá cancelaciones con reglas claras, recordatorios y seña online. Plantillas y ejemplo con GetSolo.",
     images: [`${SITE}/og.png`],
   },
 }
@@ -83,15 +83,15 @@ function jsonLd() {
     "@type": "BlogPosting",
     headline: "Cómo evitar cancelaciones en una barbería (con seña online + reglas claras)",
     description:
-      "Guía práctica para reducir cancelaciones y no-shows con política simple, recordatorios y seña online. Incluye ejemplos y cómo aplicarlo con Solo.",
+      "Guía práctica para reducir cancelaciones y no-shows con política simple, recordatorios y seña online. Incluye ejemplos y cómo aplicarlo con GetSolo.",
     image: [`${SITE}/og.png`],
     datePublished: published,
     dateModified: modified,
     mainEntityOfPage: { "@type": "WebPage", "@id": CANONICAL },
-    author: { "@type": "Organization", name: "Solo", url: SITE },
+    author: { "@type": "Organization", name: "GetSolo", url: SITE },
     publisher: {
       "@type": "Organization",
-      name: "Solo",
+      name: "GetSolo",
       logo: { "@type": "ImageObject", url: `${SITE}/logo/solo.png` },
     },
   }
@@ -150,9 +150,9 @@ export default function EvitarCancelacionesBarberiaPage() {
         <div className="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="relative w-9 h-9">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-xl font-800 text-white">Solo</span>
+            <span className="heading-font text-xl font-800 text-white">GetSolo</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -392,11 +392,11 @@ export default function EvitarCancelacionesBarberiaPage() {
                 </div>
 
                 <h2 className="heading-font text-2xl sm:text-3xl font-900 text-white">
-                  Ejemplo con Solo (simple y sin vueltas)
+                  Ejemplo con GetSolo (simple y sin vueltas)
                 </h2>
 
                 <p>
-                  Con Solo armás el sistema una vez y después se gestiona solo: link público, agenda, y seña con MercadoPago.
+                  Con GetSolo armás el sistema una vez y después se gestiona solo: link público, agenda, y seña con MercadoPago.
                 </p>
 
                 <div className="mt-6 grid gap-4">
@@ -441,7 +441,7 @@ export default function EvitarCancelacionesBarberiaPage() {
                     Querés agenda real (sin cancelaciones)
                   </p>
                   <p className="text-sm text-white/50 mb-4">
-                    Probá Solo gratis: política + seña + link de turnos para reservar 24/7.
+                    Probá GetSolo gratis: política + seña + link de turnos para reservar 24/7.
                   </p>
                   <Link
                     href="/register?plan=pro"
@@ -488,7 +488,7 @@ export default function EvitarCancelacionesBarberiaPage() {
                     href="/register?plan=pro"
                     className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white text-base h-12 px-8 rounded-xl font-semibold shadow-xl shadow-blue-500/30 transition-all hover:scale-[1.04] group"
                   >
-                    Probar Solo gratis
+                    Probar GetSolo gratis
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </Link>
                   <Link
@@ -511,7 +511,7 @@ export default function EvitarCancelacionesBarberiaPage() {
                   >
                     <p className="font-bold text-white mb-1">Cómo cobrar seña online en una barbería</p>
                     <p className="text-sm text-white/40">
-                      MercadoPago + Solo: activá señas y confirmá turnos automáticamente.
+                      MercadoPago + GetSolo: activá señas y confirmá turnos automáticamente.
                     </p>
                   </Link>
 
@@ -564,7 +564,7 @@ export default function EvitarCancelacionesBarberiaPage() {
                     href="/register?plan=pro"
                     className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white text-sm h-10 px-6 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all w-full"
                   >
-                    Activar esto en Solo
+                    Activar esto en GetSolo
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <p className="mt-3 text-xs text-white/30 text-center">14 días gratis • sin tarjeta</p>
@@ -594,7 +594,7 @@ export default function EvitarCancelacionesBarberiaPage() {
                 Menos cancelaciones. Más agenda real.
               </h2>
               <p className="text-white/50 text-lg max-w-2xl mx-auto mb-8">
-                Política + recordatorios + seña online. Armalo en Solo y dejá de depender de WhatsApp.
+                Política + recordatorios + seña online. Armalo en GetSolo y dejá de depender de WhatsApp.
               </p>
               <Link
                 href="/register?plan=pro"
@@ -614,9 +614,9 @@ export default function EvitarCancelacionesBarberiaPage() {
         <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="relative w-8 h-8">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="text-xs text-white/20">© {new Date().getFullYear()} Solo</span>
+            <span className="text-xs text-white/20">© {new Date().getFullYear()} GetSolo</span>
           </div>
           <div className="flex items-center gap-6 text-sm">
             <Link href="/sistema-turnos-online" className="text-white/40 hover:text-white/70 transition-colors">

@@ -130,13 +130,13 @@ function SidebarContent({
         <div className="h-16 px-6 flex items-center justify-between border-b border-gray-200">
           <div className="flex items-center gap-2.5">
             <div className="relative w-8 h-8">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" priority />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" priority />
             </div>
             <span
               className="font-bold text-gray-900 text-lg tracking-tight"
               style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
             >
-              Solo
+              GetSolo
             </span>
           </div>
         </div>
@@ -407,13 +407,13 @@ export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
 
           <div className="flex items-center gap-2.5">
             <div className="relative w-7 h-7">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" priority />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" priority />
             </div>
             <span
               className="font-bold text-gray-900 text-base tracking-tight"
               style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
             >
-              Solo
+              GetSolo
             </span>
           </div>
 
@@ -459,13 +459,13 @@ export function DashboardNav({ negocio, user }: { negocio: any; user: any }) {
             <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200">
               <div className="flex items-center gap-2.5">
                 <div className="relative w-7 h-7">
-                  <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" priority />
+                  <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" priority />
                 </div>
                 <span
                   className="font-bold text-gray-900 text-base tracking-tight"
                   style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
                 >
-                  Solo
+                  GetSolo
                 </span>
               </div>
 

@@ -463,7 +463,7 @@ export function OnboardingPanel({ negocioId }: OnboardingPanelProps) {
   const payRoute = "/dashboard/configuracion/plan/pagos"
 
   const waMsg = encodeURIComponent(
-    `Hola! Estoy configurando Solo. Mi negocio es ${negocioSlug || "(sin slug)"}.\nNecesito ayuda con: `
+    `Hola! Estoy configurando GetSolo. Mi negocio es ${negocioSlug || "(sin slug)"}.\nNecesito ayuda con: `
   )
   const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`
 

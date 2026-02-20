@@ -149,7 +149,7 @@ export default async function PagosFacturacionPage() {
                   <div>
                     <p className="font-semibold text-green-900 mb-1">Pagos 100% seguros</p>
                     <p className="text-sm text-green-700">
-                      MercadoPago procesa los pagos. Solo no almacena datos completos de tarjetas.
+                      MercadoPago procesa los pagos. GetSolo no almacena datos completos de tarjetas.
                     </p>
                   </div>
                 </div>

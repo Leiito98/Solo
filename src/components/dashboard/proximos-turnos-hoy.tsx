@@ -60,7 +60,7 @@ export function ProximosTurnosHoy({
     return `${hh}:${mm}:${ss}`
   }, [horaActualStr])
 
-  // ✅ Solo turnos activos + orden: atrasados primero, luego próximos. Cupo 5.
+  // ✅ GetSolo turnos activos + orden: atrasados primero, luego próximos. Cupo 5.
   const turnosActivos = useMemo(() => {
     const activos = (turnos || []).filter((t) => t.estado === 'pendiente' || t.estado === 'confirmado')
 

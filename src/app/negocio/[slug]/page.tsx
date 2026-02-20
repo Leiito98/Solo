@@ -223,7 +223,7 @@ export async function generateMetadata({
       url: canonical,
       title: `${nombre} | Reservas Online`,
       description: desc,
-      siteName: "Solo",
+      siteName: "GetSolo",
       images: [{ url: ogImage, width: 1200, height: 630, alt: nombre }],
     },
     twitter: {
@@ -940,7 +940,7 @@ export default async function NegocioPage({
             <p className="text-xs text-gray-400 flex items-center gap-1">
               Powered by{" "}
               <Link href="https://getsolo.site" className="font-bold hover:underline" style={{ color: primary }}>
-                Solo
+                GetSolo
               </Link>
             </p>
           </div>

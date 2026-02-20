@@ -425,7 +425,7 @@ export function MercadoPagoConfig({ mp_connected_at, mp_sena_pct }: Props) {
                 <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
                   <li>Entrá a tu cuenta de MercadoPago</li>
                   <li>Ir a <strong>Configuración → Integraciones → Tus integraciones → Crear aplicación</strong></li>
-                  <li><strong> Nombre del local → Pagos online → A través de una plataforma → Otra plataforma: Solo</strong></li>
+                  <li><strong> Nombre del local → Pagos online → A través de una plataforma → Otra plataforma: GetSolo</strong></li>
                   <li>Copiá el <strong>Access Token de producción</strong></li>
                   <li>Pegas el Access Token aca y Listo!</li>
                 </ol>

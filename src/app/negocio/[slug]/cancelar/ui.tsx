@@ -378,7 +378,7 @@ export default function CancelarTurnoClient({
                 <a href="https://getsolo.site" target="_blank" rel="noopener noreferrer" className="inline-block w-fit">
                   <Image
                     src="/logo/solo.png"
-                    alt="Solo"
+                    alt="GetSolo"
                     width={80}
                     height={28}
                     className="object-contain"
@@ -391,7 +391,7 @@ export default function CancelarTurnoClient({
                   rel="noopener noreferrer"
                   className="text-xs font-bold text-gray-400 uppercase tracking-widest"
                 >
-                  Solo
+                  GetSolo
                 </a>
               </div>
 
@@ -405,7 +405,7 @@ export default function CancelarTurnoClient({
 
               <div className="flex flex-col gap-2">
                 <a href="https://getsolo.site" target="_blank" rel="noopener noreferrer" className="solo-cta-btn w-fit">
-                  Probá Solo gratis →
+                  Probá GetSolo gratis →
                 </a>
                 <p className="text-[11px] text-gray-400">Turnos · WhatsApp · Pagos online</p>
               </div>
@@ -485,7 +485,7 @@ export default function CancelarTurnoClient({
               rel="noopener noreferrer"
               className="font-semibold text-gray-500 hover:text-gray-800 transition-colors"
             >
-              Solo
+              GetSolo
             </a>
           </p>
         </div>

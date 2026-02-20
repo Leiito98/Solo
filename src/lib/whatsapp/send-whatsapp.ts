@@ -3,7 +3,7 @@ import { WhatsAppClient } from '@kapso/whatsapp-cloud-api'
 // ─── Modos: SANDBOX (dev) vs PRODUCCION ───────────────────────────────────────
 //
 // SANDBOX  → usa el número de sandbox de Kapso + sendText (mensajes libres)
-//            Solo funciona con números que tengan sesión activa en el sandbox.
+//            GetSolo funciona con números que tengan sesión activa en el sandbox.
 //            Ideal para probar el flujo completo antes de tener número real.
 //
 // PRODUCCION → usa tu número de Meta conectado a Kapso + sendTemplate

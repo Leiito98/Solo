@@ -7,21 +7,21 @@ const SITE = "https://getsolo.site"
 const CANONICAL = `${SITE}/nutricion`
 
 export const metadata: Metadata = {
-  title: "Sistema de turnos para nutricionistas en Argentina | Solo",
+  title: "Sistema de turnos para nutricionistas en Argentina | GetSolo",
   description:
     "Agenda online para nutricionistas: reservas 24/7, recordatorios, señas con MercadoPago y organización de turnos. Probá 14 días gratis sin tarjeta.",
   alternates: { canonical: CANONICAL },
   openGraph: {
     type: "website",
     url: CANONICAL,
-    title: "Sistema de turnos para nutricionistas en Argentina | Solo",
+    title: "Sistema de turnos para nutricionistas en Argentina | GetSolo",
     description: "Reservas 24/7 + recordatorios + señas con MercadoPago. Probá 14 días gratis.",
-    siteName: "Solo",
-    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "Solo" }],
+    siteName: "GetSolo",
+    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "GetSolo" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sistema de turnos para nutricionistas en Argentina | Solo",
+    title: "Sistema de turnos para nutricionistas en Argentina | GetSolo",
     description: "Reservas 24/7 + recordatorios + señas con MercadoPago. Probá 14 días gratis.",
     images: [`${SITE}/og.png`],
   },
@@ -49,7 +49,7 @@ function jsonLd() {
   const appSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Solo",
+    name: "GetSolo",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: CANONICAL,
@@ -99,9 +99,9 @@ export default function NutricionPage() {
         <div className="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="relative w-9 h-9">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-xl font-800 text-white">Solo</span>
+            <span className="heading-font text-xl font-800 text-white">GetSolo</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/sistema-turnos-online" className="text-sm font-semibold text-white/60 hover:text-white transition-colors">
@@ -165,7 +165,7 @@ export default function NutricionPage() {
               Qué resolvés como nutricionista
             </h2>
             <p className="text-white/40 mb-8 max-w-2xl">
-              Estos son los problemas que Solo soluciona para tu práctica profesional.
+              Estos son los problemas que GetSolo soluciona para tu práctica profesional.
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
@@ -260,7 +260,7 @@ export default function NutricionPage() {
                 Tu agenda de nutrición, ordenada
               </h2>
               <p className="text-white/50 text-lg max-w-2xl mx-auto mb-8">
-                Probá Solo gratis y empezá a tomar turnos online.
+                Probá GetSolo gratis y empezá a tomar turnos online.
               </p>
               <Link
                 href="/register?plan=pro"
@@ -288,9 +288,9 @@ export default function NutricionPage() {
         <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="relative w-8 h-8">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="text-xs text-white/20">© {new Date().getFullYear()} Solo</span>
+            <span className="text-xs text-white/20">© {new Date().getFullYear()} GetSolo</span>
           </div>
           <div className="flex items-center gap-6 text-sm">
             <Link href="/sistema-turnos-online" className="text-white/40 hover:text-white/70 transition-colors">

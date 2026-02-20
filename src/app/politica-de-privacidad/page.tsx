@@ -2,8 +2,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 export const metadata = {
-  title: 'Política de Privacidad · Solo',
-  description: 'Política de privacidad y tratamiento de datos de la plataforma Solo.',
+  title: 'Política de Privacidad · GetSolo',
+  description: 'Política de privacidad y tratamiento de datos de la plataforma GetSolo.',
 }
 
 const sections = [
@@ -63,9 +63,9 @@ export default function PrivacidadPage() {
         <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="relative w-7 h-7">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-base font-800 text-white">Solo</span>
+            <span className="heading-font text-base font-800 text-white">GetSolo</span>
           </Link>
           <div className="flex items-center gap-5">
             <Link href="/terminos-y-condiciones" className="text-xs text-white/30 hover:text-white/60 transition-colors hidden sm:block">
@@ -105,7 +105,7 @@ export default function PrivacidadPage() {
               Política de<br />Privacidad
             </h1>
             <p className="text-sm text-white/30 leading-relaxed">
-              Última actualización: enero de 2026 · En Solo nos tomamos la privacidad de tus datos muy en serio.
+              Última actualización: enero de 2026 · En GetSolo nos tomamos la privacidad de tus datos muy en serio.
             </p>
           </div>
 
@@ -114,14 +114,14 @@ export default function PrivacidadPage() {
             <section id="introduccion">
               <h2>1. Introducción</h2>
               <p>
-                Esta Política de Privacidad describe cómo <strong>Solo</strong> recopila, usa, almacena y protege la información personal de los Negocios que utilizan la Plataforma y de los Clientes Finales cuyos datos son gestionados a través de ella.
+                Esta Política de Privacidad describe cómo <strong>GetSolo</strong> recopila, usa, almacena y protege la información personal de los Negocios que utilizan la Plataforma y de los Clientes Finales cuyos datos son gestionados a través de ella.
               </p>
               <p>
-                Al registrarse y usar la Plataforma, el Negocio acepta las prácticas descritas en esta Política. Esta Política se integra con los <Link href="/terminos-y-condiciones">Términos y Condiciones</Link> de Solo y ambos documentos deben leerse en conjunto.
+                Al registrarse y usar la Plataforma, el Negocio acepta las prácticas descritas en esta Política. Esta Política se integra con los <Link href="/terminos-y-condiciones">Términos y Condiciones</Link> de GetSolo y ambos documentos deben leerse en conjunto.
               </p>
               <div className="info-box">
                 <p>
-                  <strong>Resumen:</strong> Solo solo recopila los datos necesarios para prestar el servicio. No vendemos datos personales a terceros. Cada Negocio tiene su propio espacio aislado de datos. Podés solicitar la eliminación de tus datos en cualquier momento.
+                  <strong>Resumen:</strong> GetSolo solo recopila los datos necesarios para prestar el servicio. No vendemos datos personales a terceros. Cada Negocio tiene su propio espacio aislado de datos. Podés solicitar la eliminación de tus datos en cualquier momento.
                 </p>
               </div>
             </section>
@@ -129,10 +129,10 @@ export default function PrivacidadPage() {
             <section id="responsable">
               <h2>2. Responsable del tratamiento</h2>
               <p>
-                El responsable del tratamiento de los datos de los Negocios es <strong>Solo</strong>, operadora de la Plataforma <strong>getsolo.site</strong>. Para consultas relacionadas con privacidad, podés contactarnos a través del canal de soporte disponible en la Plataforma o vía WhatsApp.
+                El responsable del tratamiento de los datos de los Negocios es <strong>GetSolo</strong>, operadora de la Plataforma <strong>getsolo.site</strong>. Para consultas relacionadas con privacidad, podés contactarnos a través del canal de soporte disponible en la Plataforma o vía WhatsApp.
               </p>
               <p>
-                Respecto de los datos de los Clientes Finales, el Negocio actúa como <strong>responsable del tratamiento</strong>, y Solo actúa como <strong>encargado del tratamiento</strong> (procesador de datos), almacenando y procesando dichos datos únicamente para prestar el servicio al Negocio.
+                Respecto de los datos de los Clientes Finales, el Negocio actúa como <strong>responsable del tratamiento</strong>, y GetSolo actúa como <strong>encargado del tratamiento</strong> (procesador de datos), almacenando y procesando dichos datos únicamente para prestar el servicio al Negocio.
               </p>
             </section>
 
@@ -160,7 +160,7 @@ export default function PrivacidadPage() {
 
               <h3>3.3 Datos de facturación</h3>
               <ul>
-                <li>Método de pago para la suscripción (procesado y almacenado por el proveedor de pagos; Solo no almacena datos de tarjetas).</li>
+                <li>Método de pago para la suscripción (procesado y almacenado por el proveedor de pagos; GetSolo no almacena datos de tarjetas).</li>
                 <li>Historial de pagos y facturas.</li>
               </ul>
             </section>
@@ -168,7 +168,7 @@ export default function PrivacidadPage() {
             <section id="datos-clientes">
               <h2>4. Datos de Clientes Finales</h2>
               <p>
-                Los Clientes Finales son las personas que reservan turnos con el Negocio. Los datos de Clientes Finales son ingresados y gestionados por el Negocio a través de la Plataforma. Solo actúa como encargado del tratamiento de estos datos.
+                Los Clientes Finales son las personas que reservan turnos con el Negocio. Los datos de Clientes Finales son ingresados y gestionados por el Negocio a través de la Plataforma. GetSolo actúa como encargado del tratamiento de estos datos.
               </p>
               <p>Los datos de Clientes Finales que pueden almacenarse en la Plataforma incluyen:</p>
               <ul>
@@ -186,7 +186,7 @@ export default function PrivacidadPage() {
 
             <section id="uso-datos">
               <h2>5. Uso de los datos</h2>
-              <p>Solo usa los datos recopilados para los siguientes fines:</p>
+              <p>GetSolo usa los datos recopilados para los siguientes fines:</p>
 
               <h3>5.1 Prestación del servicio</h3>
               <ul>
@@ -215,12 +215,12 @@ export default function PrivacidadPage() {
                 <li>Mantener registros de facturación requeridos por obligaciones legales.</li>
               </ul>
 
-              <p>Solo <strong>no usa</strong> los datos de los Negocios ni de los Clientes Finales para publicidad de terceros, ni los vende o cede a terceros con fines comerciales propios.</p>
+              <p>GetSolo <strong>no usa</strong> los datos de los Negocios ni de los Clientes Finales para publicidad de terceros, ni los vende o cede a terceros con fines comerciales propios.</p>
             </section>
 
             <section id="compartir">
               <h2>6. Compartir información con terceros</h2>
-              <p>Solo comparte datos únicamente en los siguientes casos:</p>
+              <p>GetSolo comparte datos únicamente en los siguientes casos:</p>
               <ul>
                 <li><strong>Proveedores de infraestructura:</strong> servicios de hosting y base de datos (como Supabase) que almacenan los datos bajo acuerdos de confidencialidad y seguridad.</li>
                 <li><strong>MercadoPago:</strong> datos necesarios para procesar el cobro de señas (nombre del cliente, monto) según sus términos y condiciones.</li>
@@ -228,17 +228,17 @@ export default function PrivacidadPage() {
                 <li><strong>Obligaciones legales:</strong> cuando sea requerido por ley, orden judicial o autoridad gubernamental competente.</li>
               </ul>
               <p>
-                Todos los proveedores con los que Solo comparte datos están obligados a tratar dicha información de forma confidencial y únicamente para la prestación del servicio contratado.
+                Todos los proveedores con los que GetSolo comparte datos están obligados a tratar dicha información de forma confidencial y únicamente para la prestación del servicio contratado.
               </p>
             </section>
 
             <section id="almacenamiento">
               <h2>7. Almacenamiento y seguridad</h2>
               <p>
-                Los datos de la Plataforma se almacenan en servidores con cifrado en tránsito (HTTPS/TLS) y en reposo. Solo implementa medidas técnicas y organizativas razonables para proteger los datos contra acceso no autorizado, pérdida o alteración.
+                Los datos de la Plataforma se almacenan en servidores con cifrado en tránsito (HTTPS/TLS) y en reposo. GetSolo implementa medidas técnicas y organizativas razonables para proteger los datos contra acceso no autorizado, pérdida o alteración.
               </p>
               <ul>
-                <li>Las contraseñas se almacenan usando hashing seguro (bcrypt/Argon2); Solo no puede ver ni recuperar contraseñas.</li>
+                <li>Las contraseñas se almacenan usando hashing seguro (bcrypt/Argon2); GetSolo no puede ver ni recuperar contraseñas.</li>
                 <li>El acceso a los datos está restringido al personal técnico necesario para operar la Plataforma.</li>
                 <li>Los datos de cada Negocio están lógicamente aislados de los de otros Negocios.</li>
               </ul>
@@ -250,7 +250,7 @@ export default function PrivacidadPage() {
             <section id="multitenant">
               <h2>8. Arquitectura multi-tenant y aislamiento de datos</h2>
               <p>
-                Solo opera bajo una arquitectura <strong>multi-tenant</strong>: múltiples Negocios comparten la misma infraestructura técnica, pero sus datos están <strong>lógicamente aislados</strong> mediante políticas de seguridad a nivel de base de datos (Row Level Security).
+                GetSolo opera bajo una arquitectura <strong>multi-tenant</strong>: múltiples Negocios comparten la misma infraestructura técnica, pero sus datos están <strong>lógicamente aislados</strong> mediante políticas de seguridad a nivel de base de datos (Row Level Security).
               </p>
               <p>
                 Esto significa que:
@@ -258,7 +258,7 @@ export default function PrivacidadPage() {
               <ul>
                 <li>Ningún Negocio puede acceder a los datos de otro Negocio.</li>
                 <li>Los turnos, clientes, servicios y métricas de cada Negocio son visibles únicamente para ese Negocio.</li>
-                <li>El personal técnico de Solo solo accede a datos de un Negocio específico cuando es estrictamente necesario para resolver un problema técnico, bajo protocolos internos de acceso controlado.</li>
+                <li>El personal técnico de GetSolo solo accede a datos de un Negocio específico cuando es estrictamente necesario para resolver un problema técnico, bajo protocolos internos de acceso controlado.</li>
               </ul>
               <div className="info-box">
                 <p>Cada Negocio tiene su propio espacio (<em>tenant</em>) completamente separado del resto, identificado por su <em>owner_id</em> único en nuestra base de datos.</p>
@@ -284,14 +284,14 @@ export default function PrivacidadPage() {
                 El Negocio tiene derecho a:
               </p>
               <ul>
-                <li><strong>Acceso:</strong> solicitar una copia de los datos personales que Solo tiene sobre su Cuenta.</li>
-                <li><strong>Rectificación:</strong> corregir datos inexactos o incompletos directamente desde la configuración de la Cuenta o solicitándolo a Solo.</li>
+                <li><strong>Acceso:</strong> solicitar una copia de los datos personales que GetSolo tiene sobre su Cuenta.</li>
+                <li><strong>Rectificación:</strong> corregir datos inexactos o incompletos directamente desde la configuración de la Cuenta o solicitándolo a GetSolo.</li>
                 <li><strong>Eliminación:</strong> solicitar la eliminación de su Cuenta y todos los datos asociados.</li>
                 <li><strong>Portabilidad:</strong> solicitar la exportación de sus datos en formato estructurado.</li>
                 <li><strong>Oposición:</strong> oponerse al tratamiento de sus datos para fines de comunicación comercial.</li>
               </ul>
               <p>
-                Para ejercer cualquiera de estos derechos, el Negocio puede contactar a Solo a través del canal de soporte en la Plataforma. Solo responderá en un plazo máximo de <strong>30 días hábiles</strong>.
+                Para ejercer cualquiera de estos derechos, el Negocio puede contactar a GetSolo a través del canal de soporte en la Plataforma. GetSolo responderá en un plazo máximo de <strong>30 días hábiles</strong>.
               </p>
             </section>
 
@@ -303,21 +303,21 @@ export default function PrivacidadPage() {
                 <li><strong>MercadoPago:</strong> procesamiento de pagos. <a href="https://www.mercadopago.com.ar/privacidad" target="_blank" rel="noopener noreferrer">Ver política de privacidad</a></li>
               </ul>
               <p>
-                Solo no controla las prácticas de privacidad de estos terceros y recomienda revisar sus políticas de privacidad independientemente.
+                GetSolo no controla las prácticas de privacidad de estos terceros y recomienda revisar sus políticas de privacidad independientemente.
               </p>
             </section>
 
             <section id="menores">
               <h2>12. Menores de edad</h2>
               <p>
-                La Plataforma no está dirigida a menores de 18 años. Solo no recopila conscientemente datos personales de menores. Si el Negocio detecta que un menor ha utilizado su URL pública para realizar una reserva, debe notificar a Solo para gestionar la situación.
+                La Plataforma no está dirigida a menores de 18 años. GetSolo no recopila conscientemente datos personales de menores. Si el Negocio detecta que un menor ha utilizado su URL pública para realizar una reserva, debe notificar a GetSolo para gestionar la situación.
               </p>
             </section>
 
             <section id="cambios">
               <h2>13. Cambios a esta Política</h2>
               <p>
-                Solo puede actualizar esta Política de Privacidad en cualquier momento. Los cambios serán notificados al Negocio por email con al menos <strong>15 días de anticipación</strong> antes de su entrada en vigencia.
+                GetSolo puede actualizar esta Política de Privacidad en cualquier momento. Los cambios serán notificados al Negocio por email con al menos <strong>15 días de anticipación</strong> antes de su entrada en vigencia.
               </p>
               <p>
                 El uso continuado de la Plataforma tras la entrada en vigencia de la nueva Política implica su aceptación. Si el Negocio no acepta los cambios, puede cancelar su Cuenta antes de la fecha de vigencia.
@@ -327,7 +327,7 @@ export default function PrivacidadPage() {
             <section id="contacto">
               <h2>14. Contacto</h2>
               <p>
-                Para consultas, solicitudes de acceso, rectificación o eliminación de datos, y cualquier otra cuestión relacionada con privacidad, podés contactarte con Solo a través de:
+                Para consultas, solicitudes de acceso, rectificación o eliminación de datos, y cualquier otra cuestión relacionada con privacidad, podés contactarte con GetSolo a través de:
               </p>
               <ul>
                 <li><strong>Canal de soporte:</strong> disponible dentro de la Plataforma una vez que iniciás sesión.</li>
@@ -344,9 +344,9 @@ export default function PrivacidadPage() {
           <div className="mt-16 pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="relative w-6 h-6">
-                <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+                <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
               </div>
-              <span className="text-xs text-white/25">© 2026 Solo. Todos los derechos reservados.</span>
+              <span className="text-xs text-white/25">© 2026 GetSolo. Todos los derechos reservados.</span>
             </div>
             <div className="flex items-center gap-5 text-xs text-white/25">
               <Link href="/terminos-y-condiciones" className="hover:text-white/60 transition-colors">Términos y Condiciones</Link>

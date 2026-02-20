@@ -217,7 +217,7 @@ export default function LandingClient() {
         vertical: 'Barbería',
         title: 'Cómo cobrar seña online en una barbería (y dejar de perder turnos)',
         excerpt:
-          'Guía práctica para cobrar señas con MercadoPago y confirmar turnos automáticamente con Solo.',
+          'Guía práctica para cobrar señas con MercadoPago y confirmar turnos automáticamente con GetSolo.',
         readTime: '6–9 min',
         icon: CreditCard,
         published: true,
@@ -309,9 +309,9 @@ export default function LandingClient() {
         <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="relative w-9 h-9">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-xl font-800 text-white tracking-tight">Solo</span>
+            <span className="heading-font text-xl font-800 text-white tracking-tight">GetSolo</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-7">
@@ -538,7 +538,7 @@ export default function LandingClient() {
                 <div className="w-3 h-3 rounded-full bg-red-500/70" />
                 <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
                 <div className="w-3 h-3 rounded-full bg-green-500/70" />
-                <div className="ml-3 text-[11px] text-white/20 font-mono">Dashboard · Solo</div>
+                <div className="ml-3 text-[11px] text-white/20 font-mono">Dashboard · GetSolo</div>
               </div>
 
               <div className="p-6 space-y-4">
@@ -822,7 +822,7 @@ export default function LandingClient() {
           <div className="grid md:grid-cols-2 gap-5">
             <div className="gradient-border rounded-2xl p-7 card-hover">
               <div className="mb-6">
-                <h3 className="heading-font text-2xl font-800 text-white mb-1">Solo</h3>
+                <h3 className="heading-font text-2xl font-800 text-white mb-1">GetSolo</h3>
                 <p className="text-white/40 text-sm">Para emprendedores y profesionales independientes</p>
               </div>
               <div className="flex items-baseline gap-1 mb-7">
@@ -872,7 +872,7 @@ export default function LandingClient() {
                 <ul className="space-y-3 mb-8">
                   {[
                     'Profesionales ilimitados',
-                    'Todo lo del plan Solo',
+                    'Todo lo del plan GetSolo',
                     'Sistema de comisiones',
                     'Control de gastos fijos',
                     'Métricas avanzadas',
@@ -899,7 +899,7 @@ export default function LandingClient() {
             ¿Dudas con el plan?{' '}
             <a
               className="text-blue-300 hover:text-blue-200 font-semibold"
-              href="https://api.whatsapp.com/send/?phone=5491164613750&text=Quiero%20saber%20qu%C3%A9%20plan%20me%20conviene%20en%20Solo&type=phone_number&app_absent=0"
+              href="https://api.whatsapp.com/send/?phone=5491164613750&text=Quiero%20saber%20qu%C3%A9%20plan%20me%20conviene%20en%20GetSolo&type=phone_number&app_absent=0"
             >
               Hablemos por WhatsApp →
             </a>
@@ -951,7 +951,7 @@ export default function LandingClient() {
 
           <div className="mt-10 text-center">
             <Link href="/register?plan=pro" className="inline-flex items-center gap-2 text-sm font-semibold text-blue-300 hover:text-blue-200">
-              Sumate a Solo (14 días gratis) <ArrowRight className="w-4 h-4" />
+              Sumate a GetSolo (14 días gratis) <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -1004,14 +1004,14 @@ export default function LandingClient() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
             <div className="flex justify-center mb-6">
               <div className="relative w-14 h-14 float-slow">
-                <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+                <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
               </div>
             </div>
             <h2 className="heading-font text-4xl sm:text-5xl font-900 text-white leading-tight mb-4">
               ¿Listo para profesionalizar tu negocio?
             </h2>
             <p className="text-white/45 text-lg mb-8 max-w-xl mx-auto">
-              Probá Solo 14 días gratis. Turnos online, señas con MercadoPago, comisiones y finanzas en un solo lugar.
+              Probá GetSolo 14 días gratis. Turnos online, señas con MercadoPago, comisiones y finanzas en un solo lugar.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button
@@ -1030,7 +1030,7 @@ export default function LandingClient() {
                 className="text-white/60 hover:text-white hover:bg-white/[0.06] text-base h-12 px-8 rounded-xl font-medium"
               >
                 <a
-                  href="https://api.whatsapp.com/send/?phone=5491164613750&text=Quiero%20ver%20una%20demo%20de%20Solo&type=phone_number&app_absent=0"
+                  href="https://api.whatsapp.com/send/?phone=5491164613750&text=Quiero%20ver%20una%20demo%20de%20GetSolo&type=phone_number&app_absent=0"
                   className="flex items-center justify-center gap-2"
                 >
                   Pedir demo <ArrowRight className="w-4 h-4" />
@@ -1060,9 +1060,9 @@ export default function LandingClient() {
             <div className="space-y-3">
               <Link href="/" className="flex items-center gap-2.5">
                 <div className="relative w-8 h-8">
-                  <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+                  <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
                 </div>
-                <span className="heading-font text-lg font-800 text-white">Solo</span>
+                <span className="heading-font text-lg font-800 text-white">GetSolo</span>
               </Link>
               <p className="text-sm text-white/30 max-w-xs leading-relaxed">
                 Sistema de turnos online para negocios de servicios: señas, comisiones y finanzas.
@@ -1096,7 +1096,7 @@ export default function LandingClient() {
                 <ul className="space-y-2 text-white/30">
                   <li>
                     <a
-                      href="https://api.whatsapp.com/send/?phone=5491164613750&text=Necesito%20ayuda%20con%20Solo&type=phone_number&app_absent=0"
+                      href="https://api.whatsapp.com/send/?phone=5491164613750&text=Necesito%20ayuda%20con%20GetSolo&type=phone_number&app_absent=0"
                       className="hover:text-white/70 transition-colors"
                     >
                       WhatsApp
@@ -1123,7 +1123,7 @@ export default function LandingClient() {
           </div>
 
           <div className="border-t border-white/[0.05] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/20">
-            <span>© {new Date().getFullYear()} Solo. Todos los derechos reservados.</span>
+            <span>© {new Date().getFullYear()} GetSolo. Todos los derechos reservados.</span>
             <span>🇦🇷 Hecho en Argentina</span>
           </div>
         </div>

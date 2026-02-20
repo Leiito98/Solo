@@ -302,7 +302,7 @@ export async function Footer({ negocio }: FooterProps) {
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
               <Zap className="w-4 h-4 text-blue-400" />
               <span className="font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Solo
+                GetSolo
               </span>
             </div>
           </div>

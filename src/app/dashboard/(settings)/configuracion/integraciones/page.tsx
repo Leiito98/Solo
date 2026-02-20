@@ -220,7 +220,7 @@ export default async function IntegracionesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Integraciones" description="Conectá Solo con tus herramientas favoritas" />
+      <PageHeader title="Integraciones" description="Conectá GetSolo con tus herramientas favoritas" />
 
       {/* Resumen */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -460,7 +460,7 @@ export default async function IntegracionesPage() {
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900 mb-2">¿Necesitás otra integración?</h4>
               <p className="text-sm text-gray-600 mb-4">
-                Si querés conectar Solo con otra herramienta, lo evaluamos para próximas versiones.
+                Si querés conectar GetSolo con otra herramienta, lo evaluamos para próximas versiones.
               </p>
 
               <RequestIntegrationDialogButton />

@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Turno no encontrado' }, { status: 404 })
     }
 
-    // Solo cancelable si está pendiente/confirmado
+    // GetSolo cancelable si está pendiente/confirmado
     if (!['pendiente', 'confirmado'].includes(turno.estado)) {
       return NextResponse.json({ error: 'Este turno ya fue cancelado' }, { status: 409 })
     }

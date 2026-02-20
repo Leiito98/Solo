@@ -7,21 +7,21 @@ const SITE = "https://getsolo.site"
 const CANONICAL = `${SITE}/belleza`
 
 export const metadata: Metadata = {
-  title: "Sistema de turnos para estética y belleza en Argentina | Solo",
+  title: "Sistema de turnos para estética y belleza en Argentina | GetSolo",
   description:
     "Agenda online para estética: turnos 24/7, recordatorios, señas con MercadoPago y organización por profesional. Probá 14 días gratis sin tarjeta.",
   alternates: { canonical: CANONICAL },
   openGraph: {
     type: "website",
     url: CANONICAL,
-    title: "Sistema de turnos para estética y belleza en Argentina | Solo",
+    title: "Sistema de turnos para estética y belleza en Argentina | GetSolo",
     description: "Reservas 24/7 + recordatorios + señas con MercadoPago. Probá 14 días gratis.",
-    siteName: "Solo",
-    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "Solo" }],
+    siteName: "GetSolo",
+    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "GetSolo" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sistema de turnos para estética y belleza en Argentina | Solo",
+    title: "Sistema de turnos para estética y belleza en Argentina | GetSolo",
     description: "Reservas 24/7 + recordatorios + señas con MercadoPago. Probá 14 días gratis.",
     images: [`${SITE}/og.png`],
   },
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 
 function jsonLd() {
   const faqs = [
-    { q: "¿Solo sirve para estética, uñas y lashes?", a: "Sí. Podés ofrecer servicios, organizar agenda y confirmar con señas." },
+    { q: "¿GetSolo sirve para estética, uñas y lashes?", a: "Sí. Podés ofrecer servicios, organizar agenda y confirmar con señas." },
     { q: "¿Se puede cobrar seña con MercadoPago?", a: "Sí. Para confirmar turnos y bajar ausencias." },
     { q: "¿Puedo manejar varios profesionales?", a: "Sí. Agenda por profesional y horarios definidos." },
     { q: "¿Envía recordatorios?", a: "Sí. Recordatorios y confirmaciones para reducir cancelaciones." },
@@ -49,7 +49,7 @@ function jsonLd() {
   const appSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Solo",
+    name: "GetSolo",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: CANONICAL,
@@ -99,9 +99,9 @@ export default function BellezaPage() {
         <div className="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="relative w-9 h-9">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-xl font-800 text-white">Solo</span>
+            <span className="heading-font text-xl font-800 text-white">GetSolo</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/sistema-turnos-online" className="text-sm font-semibold text-white/60 hover:text-white transition-colors">
@@ -162,7 +162,7 @@ export default function BellezaPage() {
         <section className="mx-auto max-w-6xl px-5 py-20">
           <div className="gradient-border rounded-3xl p-8 sm:p-12">
             <h2 className="heading-font text-3xl sm:text-4xl font-900 text-white mb-3">
-              Lo que Solo ordena en estética
+              Lo que GetSolo ordena en estética
             </h2>
             <p className="text-white/40 mb-8 max-w-2xl">
               Automatizá tu agenda y reducí cancelaciones con estas funcionalidades clave.
@@ -260,7 +260,7 @@ export default function BellezaPage() {
                 Tu agenda de estética, con turnos online
               </h2>
               <p className="text-white/50 text-lg max-w-2xl mx-auto mb-8">
-                Probá Solo gratis y empezá a tomar reservas 24/7.
+                Probá GetSolo gratis y empezá a tomar reservas 24/7.
               </p>
               <Link
                 href="/register?plan=pro"
@@ -288,9 +288,9 @@ export default function BellezaPage() {
         <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="relative w-8 h-8">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="text-xs text-white/20">© {new Date().getFullYear()} Solo</span>
+            <span className="text-xs text-white/20">© {new Date().getFullYear()} GetSolo</span>
           </div>
           <div className="flex items-center gap-6 text-sm">
             <Link href="/sistema-turnos-online" className="text-white/40 hover:text-white/70 transition-colors">

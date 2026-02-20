@@ -7,22 +7,22 @@ const CANONICAL = `${SITE}/`
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: "Solo | Agenda online, señas con MercadoPago y gestión para profesionales",
+  title: "GetSolo | Agenda online, señas con MercadoPago y gestión para profesionales",
   description:
     "Sistema todo-en-uno para negocios de servicios: turnos online 24/7, señas con MercadoPago, comisiones, finanzas y tu web de reservas. Probá 14 días gratis sin tarjeta.",
   alternates: { canonical: CANONICAL },
   openGraph: {
     type: "website",
     url: CANONICAL,
-    title: "Solo | Turnos online + señas con MercadoPago",
+    title: "GetSolo | Turnos online + señas con MercadoPago",
     description:
       "Agenda online 24/7, recordatorios, comisiones y finanzas. Tu web de reservas en minutos. 14 días gratis sin tarjeta.",
-    siteName: "Solo",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Solo" }],
+    siteName: "GetSolo",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "GetSolo" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Solo | Turnos online + señas con MercadoPago",
+    title: "GetSolo | Turnos online + señas con MercadoPago",
     description:
       "Agenda online 24/7, recordatorios, comisiones y finanzas. 14 días gratis sin tarjeta.",
     images: ["/og.png"],
@@ -33,7 +33,7 @@ function jsonLd() {
   const software = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Solo",
+    name: "GetSolo",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: CANONICAL,
@@ -55,7 +55,7 @@ function jsonLd() {
   const organization = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Solo",
+    name: "GetSolo",
     url: SITE,
     logo: `${SITE}/logo/solo.png`,
   }

@@ -8,7 +8,7 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-// ✅ IMPORTANTE: esto debe ser getsolo.site (no "Solo.site")
+// ✅ IMPORTANTE: esto debe ser getsolo.site (no "GetSolo.site")
 const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "getsolo.site").toLowerCase();
 const RESERVED_SUBDOMAINS = new Set(["www", "app", "admin", "dashboard", "api"]);
 
@@ -53,8 +53,8 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
       metadataBase: new URL(`https://${ROOT_DOMAIN}`),
       title: {
-        default: "Solo — Turnos, cobros y gestión para profesionales",
-        template: "%s — Solo",
+        default: "GetSolo — Turnos, cobros y gestión para profesionales",
+        template: "%s — GetSolo",
       },
       description:
         "Sistema de turnos online para profesionales en Argentina. Cobrá señas, reducí ausencias y gestioná tu negocio en un solo lugar.",
@@ -64,8 +64,8 @@ export async function generateMetadata(): Promise<Metadata> {
       openGraph: {
         type: "website",
         url: `https://${ROOT_DOMAIN}`,
-        siteName: "Solo",
-        title: "Solo — Turnos, cobros y gestión para profesionales",
+        siteName: "GetSolo",
+        title: "GetSolo — Turnos, cobros y gestión para profesionales",
         description:
           "Turnos online + cobro de señas + gestión de ingresos/egresos, comisiones e inventario.",
         images: [
@@ -73,13 +73,13 @@ export async function generateMetadata(): Promise<Metadata> {
             url: "/og.png",
             width: 1200,
             height: 630,
-            alt: "Solo",
+            alt: "GetSolo",
           },
         ],
       },
       twitter: {
         card: "summary_large_image",
-        title: "Solo — Turnos, cobros y gestión para profesionales",
+        title: "GetSolo — Turnos, cobros y gestión para profesionales",
         description: "Turnos online + cobro de señas + gestión completa para profesionales.",
         images: ["/og.png"],
       },
@@ -99,7 +99,7 @@ export async function generateMetadata(): Promise<Metadata> {
     .maybeSingle();
 
   const nombre = negocio?.nombre?.trim() || sub;
-  const desc = negocio?.descripcion?.trim() || `Reservas online y turnos para ${nombre} con Solo.`;
+  const desc = negocio?.descripcion?.trim() || `Reservas online y turnos para ${nombre} con GetSolo.`;
 
   // Imagen preferida para OG: banner > logo > default
   const ogImage = negocio?.banner_url || negocio?.logo_url || "/og.png";
@@ -117,7 +117,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: "website",
       url: canonical,
-      siteName: "Solo",
+      siteName: "GetSolo",
       title: `${nombre} | Reservas Online`,
       description: desc,
       images: [{ url: ogImage, width: 1200, height: 630, alt: nombre }],
@@ -138,7 +138,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const host = pickHost(h);
   const sub = getSubdomainFromHost(host);
 
-  // ✅ Solo trackear GA4 en ROOT (marketing)
+  // ✅ GetSolo trackear GA4 en ROOT (marketing)
   const shouldLoadGA = !sub && Boolean(GA4_ID);
 
   return (

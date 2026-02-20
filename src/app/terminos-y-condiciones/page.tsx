@@ -2,14 +2,14 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 export const metadata = {
-  title: 'Términos y Condiciones · Solo',
-  description: 'Términos y condiciones de uso de la plataforma Solo.',
+  title: 'Términos y Condiciones · GetSolo',
+  description: 'Términos y condiciones de uso de la plataforma GetSolo.',
 }
 
 const sections = [
   { id: 'generalidades', title: '1. Generalidades' },
   { id: 'definiciones', title: '2. Definiciones' },
-  { id: 'servicios', title: '3. Servicios de Solo' },
+  { id: 'servicios', title: '3. Servicios de GetSolo' },
   { id: 'acceso', title: '4. Condiciones de acceso' },
   { id: 'planes', title: '5. Planes y forma de pago' },
   { id: 'tarifas', title: '6. Tarifas' },
@@ -61,9 +61,9 @@ export default function TerminosPage() {
         <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="relative w-7 h-7">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-base font-800 text-white">Solo</span>
+            <span className="heading-font text-base font-800 text-white">GetSolo</span>
           </Link>
           <div className="flex items-center gap-5">
             <Link href="/politica-de-privacidad" className="text-xs text-white/30 hover:text-white/60 transition-colors hidden sm:block">
@@ -103,7 +103,7 @@ export default function TerminosPage() {
               Términos y<br />Condiciones
             </h1>
             <p className="text-sm text-white/30 leading-relaxed">
-              Última actualización: enero de 2026 · Vigente para todos los negocios registrados en Solo.
+              Última actualización: enero de 2026 · Vigente para todos los negocios registrados en GetSolo.
             </p>
           </div>
 
@@ -111,17 +111,17 @@ export default function TerminosPage() {
 
             <section id="generalidades">
               <h2>1. Generalidades</h2>
-              <p>Las relaciones contractuales con <strong>Solo</strong> (en adelante, <strong>"Solo"</strong> o <strong>"la Plataforma"</strong>) se rigen por los siguientes Términos y Condiciones, constituyendo un contrato vinculante con cualquier Negocio que acceda, use o navegue la Plataforma y sus Servicios.</p>
+              <p>Las relaciones contractuales con <strong>GetSolo</strong> (en adelante, <strong>"GetSolo"</strong> o <strong>"la Plataforma"</strong>) se rigen por los siguientes Términos y Condiciones, constituyendo un contrato vinculante con cualquier Negocio que acceda, use o navegue la Plataforma y sus Servicios.</p>
               <p>Cualquier Negocio que no acepte estos Términos, los cuales tienen carácter obligatorio, deberá abstenerse de utilizar la Plataforma. No está permitido el uso de los Servicios por menores de dieciocho (18) años.</p>
-              <p>Estos Términos hacen referencia a la <Link href="/politica-de-privacidad">Política de Privacidad</Link> de Solo, la cual es parte integrante de los mismos.</p>
+              <p>Estos Términos hacen referencia a la <Link href="/politica-de-privacidad">Política de Privacidad</Link> de GetSolo, la cual es parte integrante de los mismos.</p>
             </section>
 
             <section id="definiciones">
               <h2>2. Definiciones</h2>
               <ul>
-                <li><strong>"Solo":</strong> empresa proveedora de los Servicios y operadora de la Plataforma.</li>
+                <li><strong>"GetSolo":</strong> empresa proveedora de los Servicios y operadora de la Plataforma.</li>
                 <li><strong>"Plataforma":</strong> sitio web <strong>getsolo.site</strong>, sus subdominios y aplicaciones web asociadas.</li>
-                <li><strong>"Negocio":</strong> persona humana o jurídica que contrata los Servicios de Solo para gestionar su actividad de prestación de servicios. También denominado "Comercio".</li>
+                <li><strong>"Negocio":</strong> persona humana o jurídica que contrata los Servicios de GetSolo para gestionar su actividad de prestación de servicios. También denominado "Comercio".</li>
                 <li><strong>"Profesional":</strong> persona física que presta servicios dentro del Negocio y cuya actividad es gestionada en la Plataforma (barbero, esteticista, nutricionista, psicólogo, etc.).</li>
                 <li><strong>"Cliente Final":</strong> persona que consume los servicios del Negocio y puede realizar reservas a través de la Plataforma.</li>
                 <li><strong>"Cuenta":</strong> acceso exclusivo del Negocio a la Plataforma, identificado por su email y contraseña.</li>
@@ -136,8 +136,8 @@ export default function TerminosPage() {
             </section>
 
             <section id="servicios">
-              <h2>3. Servicios de Solo</h2>
-              <p>Solo es una plataforma ERP entregada como SaaS, orientada a negocios de servicios que trabajan con turnos, profesionales y clientes recurrentes. Opera bajo arquitectura <strong>multi-tenant</strong>: cada Negocio tiene su propio espacio de datos aislado, accesible desde su URL única.</p>
+              <h2>3. Servicios de GetSolo</h2>
+              <p>GetSolo es una plataforma ERP entregada como SaaS, orientada a negocios de servicios que trabajan con turnos, profesionales y clientes recurrentes. Opera bajo arquitectura <strong>multi-tenant</strong>: cada Negocio tiene su propio espacio de datos aislado, accesible desde su URL única.</p>
 
               <h3>3.1 Agenda y reservas online</h3>
               <ul>
@@ -166,7 +166,7 @@ export default function TerminosPage() {
 
               <h3>3.4 Gestión de equipo</h3>
               <ul>
-                <li>Alta y gestión de Profesionales ilimitados (plan Pro) o hasta 2 (plan Solo).</li>
+                <li>Alta y gestión de Profesionales ilimitados (plan Pro) o hasta 2 (plan GetSolo).</li>
                 <li>Asignación de servicios, precios y comisiones individuales.</li>
                 <li>Ranking mensual de performance por turnos y facturación.</li>
               </ul>
@@ -196,32 +196,32 @@ export default function TerminosPage() {
               <p>El Negocio garantiza que toda la información proporcionada es verdadera, exacta y actualizada. El Negocio será el único responsable por los perjuicios causados por información falsa o inexacta.</p>
 
               <h3>4.3 Confidencialidad de credenciales</h3>
-              <p>El Negocio es responsable de mantener la confidencialidad de sus credenciales. Toda operación realizada desde su Cuenta se considerará realizada por el propio Negocio. Ante sospechas de acceso no autorizado, debe notificar a Solo de inmediato.</p>
+              <p>El Negocio es responsable de mantener la confidencialidad de sus credenciales. Toda operación realizada desde su Cuenta se considerará realizada por el propio Negocio. Ante sospechas de acceso no autorizado, debe notificar a GetSolo de inmediato.</p>
 
-              <h3>4.4 Facultades de Solo</h3>
-              <p>Solo puede suspender o cancelar una Cuenta ante: información falsa, uso fraudulento, violación de estos Términos, falta de pago reiterada o actividades que perjudiquen a la Plataforma u otros usuarios.</p>
+              <h3>4.4 Facultades de GetSolo</h3>
+              <p>GetSolo puede suspender o cancelar una Cuenta ante: información falsa, uso fraudulento, violación de estos Términos, falta de pago reiterada o actividades que perjudiquen a la Plataforma u otros usuarios.</p>
             </section>
 
             <section id="planes">
               <h2>5. Planes y forma de pago</h2>
-              <p>Solo ofrece los siguientes planes de suscripción mensual:</p>
+              <p>GetSolo ofrece los siguientes planes de suscripción mensual:</p>
 
               <div className="info-box">
-                <p><strong>Plan Solo — $20.000/mes</strong></p>
+                <p><strong>Plan GetSolo — $20.000/mes</strong></p>
                 <p>Para negocios de hasta 2 profesionales. Incluye agenda online ilimitada, landing personalizada, pagos con MercadoPago, recordatorios automáticos y soporte por WhatsApp.</p>
               </div>
 
               <div className="info-box">
                 <p><strong>Plan Pro — $29.990/mes</strong></p>
-                <p>Para negocios con equipo ilimitado. Incluye todo lo del plan Solo, más sistema de comisiones, control de gastos, analytics avanzados, exportación a Excel/PDF y soporte prioritario.</p>
+                <p>Para negocios con equipo ilimitado. Incluye todo lo del plan GetSolo, más sistema de comisiones, control de gastos, analytics avanzados, exportación a Excel/PDF y soporte prioritario.</p>
               </div>
 
-              <p>Todos los planes incluyen <strong>14 días de prueba gratuita</strong> sin tarjeta de crédito. Solo puede modificar precios con aviso previo de <strong>30 días por email</strong>; ante ese caso, el Negocio puede cancelar sin cargo.</p>
+              <p>Todos los planes incluyen <strong>14 días de prueba gratuita</strong> sin tarjeta de crédito. GetSolo puede modificar precios con aviso previo de <strong>30 días por email</strong>; ante ese caso, el Negocio puede cancelar sin cargo.</p>
             </section>
 
             <section id="tarifas">
               <h2>6. Tarifas</h2>
-              <p>El cobro se realiza mensualmente de forma automática mediante el método de pago registrado. El Negocio debe mantener un método de pago válido y vigente. Ante fallo en el cobro, Solo podrá suspender temporalmente el acceso hasta regularizar la situación.</p>
+              <p>El cobro se realiza mensualmente de forma automática mediante el método de pago registrado. El Negocio debe mantener un método de pago válido y vigente. Ante fallo en el cobro, GetSolo podrá suspender temporalmente el acceso hasta regularizar la situación.</p>
               <p>Los impuestos derivados del uso de la Plataforma y de la actividad del Negocio son responsabilidad exclusiva del Negocio. El cambio de plan puede realizarse en cualquier momento; la diferencia de valor se prorrateará o acreditará según corresponda.</p>
             </section>
 
@@ -229,13 +229,13 @@ export default function TerminosPage() {
               <h2>7. Funcionalidad de agenda y turnos</h2>
               <p>El Negocio puede configurar su disponibilidad horaria y la de sus Profesionales. Los Clientes Finales reservan desde la URL pública del Negocio seleccionando servicio, Profesional y horario.</p>
               <p>Una vez confirmado un turno, el Negocio se compromete a respetar el horario. Si se configura la obligatoriedad de seña, el turno se confirma únicamente cuando el pago es procesado exitosamente vía MercadoPago.</p>
-              <p>Solo no es responsable por los servicios prestados por el Negocio a sus Clientes Finales; su rol se limita a proveer el software de gestión.</p>
+              <p>GetSolo no es responsable por los servicios prestados por el Negocio a sus Clientes Finales; su rol se limita a proveer el software de gestión.</p>
             </section>
 
             <section id="pagos">
               <h2>8. Procesamiento de pagos</h2>
-              <p>Los cobros se procesan a través de <strong>MercadoPago</strong>. Solo actúa como intermediario tecnológico y no es responsable por fallas, demoras o disputas atribuibles a MercadoPago o emisores de tarjetas.</p>
-              <p>El Negocio debe configurar correctamente su cuenta de MercadoPago y cumplir sus términos. Las disputas o contracargos deben resolverse entre el Negocio y MercadoPago. Solo no retiene fondos ni actúa como entidad financiera; los montos cobrados se acreditan directamente en la cuenta del Negocio.</p>
+              <p>Los cobros se procesan a través de <strong>MercadoPago</strong>. GetSolo actúa como intermediario tecnológico y no es responsable por fallas, demoras o disputas atribuibles a MercadoPago o emisores de tarjetas.</p>
+              <p>El Negocio debe configurar correctamente su cuenta de MercadoPago y cumplir sus términos. Las disputas o contracargos deben resolverse entre el Negocio y MercadoPago. GetSolo no retiene fondos ni actúa como entidad financiera; los montos cobrados se acreditan directamente en la cuenta del Negocio.</p>
             </section>
 
             <section id="responsabilidades">
@@ -248,35 +248,35 @@ export default function TerminosPage() {
                 <li>No utilizar la Plataforma para actividades ilícitas, fraudulentas o contrarias a la moral.</li>
                 <li>No intentar acceder a cuentas de otros Negocios ni a información ajena.</li>
                 <li>No reproducir, distribuir ni modificar el software de la Plataforma.</li>
-                <li>Notificar a Solo ante cualquier uso no autorizado de su Cuenta.</li>
+                <li>Notificar a GetSolo ante cualquier uso no autorizado de su Cuenta.</li>
                 <li>Cumplir con todas las obligaciones fiscales, laborales y comerciales derivadas de su actividad.</li>
               </ul>
             </section>
 
             <section id="limitaciones">
               <h2>10. Limitaciones de responsabilidad</h2>
-              <p>Solo proporciona la Plataforma "tal como está" y no garantiza disponibilidad ininterrumpida. No será responsable por interrupciones causadas por mantenimiento, fallas de terceros proveedores, eventos de fuerza mayor u otras causas fuera de su control razonable.</p>
-              <p>Solo no será responsable por pérdidas de ingresos, daños indirectos, lucro cesante o pérdida de datos derivados del uso o imposibilidad de uso de la Plataforma.</p>
-              <p>La responsabilidad máxima de Solo frente al Negocio estará limitada al monto abonado durante los últimos <strong>tres (3) meses</strong> de suscripción activa.</p>
+              <p>GetSolo proporciona la Plataforma "tal como está" y no garantiza disponibilidad ininterrumpida. No será responsable por interrupciones causadas por mantenimiento, fallas de terceros proveedores, eventos de fuerza mayor u otras causas fuera de su control razonable.</p>
+              <p>GetSolo no será responsable por pérdidas de ingresos, daños indirectos, lucro cesante o pérdida de datos derivados del uso o imposibilidad de uso de la Plataforma.</p>
+              <p>La responsabilidad máxima de GetSolo frente al Negocio estará limitada al monto abonado durante los últimos <strong>tres (3) meses</strong> de suscripción activa.</p>
             </section>
 
             <section id="propiedad">
               <h2>11. Propiedad intelectual</h2>
-              <p>Todos los derechos de propiedad intelectual sobre la Plataforma —software, diseño, marca, logotipos, textos y funcionalidades— pertenecen exclusivamente a Solo.</p>
+              <p>Todos los derechos de propiedad intelectual sobre la Plataforma —software, diseño, marca, logotipos, textos y funcionalidades— pertenecen exclusivamente a GetSolo.</p>
               <p>El Negocio recibe una licencia de uso limitada, no exclusiva, intransferible y revocable para utilizar la Plataforma durante la vigencia de su suscripción activa.</p>
-              <p>Queda prohibida la reproducción, distribución, modificación o ingeniería inversa de la Plataforma sin el consentimiento expreso de Solo. El Negocio conserva la propiedad sobre los datos que ingresa (clientes, servicios, precios, etc.).</p>
+              <p>Queda prohibida la reproducción, distribución, modificación o ingeniería inversa de la Plataforma sin el consentimiento expreso de GetSolo. El Negocio conserva la propiedad sobre los datos que ingresa (clientes, servicios, precios, etc.).</p>
             </section>
 
             <section id="terminacion">
               <h2>12. Vigencia y terminación</h2>
               <p>Estos Términos entran en vigencia al completar el registro y se mantienen mientras la Cuenta esté activa.</p>
-              <p>El Negocio puede cancelar su suscripción en cualquier momento sin penalidades. La cancelación toma efecto al finalizar el período de facturación en curso. Tras la baja, Solo podrá eliminar los datos del Negocio conforme a su Política de Privacidad.</p>
-              <p>Solo puede dar de baja una Cuenta ante: violación de estos Términos, uso fraudulento, falta de pago reiterada o actividades ilícitas. En casos graves la baja puede ser inmediata y sin previo aviso.</p>
+              <p>El Negocio puede cancelar su suscripción en cualquier momento sin penalidades. La cancelación toma efecto al finalizar el período de facturación en curso. Tras la baja, GetSolo podrá eliminar los datos del Negocio conforme a su Política de Privacidad.</p>
+              <p>GetSolo puede dar de baja una Cuenta ante: violación de estos Términos, uso fraudulento, falta de pago reiterada o actividades ilícitas. En casos graves la baja puede ser inmediata y sin previo aviso.</p>
             </section>
 
             <section id="varios">
               <h2>13. Varios</h2>
-              <p><strong>Modificaciones.</strong> Solo podrá modificar estos Términos notificando al Negocio por email con al menos 30 días de anticipación. El uso continuado implica aceptación de los nuevos Términos.</p>
+              <p><strong>Modificaciones.</strong> GetSolo podrá modificar estos Términos notificando al Negocio por email con al menos 30 días de anticipación. El uso continuado implica aceptación de los nuevos Términos.</p>
               <p><strong>Jurisdicción.</strong> Estos Términos se rigen por las leyes de la República Argentina. Cualquier controversia será sometida a los tribunales ordinarios con sede en la Ciudad Autónoma de Buenos Aires.</p>
               <p><strong>Divisibilidad.</strong> Si alguna cláusula fuera inválida, el resto continuará vigente.</p>
               <p><strong>Contacto.</strong> Consultas sobre estos Términos: canal de soporte en la Plataforma o vía WhatsApp.</p>
@@ -288,9 +288,9 @@ export default function TerminosPage() {
           <div className="mt-16 pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="relative w-6 h-6">
-                <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+                <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
               </div>
-              <span className="text-xs text-white/25">© 2026 Solo. Todos los derechos reservados.</span>
+              <span className="text-xs text-white/25">© 2026 GetSolo. Todos los derechos reservados.</span>
             </div>
             <div className="flex items-center gap-5 text-xs text-white/25">
               <Link href="/politica-de-privacidad" className="hover:text-white/60 transition-colors">Política de Privacidad</Link>

@@ -137,9 +137,9 @@ export default function LoginPage() {
         <div className="relative z-10 px-8 pt-7 pb-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="relative w-8 h-8">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-lg font-800 text-white">Solo</span>
+            <span className="heading-font text-lg font-800 text-white">GetSolo</span>
           </Link>
           <Link
             href="/"
@@ -289,7 +289,7 @@ export default function LoginPage() {
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-                <div className="ml-3 text-[10px] text-white/20 font-mono">Dashboard · Solo</div>
+                <div className="ml-3 text-[10px] text-white/20 font-mono">Dashboard · GetSolo</div>
               </div>
 
               <div className="p-4 space-y-3">
@@ -380,7 +380,7 @@ export default function LoginPage() {
                 ))}
               </div>
               <p className="text-xs text-white/45 leading-relaxed italic">
-                "Migré de Excel a Solo y fue el mejor cambio que hice. Ahora veo todo en un solo lugar."
+                "Migré de Excel a GetSolo y fue el mejor cambio que hice. Ahora veo todo en un solo lugar."
               </p>
               <p className="text-xs font-semibold text-white/60 mt-2">— Juan P. · BarberShop Elite</p>
             </div>

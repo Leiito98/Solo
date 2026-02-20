@@ -127,7 +127,7 @@ export default async function ProximamentePage() {
                   Otras funcionalidades disponibles
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
-                  Explorá todas las herramientas que ya tenés disponibles en Solo.
+                  Explorá todas las herramientas que ya tenés disponibles en GetSolo.
                 </p>
                 <Button variant="link" className="p-0 h-auto text-purple-600" asChild>
                   <Link href="/dashboard/configuracion">

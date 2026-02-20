@@ -368,19 +368,19 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
             {/* Columna izquierda: logo + copy + CTA */}
             <div className="relative flex flex-col gap-3 flex-1 min-w-0">
 
-              {/* Logo real de Solo */}
+              {/* Logo real de GetSolo */}
               <div className="flex items-center gap-2">
                 <a href="https://getsolo.site" target="_blank" rel="noopener noreferrer" className="inline-block w-fit">
                   <Image
                     src="/logo/solo.png"
-                    alt="Solo"
+                    alt="GetSolo"
                     width={80}
                     height={28}
                     className="object-contain"
                     style={{ height: 24, width: 'auto' }}
                   />
                 </a>
-                <a href="https://getsolo.site" className="text-xs font-bold text-gray-400 uppercase tracking-widest">Solo</a>
+                <a href="https://getsolo.site" className="text-xs font-bold text-gray-400 uppercase tracking-widest">GetSolo</a>
               </div>
               <div>
                 <p className="font-black text-gray-900 text-[15px] leading-snug">
@@ -398,7 +398,7 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
                   rel="noopener noreferrer"
                   className="solo-cta-btn w-fit"
                 >
-                  Probá Solo gratis →
+                  Probá GetSolo gratis →
                 </a>
                 <p className="text-[11px] text-gray-400">Turnos · WhatsApp · Pagos online</p>
               </div>
@@ -457,7 +457,7 @@ export default async function ReservaExitosaPage({ params, searchParams }: PageP
               rel="noopener noreferrer"
               className="font-semibold text-gray-500 hover:text-gray-800 transition-colors"
             >
-              Solo
+              GetSolo
             </a>
           </p>
         </div>

@@ -90,9 +90,9 @@ export default function ResetPasswordPage() {
         <div className="relative z-10 px-8 pt-7 pb-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="relative w-8 h-8">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-lg font-800 text-white">Solo</span>
+            <span className="heading-font text-lg font-800 text-white">GetSolo</span>
           </Link>
           <Link
             href="/login"

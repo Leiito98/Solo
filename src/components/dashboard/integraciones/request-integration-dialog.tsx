@@ -75,7 +75,7 @@ export function RequestIntegrationDialogButton() {
           <DialogHeader>
             <DialogTitle>Solicitar integración</DialogTitle>
             <DialogDescription>
-              Contanos qué herramienta querés conectar con Solo. Esto se envía a <b>support@getsolo.site</b>.
+              Contanos qué herramienta querés conectar con GetSolo. Esto se envía a <b>support@getsolo.site</b>.
             </DialogDescription>
           </DialogHeader>
 

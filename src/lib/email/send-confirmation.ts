@@ -2,7 +2,7 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Solo <no-reply@getsolo.site>'
+const EMAIL_FROM = process.env.EMAIL_FROM || 'GetSolo <no-reply@getsolo.site>'
 const APP_URL = 'https://getsolo.site'.replace(/\/$/, '')
 const SOLO_LOGO_URL = `${APP_URL}/logo/solo.png`
 
@@ -66,9 +66,9 @@ function footerSoloHTML() {
   return `
     <div class="solo-footer">
       <div class="solo-footer-inner">
-        <img src="${SOLO_LOGO_URL}" width="32" height="32" alt="Solo" style="display:block;border:0;outline:none;text-decoration:none;border-radius:8px;" />
+        <img src="${SOLO_LOGO_URL}" width="32" height="32" alt="GetSolo" style="display:block;border:0;outline:none;text-decoration:none;border-radius:8px;" />
         <div style="text-align:left;">
-          <div style="font-weight:700;color:#111827;line-height:1.2;">Solo</div>
+          <div style="font-weight:700;color:#111827;line-height:1.2;">GetSolo</div>
           <div style="color:#6B7280;font-size:12px;line-height:1.2;">Sistema de turnos y gestión para profesionales</div>
           <div style="color:#9CA3AF;font-size:12px;line-height:1.2;">${APP_URL}</div>
         </div>
@@ -251,10 +251,10 @@ export async function sendNuevaReservaOwner(data: NuevaReservaOwnerEmail) {
                 </div>
               </div>
 
-              <p class="subtle">Podés gestionar el turno desde tu dashboard de Solo.</p>
+              <p class="subtle">Podés gestionar el turno desde tu dashboard de GetSolo.</p>
 
               <div class="divider footer">
-                <p style="margin:0;" class="subtle">© ${new Date().getFullYear()} Solo — Notificación automática</p>
+                <p style="margin:0;" class="subtle">© ${new Date().getFullYear()} GetSolo — Notificación automática</p>
                 ${footerSoloHTML()}
               </div>
             </div>

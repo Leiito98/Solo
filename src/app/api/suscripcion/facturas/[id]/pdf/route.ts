@@ -282,7 +282,7 @@ export async function GET(
     <!-- Header -->
     <div class="header">
       <div class="header-brand">
-        <div class="app-name">Solo</div>
+        <div class="app-name">GetSolo</div>
         <div class="app-sub">Plataforma de gestión para profesionales</div>
       </div>
       <div class="header-right">
@@ -358,7 +358,7 @@ export async function GET(
 
     <!-- Footer -->
     <div class="footer">
-      <p>Este documento es un comprobante de pago emitido por Solo.</p>
+      <p>Este documento es un comprobante de pago emitido por GetSolo.</p>
       <p>Para consultas: <a href="mailto:support@getsolo.app" style="color:#64748b">support@getsolo.app</a></p>
     </div>
 

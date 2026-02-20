@@ -29,24 +29,24 @@ const SITE = "https://getsolo.site"
 const CANONICAL = `${SITE}/sistema-turnos-online`
 
 export const metadata: Metadata = {
-  title: "Sistema de turnos online para profesionales en Argentina | Solo",
+  title: "Sistema de turnos online para profesionales en Argentina | GetSolo",
   description:
     "Agenda online para barberías, psicólogos, nutricionistas y estética: reservas 24/7, recordatorios, señas con MercadoPago y gestión del negocio. Probá 14 días gratis.",
   alternates: { canonical: CANONICAL },
   openGraph: {
     type: "website",
     url: CANONICAL,
-    title: "Sistema de turnos online para profesionales en Argentina | Solo",
+    title: "Sistema de turnos online para profesionales en Argentina | GetSolo",
     description:
-      "Reservas 24/7 + recordatorios + señas con MercadoPago. Probá Solo 14 días gratis.",
-    siteName: "Solo",
-    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "Solo" }],
+      "Reservas 24/7 + recordatorios + señas con MercadoPago. Probá GetSolo 14 días gratis.",
+    siteName: "GetSolo",
+    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "GetSolo" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sistema de turnos online para profesionales en Argentina | Solo",
+    title: "Sistema de turnos online para profesionales en Argentina | GetSolo",
     description:
-      "Reservas 24/7 + recordatorios + señas con MercadoPago. Probá Solo 14 días gratis.",
+      "Reservas 24/7 + recordatorios + señas con MercadoPago. Probá GetSolo 14 días gratis.",
     images: [`${SITE}/og.png`],
   },
 }
@@ -55,7 +55,7 @@ function jsonLd() {
   const faqs = [
     {
       q: "¿Solo sirve para barberías, psicólogos y nutricionistas?",
-      a: "Sí. Solo está pensado para profesionales y negocios de servicios: barberías, estética, psicología, nutrición, fitness y más.",
+      a: "Sí. GetSolo está pensado para profesionales y negocios de servicios: barberías, estética, psicología, nutrición, fitness y más.",
     },
     {
       q: "¿Puedo cobrar seña con MercadoPago?",
@@ -92,7 +92,7 @@ function jsonLd() {
   const appSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Solo",
+    name: "GetSolo",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: CANONICAL,
@@ -162,9 +162,9 @@ export default function SistemaTurnosOnlinePage() {
         <div className="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="relative w-9 h-9">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-xl font-800 text-white tracking-tight">Solo</span>
+            <span className="heading-font text-xl font-800 text-white tracking-tight">GetSolo</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -201,7 +201,7 @@ export default function SistemaTurnosOnlinePage() {
               </h1>
 
               <p className="text-lg text-white/50 leading-relaxed mb-6">
-                Barberías, nutricionistas, psicólogos y centros de estética usan Solo para{" "}
+                Barberías, nutricionistas, psicólogos y centros de estética usan GetSolo para{" "}
                 <strong className="text-white/70">organizar agenda</strong>,{" "}
                 <strong className="text-white/70">cobrar señas con MercadoPago</strong> y{" "}
                 <strong className="text-white/70">reducir ausencias</strong>.
@@ -333,7 +333,7 @@ export default function SistemaTurnosOnlinePage() {
             Cómo funciona
           </div>
           <h2 className="heading-font text-3xl sm:text-4xl font-900 text-white mb-3">
-            Cómo funciona Solo
+            Cómo funciona GetSolo
           </h2>
           <p className="text-white/40 max-w-2xl">
             Lo configurás una vez y después tu agenda se ordena sola.
@@ -514,7 +514,7 @@ export default function SistemaTurnosOnlinePage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)] pointer-events-none" />
           <div className="relative text-center">
             <h2 className="heading-font text-4xl sm:text-5xl font-900 text-white leading-tight mb-4">
-              Probá Solo gratis y empezá a tomar turnos hoy
+              Probá GetSolo gratis y empezá a tomar turnos hoy
             </h2>
             <p className="text-white/50 text-lg max-w-2xl mx-auto mb-8">
               Armá tu página de reservas, organizá tu agenda y cobrá señas con MercadoPago.
@@ -548,9 +548,9 @@ export default function SistemaTurnosOnlinePage() {
             <div className="space-y-3">
               <Link href="/" className="flex items-center gap-2.5">
                 <div className="relative w-8 h-8">
-                  <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+                  <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
                 </div>
-                <span className="heading-font text-lg font-800 text-white">Solo</span>
+                <span className="heading-font text-lg font-800 text-white">GetSolo</span>
               </Link>
               <p className="text-sm text-white/30 max-w-xs leading-relaxed">
                 La plataforma todo-en-uno para gestionar tu negocio de servicios.
@@ -612,7 +612,7 @@ export default function SistemaTurnosOnlinePage() {
           </div>
 
           <div className="border-t border-white/[0.05] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/20">
-            <span>© 2026 Solo. Todos los derechos reservados.</span>
+            <span>© 2026 GetSolo. Todos los derechos reservados.</span>
             <span>🇦🇷 Hecho en Argentina</span>
           </div>
         </div>

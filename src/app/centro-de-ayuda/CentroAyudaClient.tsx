@@ -45,16 +45,16 @@ const faqCategories: FAQCategory[] = [
     description: 'Todo lo que necesitás saber para empezar',
     questions: [
       {
-        question: '¿Cómo creo mi cuenta en Solo?',
-        answer: 'Creá tu cuenta en solo 2 pasos: (1) Hacé click en "Empezar Gratis" e ingresá tu email y contraseña. Confirmá tu email haciendo click en el link que te enviamos. (2) Completá los datos de tu negocio: nombre del responsable, tipo de negocio, nombre comercial y elegí tu URL única (slug). ¡Listo! Ya podés empezar a usar Solo.',
+        question: '¿Cómo creo mi cuenta en GetSolo?',
+        answer: 'Creá tu cuenta en solo 2 pasos: (1) Hacé click en "Empezar Gratis" e ingresá tu email y contraseña. Confirmá tu email haciendo click en el link que te enviamos. (2) Completá los datos de tu negocio: nombre del responsable, tipo de negocio, nombre comercial y elegí tu URL única (slug). ¡Listo! Ya podés empezar a usar GetSolo.',
       },
       {
         question: '¿Cuánto tarda el setup inicial?',
-        answer: 'El setup completo de Solo toma aproximadamente 10 minutos. Esto incluye: crear tu cuenta, configurar tus datos, agregar servicios y precios, dar de alta a tu equipo (si lo tenés), y personalizar tu página pública. Podés empezar a recibir reservas inmediatamente después.',
+        answer: 'El setup completo de GetSolo toma aproximadamente 10 minutos. Esto incluye: crear tu cuenta, configurar tus datos, agregar servicios y precios, dar de alta a tu equipo (si lo tenés), y personalizar tu página pública. Podés empezar a recibir reservas inmediatamente después.',
       },
       {
         question: '¿Necesito tarjeta de crédito para la prueba gratis?',
-        answer: 'No. Los 14 días de prueba gratuita no requieren tarjeta de crédito. Podés explorar todas las funcionalidades sin ingresar datos de pago. Al finalizar el período de prueba, te pediremos que elijas un plan y agregues un método de pago para continuar usando Solo.',
+        answer: 'No. Los 14 días de prueba gratuita no requieren tarjeta de crédito. Podés explorar todas las funcionalidades sin ingresar datos de pago. Al finalizar el período de prueba, te pediremos que elijas un plan y agregues un método de pago para continuar usando GetSolo.',
       },
       {
         question: '¿Puedo migrar mis datos desde otra plataforma?',
@@ -78,7 +78,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: '¿Qué pasa si un cliente cancela?',
-        answer: 'Podés gestionar cancelaciones desde el Dashboard. Si el turno tenía seña pagada, deberás coordinar la devolución o crédito directamente con tu cliente según tu política de cancelación. Solo te muestra el estado del pago pero no procesa devoluciones automáticas.',
+        answer: 'Podés gestionar cancelaciones desde el Dashboard. Si el turno tenía seña pagada, deberás coordinar la devolución o crédito directamente con tu cliente según tu política de cancelación. GetSolo te muestra el estado del pago pero no procesa devoluciones automáticas.',
       },
       {
         question: '¿Puedo bloquear horarios para eventos privados?',
@@ -86,7 +86,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: '¿Los recordatorios se envían automáticamente?',
-        answer: 'Sí. Solo envía automáticamente un recordatorio por email al cliente 24 horas antes de su turno. No tenés que hacer nada, el sistema lo gestiona completamente. El email incluye fecha, hora, servicio y profesional asignado.',
+        answer: 'Sí. GetSolo envía automáticamente un recordatorio por email al cliente 24 horas antes de su turno. No tenés que hacer nada, el sistema lo gestiona completamente. El email incluye fecha, hora, servicio y profesional asignado.',
       },
     ],
   },
@@ -98,11 +98,11 @@ const faqCategories: FAQCategory[] = [
     questions: [
       {
         question: '¿Cómo configuro MercadoPago?',
-        answer: 'Desde el panel de configuración, andá a "Pagos" y conectá tu cuenta de MercadoPago siguiendo el proceso de autorización OAuth. Solo necesitás tener una cuenta de MercadoPago activa. Una vez conectada, podés empezar a cobrar señas inmediatamente. Todos los pagos se acreditan directamente en tu cuenta de MercadoPago.',
+        answer: 'Desde el panel de configuración, andá a "Pagos" y conectá tu cuenta de MercadoPago siguiendo el proceso de autorización OAuth. GetSolo necesitás tener una cuenta de MercadoPago activa. Una vez conectada, podés empezar a cobrar señas inmediatamente. Todos los pagos se acreditan directamente en tu cuenta de MercadoPago.',
       },
       {
         question: '¿Cuánto cobran de comisión por las señas?',
-        answer: 'Solo no cobra ninguna comisión adicional sobre los pagos. Las únicas comisiones son las de MercadoPago, que varían según el tipo de pago (tarjeta de crédito, débito, etc.). Podés ver las tarifas actualizadas en el sitio de MercadoPago.',
+        answer: 'GetSolo no cobra ninguna comisión adicional sobre los pagos. Las únicas comisiones son las de MercadoPago, que varían según el tipo de pago (tarjeta de crédito, débito, etc.). Podés ver las tarifas actualizadas en el sitio de MercadoPago.',
       },
       {
         question: '¿La seña es obligatoria?',
@@ -126,11 +126,11 @@ const faqCategories: FAQCategory[] = [
     questions: [
       {
         question: '¿Cuántos profesionales puedo agregar?',
-        answer: 'Depende de tu plan. El plan Solo permite hasta 2 profesionales. El plan Pro permite profesionales ilimitados. Podés agregar, editar o eliminar profesionales desde el panel de "Equipo" en cualquier momento.',
+        answer: 'Depende de tu plan. El plan GetSolo permite hasta 2 profesionales. El plan Pro permite profesionales ilimitados. Podés agregar, editar o eliminar profesionales desde el panel de "Equipo" en cualquier momento.',
       },
       {
         question: '¿Cómo funcionan las comisiones?',
-        answer: 'Asignás un porcentaje de comisión a cada profesional (por ejemplo, 40%). Solo calcula automáticamente cuánto le corresponde a cada uno según los turnos que atendió y el precio de cada servicio. Al final del mes, podés ver el detalle completo en el Dashboard y exportarlo a Excel si tenés el plan Pro.',
+        answer: 'Asignás un porcentaje de comisión a cada profesional (por ejemplo, 40%). GetSolo calcula automáticamente cuánto le corresponde a cada uno según los turnos que atendió y el precio de cada servicio. Al final del mes, podés ver el detalle completo en el Dashboard y exportarlo a Excel si tenés el plan Pro.',
       },
       {
         question: '¿Puedo asignar diferentes comisiones por profesional?',
@@ -138,7 +138,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: '¿Los profesionales pueden ver sus propias comisiones?',
-        answer: 'Actualmente no. Solo el dueño del negocio tiene acceso completo al Dashboard. Los profesionales no tienen login propio. Estamos trabajando en una funcionalidad de acceso limitado para el equipo en futuras versiones.',
+        answer: 'Actualmente no. GetSolo el dueño del negocio tiene acceso completo al Dashboard. Los profesionales no tienen login propio. Estamos trabajando en una funcionalidad de acceso limitado para el equipo en futuras versiones.',
       },
     ],
   },
@@ -162,7 +162,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: '¿El sistema emite facturas?',
-        answer: 'No. Solo registra los ingresos pero no emite facturas legales. Deberás emitir tus facturas a través del sistema que uses habitualmente (AFIP, Monotributo, etc.). Solo te provee los datos para que puedas hacerlo fácilmente.',
+        answer: 'No. GetSolo registra los ingresos pero no emite facturas legales. Deberás emitir tus facturas a través del sistema que uses habitualmente (AFIP, Monotributo, etc.). GetSolo te provee los datos para que puedas hacerlo fácilmente.',
       },
     ],
   },
@@ -174,7 +174,7 @@ const faqCategories: FAQCategory[] = [
     questions: [
       {
         question: '¿Cómo funciona mi página web?',
-        answer: 'Al crear tu cuenta, Solo genera automáticamente una landing page en tu URL única (tuNegocio.getsolo.site). Esta página incluye el nombre de tu negocio, tus servicios, precios y un botón para que los clientes reserven turnos. Podés compartir esta URL por Instagram, WhatsApp, Google Maps, etc.',
+        answer: 'Al crear tu cuenta, GetSolo genera automáticamente una landing page en tu URL única (tuNegocio.getsolo.site). Esta página incluye el nombre de tu negocio, tus servicios, precios y un botón para que los clientes reserven turnos. Podés compartir esta URL por Instagram, WhatsApp, Google Maps, etc.',
       },
       {
         question: '¿Puedo personalizar mi página?',
@@ -182,7 +182,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: '¿Puedo usar mi propio dominio?',
-        answer: 'Sí. Podés conectar tu dominio propio (ej: www.tunegocio.com) en lugar de usar el subdominio de Solo. Contactanos por WhatsApp y te ayudamos con la configuración DNS. Esta funcionalidad está disponible en ambos planes.',
+        answer: 'Sí. Podés conectar tu dominio propio (ej: www.tunegocio.com) en lugar de usar el subdominio de GetSolo. Contactanos por WhatsApp y te ayudamos con la configuración DNS. Esta funcionalidad está disponible en ambos planes.',
       },
       {
         question: '¿La página es responsive?',
@@ -197,12 +197,12 @@ const faqCategories: FAQCategory[] = [
     description: 'Suscripciones, cambios de plan y pagos',
     questions: [
       {
-        question: '¿Cuál es la diferencia entre los planes Solo y Pro?',
-        answer: 'Plan Solo ($20.000/mes): hasta 2 profesionales, agenda online, landing, pagos, recordatorios y soporte WhatsApp. Plan Pro ($29.990/mes): todo lo del plan Solo + profesionales ilimitados, sistema de comisiones, control de gastos, analytics avanzados, exportar a Excel/PDF y soporte prioritario.',
+        question: '¿Cuál es la diferencia entre los planes GetSolo y Pro?',
+        answer: 'Plan GetSolo ($20.000/mes): hasta 2 profesionales, agenda online, landing, pagos, recordatorios y soporte WhatsApp. Plan Pro ($29.990/mes): todo lo del plan GetSolo + profesionales ilimitados, sistema de comisiones, control de gastos, analytics avanzados, exportar a Excel/PDF y soporte prioritario.',
       },
       {
         question: '¿Puedo cambiar de plan después?',
-        answer: 'Sí, podés cambiar de plan en cualquier momento desde el panel de configuración. Si pasás de Solo a Pro, se prorratea la diferencia. Si bajás de Pro a Solo, el crédito se aplica al siguiente mes. El cambio es inmediato.',
+        answer: 'Sí, podés cambiar de plan en cualquier momento desde el panel de configuración. Si pasás de GetSolo a Pro, se prorratea la diferencia. Si bajás de Pro a GetSolo, el crédito se aplica al siguiente mes. El cambio es inmediato.',
       },
       {
         question: '¿Cómo se cobra la suscripción mensual?',
@@ -230,7 +230,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: '¿Quién puede ver los datos de mis clientes?',
-        answer: 'Solo vos y tu equipo (cuando implementemos el acceso limitado). Ni siquiera el personal de Solo puede ver tus datos salvo que nos lo autorices explícitamente para resolver un problema técnico. Cada negocio es un tenant completamente aislado.',
+        answer: 'GetSolo vos y tu equipo (cuando implementemos el acceso limitado). Ni siquiera el personal de GetSolo puede ver tus datos salvo que nos lo autorices explícitamente para resolver un problema técnico. Cada negocio es un tenant completamente aislado.',
       },
       {
         question: '¿Qué pasa con mis datos si cancelo?',
@@ -238,7 +238,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: '¿Puedo exportar mis datos antes de cancelar?',
-        answer: 'Sí. Antes de cancelar podés exportar toda tu información (clientes, turnos, ingresos) a Excel desde el plan Pro. Si tenés el plan Solo, contactanos y te generamos la exportación manualmente sin cargo.',
+        answer: 'Sí. Antes de cancelar podés exportar toda tu información (clientes, turnos, ingresos) a Excel desde el plan Pro. Si tenés el plan GetSolo, contactanos y te generamos la exportación manualmente sin cargo.',
       },
     ],
   },
@@ -250,7 +250,7 @@ const faqCategories: FAQCategory[] = [
     questions: [
       {
         question: '¿Cómo contacto a soporte?',
-        answer: 'Podés contactarnos por WhatsApp (link en el footer de la plataforma) o por email a support@getsolo.site. El plan Solo tiene soporte estándar (respuesta en 24-48hs). El plan Pro tiene soporte prioritario (respuesta en menos de 12hs).',
+        answer: 'Podés contactarnos por WhatsApp (link en el footer de la plataforma) o por email a support@getsolo.site. El plan GetSolo tiene soporte estándar (respuesta en 24-48hs). El plan Pro tiene soporte prioritario (respuesta en menos de 12hs).',
       },
       {
         question: '¿Hay soporte telefónico?',
@@ -258,7 +258,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: '¿Hacen capacitaciones para usar la plataforma?',
-        answer: 'Sí. Ofrecemos una videollamada de onboarding gratuita de 30 minutos para nuevos clientes del plan Pro. Para el plan Solo, tenemos tutoriales en video disponibles en el Centro de Ayuda. También podés pedir ayuda por WhatsApp en cualquier momento.',
+        answer: 'Sí. Ofrecemos una videollamada de onboarding gratuita de 30 minutos para nuevos clientes del plan Pro. Para el plan GetSolo, tenemos tutoriales en video disponibles en el Centro de Ayuda. También podés pedir ayuda por WhatsApp en cualquier momento.',
       },
       {
         question: '¿Qué hago si encuentro un error?',
@@ -320,9 +320,9 @@ export default function CentroAyudaPage() {
         <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="relative w-7 h-7">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-base font-800 text-white">Solo</span>
+            <span className="heading-font text-base font-800 text-white">GetSolo</span>
           </Link>
           <div className="flex items-center gap-5">
             <Link href="/terminos-y-condiciones" className="text-xs text-white/30 hover:text-white/60 transition-colors hidden sm:block">
@@ -350,7 +350,7 @@ export default function CentroAyudaPage() {
             Centro de Ayuda
           </h1>
           <p className="text-base text-white/40 max-w-xl mx-auto leading-relaxed mb-8">
-            Encontrá respuestas rápidas a las preguntas más frecuentes sobre Solo
+            Encontrá respuestas rápidas a las preguntas más frecuentes sobre GetSolo
           </p>
 
           {/* Search */}
@@ -369,7 +369,7 @@ export default function CentroAyudaPage() {
         {/* Quick Actions */}
         <div className="grid sm:grid-cols-3 gap-3 mb-12">
           <a
-            href="https://api.whatsapp.com/send/?phone=5491164613750&text=Necesito%20hablar%20con%20un%20representante%20de%20Solo&type=phone_number&app_absent=0"
+            href="https://api.whatsapp.com/send/?phone=5491164613750&text=Necesito%20hablar%20con%20un%20representante%20de%20GetSolo&type=phone_number&app_absent=0"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.07] hover:border-green-500/30 hover:bg-green-500/[0.04] transition-all group"
@@ -475,7 +475,7 @@ export default function CentroAyudaPage() {
             <h3 className="heading-font text-xl font-700 text-white/50 mb-2">No encontramos resultados</h3>
             <p className="text-sm text-white/30 mb-6">Probá con otros términos o contactanos directamente</p>
             <a
-              href="https://api.whatsapp.com/send/?phone=5491164613750&text=Necesito%20ayuda%20con%20Solo&type=phone_number&app_absent=0"
+              href="https://api.whatsapp.com/send/?phone=5491164613750&text=Necesito%20ayuda%20con%20GetSolo&type=phone_number&app_absent=0"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-500/15 hover:bg-green-500/25 border border-green-500/20 text-green-400 rounded-lg text-sm font-semibold transition-all"
@@ -494,7 +494,7 @@ export default function CentroAyudaPage() {
               Recursos
             </div>
             <h2 className="heading-font text-3xl font-900 text-white mb-3">Tutoriales y guías</h2>
-            <p className="text-white/40 text-sm">Aprendé a usar Solo con nuestras guías paso a paso</p>
+            <p className="text-white/40 text-sm">Aprendé a usar GetSolo con nuestras guías paso a paso</p>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
@@ -545,7 +545,7 @@ export default function CentroAyudaPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a
-                href="https://api.whatsapp.com/send/?phone=5491164613750&text=Necesito%20ayuda%20con%20Solo&type=phone_number&app_absent=0"
+                href="https://api.whatsapp.com/send/?phone=5491164613750&text=Necesito%20ayuda%20con%20GetSolo&type=phone_number&app_absent=0"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-400 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-green-500/20 hover:shadow-green-400/30"
@@ -568,9 +568,9 @@ export default function CentroAyudaPage() {
         <div className="mt-16 pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="relative w-6 h-6">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="text-xs text-white/25">© 2026 Solo. Todos los derechos reservados.</span>
+            <span className="text-xs text-white/25">© 2026 GetSolo. Todos los derechos reservados.</span>
           </div>
           <div className="flex items-center gap-5 text-xs text-white/25">
             <Link href="/terminos-y-condiciones" className="hover:text-white/60 transition-colors">Términos y Condiciones</Link>

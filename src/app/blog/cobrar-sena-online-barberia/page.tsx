@@ -18,24 +18,24 @@ const SLUG = "/blog/cobrar-sena-online-barberia"
 const CANONICAL = `${SITE}${SLUG}`
 
 export const metadata: Metadata = {
-  title: "Cómo cobrar seña online en una barbería (MercadoPago + Solo)",
+  title: "Cómo cobrar seña online en una barbería (MercadoPago + GetSolo)",
   description:
-    "Guía práctica para cobrar seña online en barberías con MercadoPago y Solo. Reducí no-shows, confirmá turnos y cobrales la seña al reservar. Probá 14 días gratis.",
+    "Guía práctica para cobrar seña online en barberías con MercadoPago y GetSolo. Reducí no-shows, confirmá turnos y cobrales la seña al reservar. Probá 14 días gratis.",
   alternates: { canonical: CANONICAL },
   openGraph: {
     type: "article",
     url: CANONICAL,
     title: "Cómo cobrar seña online en una barbería (y dejar de perder turnos)",
     description:
-      "Paso a paso para cobrar seña online en tu barbería con MercadoPago y Solo. Menos cancelaciones, más agenda real.",
-    siteName: "Solo",
-    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "Solo" }],
+      "Paso a paso para cobrar seña online en tu barbería con MercadoPago y GetSolo. Menos cancelaciones, más agenda real.",
+    siteName: "GetSolo",
+    images: [{ url: `${SITE}/og.png`, width: 1200, height: 630, alt: "GetSolo" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Cómo cobrar seña online en una barbería (y dejar de perder turnos)",
     description:
-      "Guía práctica para cobrar seña online con MercadoPago y Solo: menos no-shows, más turnos confirmados.",
+      "Guía práctica para cobrar seña online con MercadoPago y GetSolo: menos no-shows, más turnos confirmados.",
     images: [`${SITE}/og.png`],
   },
 }
@@ -47,7 +47,7 @@ function jsonLd() {
   const faqs = [
     {
       q: "¿El dinero va a mi cuenta?",
-      a: "Sí. Cada pago entra directamente a tu cuenta de MercadoPago. Solo no toca tu dinero.",
+      a: "Sí. Cada pago entra directamente a tu cuenta de MercadoPago. GetSolo no toca tu dinero.",
     },
     {
       q: "¿Puedo cambiar el porcentaje después?",
@@ -75,15 +75,15 @@ function jsonLd() {
     "@type": "BlogPosting",
     headline: "Cómo cobrar seña online en una barbería (y dejar de perder turnos)",
     description:
-      "Guía práctica para cobrar seña online en barberías con MercadoPago y Solo. Reducí no-shows, confirmá turnos y cobrales la seña al reservar.",
+      "Guía práctica para cobrar seña online en barberías con MercadoPago y GetSolo. Reducí no-shows, confirmá turnos y cobrales la seña al reservar.",
     image: [`${SITE}/og.png`],
     datePublished: published,
     dateModified: modified,
     mainEntityOfPage: { "@type": "WebPage", "@id": CANONICAL },
-    author: { "@type": "Organization", name: "Solo", url: SITE },
+    author: { "@type": "Organization", name: "GetSolo", url: SITE },
     publisher: {
       "@type": "Organization",
-      name: "Solo",
+      name: "GetSolo",
       logo: { "@type": "ImageObject", url: `${SITE}/logo/solo.png` },
     },
   }
@@ -141,9 +141,9 @@ export default function CobrarSenaOnlineBarberiaPage() {
         <div className="mx-auto max-w-6xl px-5 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="relative w-9 h-9">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="heading-font text-xl font-800 text-white">Solo</span>
+            <span className="heading-font text-xl font-800 text-white">GetSolo</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -190,7 +190,7 @@ export default function CobrarSenaOnlineBarberiaPage() {
             </h1>
 
             <p className="text-lg text-white/50 leading-relaxed max-w-3xl">
-              Guía práctica para cobrar señas con <strong>MercadoPago</strong> y confirmar turnos automáticamente con <strong>Solo</strong>.
+              Guía práctica para cobrar señas con <strong>MercadoPago</strong> y confirmar turnos automáticamente con <strong>GetSolo</strong>.
               Menos ausencias, agenda real y menos WhatsApp infinito.
             </p>
 
@@ -280,11 +280,11 @@ export default function CobrarSenaOnlineBarberiaPage() {
                 </p>
 
                 <h2 className="heading-font text-2xl sm:text-3xl font-900 text-white">
-                  Cómo cobrar seña online con Solo + MercadoPago
+                  Cómo cobrar seña online con GetSolo + MercadoPago
                 </h2>
 
                 <p>
-                  Con Solo podés hacerlo sin conocimientos técnicos. Configurás una vez y después tu agenda se gestiona sola.
+                  Con GetSolo podés hacerlo sin conocimientos técnicos. Configurás una vez y después tu agenda se gestiona sola.
                 </p>
 
                 <div className="mt-6 grid gap-4">
@@ -340,7 +340,7 @@ export default function CobrarSenaOnlineBarberiaPage() {
 
                 {/* CTA inline */}
                 <div className="mt-8 rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-600/10 to-violet-600/5 p-6">
-                  <p className="heading-font text-lg font-800 text-white mb-1">Probá Solo gratis</p>
+                  <p className="heading-font text-lg font-800 text-white mb-1">Probá GetSolo gratis</p>
                   <p className="text-sm text-white/50 mb-4">
                     En menos de 10 minutos ya podés cobrar señas online y confirmar turnos.
                   </p>
@@ -362,7 +362,7 @@ export default function CobrarSenaOnlineBarberiaPage() {
                   {[
                     {
                       q: "¿El dinero va a mi cuenta?",
-                      a: "Sí. Cada pago entra directamente a tu cuenta de MercadoPago. Solo no toca tu dinero.",
+                      a: "Sí. Cada pago entra directamente a tu cuenta de MercadoPago. GetSolo no toca tu dinero.",
                     },
                     {
                       q: "¿Puedo cambiar el porcentaje después?",
@@ -389,7 +389,7 @@ export default function CobrarSenaOnlineBarberiaPage() {
                     href="/register?plan=pro"
                     className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white text-base h-12 px-8 rounded-xl font-semibold shadow-xl shadow-blue-500/30 transition-all hover:scale-[1.04] group"
                   >
-                    Probar Solo gratis
+                    Probar GetSolo gratis
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </Link>
                   <Link
@@ -495,7 +495,7 @@ export default function CobrarSenaOnlineBarberiaPage() {
                 Confirmá turnos y cobrales la seña
               </h2>
               <p className="text-white/50 text-lg max-w-2xl mx-auto mb-8">
-                Probá Solo gratis y empezá a tomar reservas 24/7 con señas online.
+                Probá GetSolo gratis y empezá a tomar reservas 24/7 con señas online.
               </p>
               <Link
                 href="/register?plan=pro"
@@ -515,9 +515,9 @@ export default function CobrarSenaOnlineBarberiaPage() {
         <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="relative w-8 h-8">
-              <Image src="/logo/solo.png" alt="Solo" fill className="object-contain" />
+              <Image src="/logo/solo.png" alt="GetSolo" fill className="object-contain" />
             </div>
-            <span className="text-xs text-white/20">© {new Date().getFullYear()} Solo</span>
+            <span className="text-xs text-white/20">© {new Date().getFullYear()} GetSolo</span>
           </div>
           <div className="flex items-center gap-6 text-sm">
             <Link href="/sistema-turnos-online" className="text-white/40 hover:text-white/70 transition-colors">
