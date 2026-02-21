@@ -902,7 +902,7 @@ export default function LandingClient() {
           <div className="grid md:grid-cols-2 gap-5">
             <div className="gradient-border rounded-2xl p-7 card-hover">
               <div className="mb-6">
-                <h3 className="heading-font text-2xl font-800 text-white mb-1">GetSolo</h3>
+                <h3 className="heading-font text-2xl font-800 text-white mb-1">Solo</h3>
                 <p className="text-white/40 text-sm">Para emprendedores y profesionales independientes</p>
               </div>
               <div className="flex items-baseline gap-1 mb-7">
@@ -913,7 +913,7 @@ export default function LandingClient() {
                 {[
                   '1-2 profesionales',
                   'Agenda online ilimitada',
-                  'Landing page personalizada',
+                  'Página personalizada',
                   'Señas con MercadoPago',
                   'Recordatorios automáticos',
                   'Soporte por WhatsApp',
@@ -952,7 +952,7 @@ export default function LandingClient() {
                 <ul className="space-y-3 mb-8">
                   {[
                     'Profesionales ilimitados',
-                    'Todo lo del plan GetSolo',
+                    'Todo lo del plan Solo',
                     'Sistema de comisiones',
                     'Control de gastos fijos',
                     'Métricas avanzadas',
