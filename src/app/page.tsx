@@ -8,7 +8,7 @@ const CANONICAL = `${SITE}/`
 export const metadata = {
   title: "GetSolo – Turnos, cierre de caja y comisiones para barberías",
   description:
-    "GetSolo es un sistema para barberías y profesionales: agenda online, cobros con MercadoPago, cierre de caja diario, comisiones por barbero, ingresos/egresos, abonos y giftcards. Probá 14 días gratis.",
+    "GetSolo: agenda online, cobros y gestión para barberías. Comisiones por barbero, cierre de caja y giftcards. Probá 14 días gratis.",
   keywords: [
     "sistema para barberías",
     "agenda online barbería",
